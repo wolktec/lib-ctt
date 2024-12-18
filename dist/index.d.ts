@@ -1,2 +1,1 @@
-export { default as availabilityAllocation } from "./microservice/availabilityAllocation";
-export * from './microservice/availabilityAllocation';
+export { default as createAvailabilityAllocation } from "./microservice/availabilityAllocation";
