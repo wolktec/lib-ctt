@@ -46,10 +46,7 @@ export interface AvailabilityAndAllocationResult {
     },
   ],
 }
-export type GroupEquipmentsCount = {
-  group: string;
-  workFronts: {
-    workFrontCode: number;
-    equipments: number;
-  }[];
-}[];
+export type EquipmentsGroupsType = Record<
+  string,
+  Record<number | 'total', number>
+>;

@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import { calcMechanicalAvailability, convertHourToDecimal } from "../helper/helper"
-import { AvailabilityAndAllocationResult, Equipment, Event, GroupEquipmentsCount } from "../interfaces/availabilityAllocation.interface";
+import { AvailabilityAndAllocationResult, Equipment, EquipmentsGroupsType, Event } from "../interfaces/availabilityAllocation.interface";
 
 export default class availabilityAllocation {
 
@@ -8,8 +8,9 @@ export default class availabilityAllocation {
   public createAvailabilityAllocation = async (equipments: Equipment[], events: Event[]) => {
     // : Promise<AvailabilityAndAllocationResult>
     let teste: AvailabilityAndAllocationResult;
-    let equipmentsGroups = this.sumEquipmentsByGroup(equipments, events);
-    return equipmentsGroups;
+    let equipmentsGroups = await this.sumEquipmentsByGroup(equipments, events);
+
+    return this.formatAvailabilityReturn(equipmentsGroups);
   }
 
   /**
@@ -17,18 +18,18 @@ export default class availabilityAllocation {
     * @param equipments the group of equipments allocated in the front
     * @param events the events of the equipment
    */
-
-  // TODO: refatorar e deixar para montar o objeto final com o valor de availability
   public sumEquipmentsByGroup = async (
     equipments: Equipment[],
     events: Event[]
-  ): Promise<GroupEquipmentsCount> => {
+  ): Promise<EquipmentsGroupsType> => {
     const eventEquipmentCodes = new Set(events.map(event => event.equipment.code));
-    
+
     // soma equipamentos que possuem eventos e agrupa por frente e grupo
-    const groupedEquipments = equipments.reduce<Record<string, Record<number, number>>>((accumulator, { description, work_front_code, code }) => {
+    const groupedEquipments = equipments.reduce<EquipmentsGroupsType>((accumulator, { description, work_front_code, code }) => {
       if (!accumulator[description]) {
-        accumulator[description] = {};
+        accumulator[description] = {
+          total: 0,
+        };
       }
 
       if (!accumulator[description][work_front_code]) {
@@ -37,31 +38,26 @@ export default class availabilityAllocation {
 
       if (eventEquipmentCodes.has(code)) {
         accumulator[description][work_front_code] += 1;
+        accumulator[description].total += 1;
       }
 
       return accumulator;
     }, {});
-    
-    return Object.entries(groupedEquipments).map(([group, workFronts]) => ({
-      group,
-      workFronts: Object.entries(workFronts).map(([workFrontCode, equipments]) => ({
-        workFrontCode: +workFrontCode,
-        equipments,
-      })),
-    }));
+
+    return groupedEquipments;
   };
 
   /**
    * GET the mechanical availability by equipment
-   * @param events
+   * @param interferences
    */
-  public getMechanicalAvailability = async (events: Event[], currentHour: string): Promise<number> => {
+  public getMechanicalAvailability = async (interferences: Event[], currentHour: string): Promise<number> => {
     let totalMaintenanceTime = 0;
     const currentHourDecimal = convertHourToDecimal(currentHour);
 
     const uniqMaintenanceEquip: Set<number> = new Set();
 
-    for (const event of events) {
+    for (const event of interferences) {
       const startTime = dayjs(event.time.start);
       const endTime = dayjs(event.time.end);
       const diffS = endTime.diff(startTime, "seconds");
@@ -79,8 +75,21 @@ export default class availabilityAllocation {
     const mechanicalAvailability = calcMechanicalAvailability(totalMaintenanceTime, uniqMaintenanceEquip.size, currentHourDecimal);
     return mechanicalAvailability;
   }
-  public getMediaTotal = async (media: any) => {
-    let totalMedia = media;
-    return totalMedia;
+
+  public formatAvailabilityReturn = async (groupedEquipments: EquipmentsGroupsType) => {
+    let availabilityAllocation = {
+      goal: 88,
+      groups: Object.entries(groupedEquipments).map(([group, workFronts]) => ({
+        group,
+        total: workFronts.total,
+        workFronts: Object.entries(workFronts).filter(([key]) => key !== 'total')
+          .map(([workFrontCode, equipments]) => ({
+            workFrontCode: +workFrontCode,
+            equipments,
+          })),
+      })),
+    };
+
+    return availabilityAllocation;
   }
 }
