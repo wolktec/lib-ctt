@@ -1,13 +1,8 @@
 import { Equipment, Event } from "../interfaces/availabilityAllocation.interface";
-declare const createAvailabilityAllocation: (equipments: Equipment[], events: Event[]) => Promise<{
-    goal: number;
-    groups: {
-        group: string;
-        total: number;
-        workFronts: {
-            workFrontCode: number;
-            equipments: number;
-        }[];
-    }[];
-}>;
+/**
+  * GET the available equipments based on the events registered by FRONT and GROUP
+  * @param equipments the group of equipments allocated in the front
+  * @param events the events of the equipment
+ */
+declare const createAvailabilityAllocation: (equipments: Equipment[], events: Event[], date: string) => Promise<Map<string, number>>;
 export default createAvailabilityAllocation;

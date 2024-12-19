@@ -1,7 +1,3 @@
-
-export type EquipmentType = "Caminhões" | "Colhedoras" | "Tratores" | "Empilhadeiras" | "Pulverizadores";
-export type EquipmentTypes = "harvester" | "tractor" | "truck" | "forklift" | "pulverizer";
-
 export interface Equipment {
   code: number,
   description: string,
@@ -48,5 +44,5 @@ export interface AvailabilityAndAllocationResult {
 }
 export type EquipmentsGroupsType = Record<
   string,
-  Record<number | 'total', number>
+  Record<number, number>
 >;

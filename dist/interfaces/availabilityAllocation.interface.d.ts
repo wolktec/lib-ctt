@@ -1,5 +1,5 @@
-export declare type EquipmentType = "Caminhões" | "Colhedoras" | "Tratores" | "Empilhadeiras" | "Pulverizadores";
-export declare type EquipmentTypes = "harvester" | "tractor" | "truck" | "forklift" | "pulverizer";
+export type EquipmentType = "Caminhões" | "Colhedoras" | "Tratores" | "Empilhadeiras" | "Pulverizadores";
+export type EquipmentTypes = "harvester" | "tractor" | "truck" | "forklift" | "pulverizer";
 export interface Equipment {
     code: number;
     description: string;
@@ -41,4 +41,4 @@ export interface AvailabilityAndAllocationResult {
         }
     ];
 }
-export declare type EquipmentsGroupsType = Record<string, Record<number | 'total', number>>;
+export type EquipmentsGroupsType = Record<string, Record<number, number>>;
