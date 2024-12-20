@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = void 0;
+exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = void 0;
 exports.convertHourToDecimal = convertHourToDecimal;
 exports.calcMechanicalAvailability = calcMechanicalAvailability;
 exports.normalizeCalc = normalizeCalc;
@@ -18,10 +18,7 @@ function calcMechanicalAvailability(totalMaintenance, countMaintenance, currentH
     if (totalMaintenance === 0) {
         return 100.0;
     }
-    console.log('currentHour', currentHour);
-    console.log('totalMaintenance', totalMaintenance);
-    console.log('countMaintenance', countMaintenance);
-    const calc = normalizeCalc(((currentHour - totalMaintenance / countMaintenance) / currentHour) * 100, 2);
+    const calc = normalizeCalc(((currentHour - (totalMaintenance / countMaintenance)) / currentHour) * 100, 2);
     return calc;
 }
 function normalizeCalc(value, fixed = 1) {
@@ -49,7 +46,6 @@ const isSameDay = (date1, date2) => {
 exports.isSameDay = isSameDay;
 const dateFilter = (start_date, splitSeparator = '/') => {
     const dt1 = (0, exports.dateParts)(start_date ?? (0, dayjs_1.default)().subtract(3, "hours").format("DD/MM/YYYY"), splitSeparator);
-    console.log('aa', dt1);
     const startDate = (0, dayjs_1.default)()
         .set('M', dt1.month)
         .set('y', dt1.year)
@@ -85,4 +81,11 @@ const dateParts = (date, splitSeparator = "/") => {
     };
 };
 exports.dateParts = dateParts;
+exports.translations = {
+    "Caminhões": "truck",
+    "Colhedoras": "harvester",
+    "Tratores": "tractor",
+    "Empilhadeiras": "forklift",
+    "Pulverizadores": "pulverizer"
+};
 //# sourceMappingURL=helper.js.map

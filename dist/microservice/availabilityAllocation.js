@@ -16,67 +16,117 @@ const createAvailabilityAllocation = async (equipments, events, date) => {
     let startDate = (0, helper_1.dateFilter)(date, '-');
     let currentHour = (0, helper_1.getCurrentHour)(startDate);
     let equipmentsGroups = await sumEquipmentsByGroup(equipments, events);
-    let mechanicalAvailability = getMechanicalAvailability(events, currentHour);
-    const formattedValues = formatAvailabilityReturn(equipmentsGroups);
-    return mechanicalAvailability;
+    const groupedEvents = groupEventsByTypeAndFront(events, equipments);
+    let mechanicalAvailability = await getMechanicalAvailability(groupedEvents, currentHour);
+    let averageAvailability = calcAverageAvailability(mechanicalAvailability);
+    const formattedValues = await formatAvailabilityReturn(equipmentsGroups, mechanicalAvailability, averageAvailability);
+    return formattedValues;
 };
 const sumEquipmentsByGroup = async (equipments, events) => {
-    const eventEquipmentCodes = new Set(events.map(event => event.equipment.code));
-    // soma equipamentos que possuem eventos e agrupa por frente e grupo
-    const groupedEquipments = equipments.reduce((accumulator, { description, work_front_code, code }) => {
-        if (!accumulator[description]) {
-            accumulator[description] = {};
+    try {
+        const eventEquipmentCodes = new Set(events.map(event => event.equipment.code));
+        // soma equipamentos que possuem eventos e agrupa por frente e grupo
+        let groupedEquipments = {};
+        for (const equipment of equipments) {
+            if (eventEquipmentCodes.has(equipment.code)) {
+                if (!groupedEquipments[equipment.description]) {
+                    groupedEquipments[equipment.description] = {};
+                }
+                if (!groupedEquipments[equipment.description][equipment.work_front_code]) {
+                    groupedEquipments[equipment.description][equipment.work_front_code] = 0;
+                }
+                groupedEquipments[equipment.description][equipment.work_front_code] += 1;
+            }
         }
-        if (!accumulator[description][work_front_code]) {
-            accumulator[description][work_front_code] = 0;
-        }
-        if (eventEquipmentCodes.has(code)) {
-            accumulator[description][work_front_code] += 1;
-        }
-        return accumulator;
-    }, {});
-    return groupedEquipments;
+        return groupedEquipments;
+    }
+    catch (error) {
+        console.error("Ocorreu um erro:", error);
+        throw error;
+    }
 };
 /**
  * GET the mechanical availability by equipment
  * @param events
  */
 const getMechanicalAvailability = async (events, currentHour) => {
-    let totalMaintenanceTime = 0;
-    //  const currentHourDecimal = convertHourToDecimal(currentHour);
-    const uniqMaintenanceEquip = new Set();
-    let mechanicalAvailability = new Map();
-    for (const event of events) {
-        const startTime = (0, dayjs_1.default)(event.time.start);
-        const endTime = (0, dayjs_1.default)(event.time.end);
-        const diffS = endTime.diff(startTime, "seconds");
-        const diff = diffS / 3600;
-        if (diff > 0) {
-            // Eventos de manutenção
-            if (event.interference) {
-                totalMaintenanceTime += diff;
-                const code = event.equipment.code;
-                uniqMaintenanceEquip.add(code);
+    try {
+        let mechanicalAvailability = new Map();
+        let workFrontCode = 0;
+        let totalMaintenanceTime = '';
+        let eventCode = '';
+        for (const [type, eventsOfType] of Object.entries(events)) {
+            for (const [total, event] of Object.entries(eventsOfType)) {
+                const startTime = (0, dayjs_1.default)(event.time.start);
+                const endTime = (0, dayjs_1.default)(event.time.end);
+                const diff = endTime.diff(startTime, 'seconds') / 3600;
+                workFrontCode = event.workFront.code;
+                totalMaintenanceTime = diff > 0 ? total + diff : total;
+                eventCode = event.code;
+                const uniqMaintenanceEquip = new Set(eventsOfType.map(event => event.equipment.code)).size;
+                if (!mechanicalAvailability.has(type)) {
+                    mechanicalAvailability.set(type, new Map());
+                }
+                mechanicalAvailability.get(type)?.set(workFrontCode.toString(), (0, helper_1.calcMechanicalAvailability)(+totalMaintenanceTime, uniqMaintenanceEquip, currentHour));
             }
         }
-        console.log('aa', uniqMaintenanceEquip);
-        mechanicalAvailability.set(event.workFront.code.toString(), (0, helper_1.calcMechanicalAvailability)(totalMaintenanceTime, uniqMaintenanceEquip.size, currentHour));
+        return mechanicalAvailability;
     }
-    return mechanicalAvailability;
+    catch (error) {
+        console.error("Ocorreu um erro:", error);
+        throw error;
+    }
 };
-const formatAvailabilityReturn = async (groupedEquipments) => {
+const calcAverageAvailability = (mechanicalAvailability) => {
+    const averageAvailabilityByType = new Map();
+    for (const [type, workFronts] of mechanicalAvailability.entries()) {
+        let totalAvailability = 0;
+        let workFrontCount = 0;
+        for (const availability of workFronts.values()) {
+            totalAvailability += availability;
+            workFrontCount += 1;
+        }
+        const averageAvailability = workFrontCount > 0 ? totalAvailability / workFrontCount : 0;
+        averageAvailabilityByType.set(type, (0, helper_1.normalizeCalc)(averageAvailability, 2));
+    }
+    return averageAvailabilityByType;
+};
+const formatAvailabilityReturn = async (groupedEquipments, mechanicalAvailability, averageAvailability) => {
     let availabilityAllocation = {
         goal: 88,
         groups: Object.entries(groupedEquipments).map(([group, workFronts]) => ({
-            group,
+            group: helper_1.translations[group],
+            average: averageAvailability.get(group) || 0,
             workFronts: Object.entries(workFronts)
                 .map(([workFrontCode, equipments]) => ({
                 workFrontCode: +workFrontCode,
                 equipments,
+                availability: mechanicalAvailability.get(group)?.get(workFrontCode.toString()) || 0,
             })),
         })),
     };
     return availabilityAllocation;
+};
+/**
+ * Agrupa os eventos por tipo de equipamento
+ */
+const groupEventsByTypeAndFront = (events, equipments) => {
+    const equipmentTypeMap = new Map();
+    equipments.forEach(equipment => {
+        equipmentTypeMap.set(equipment.code, equipment.description);
+    });
+    const eventsByType = events.reduce((accumulator, event) => {
+        if (event.interference) {
+            const equipmentType = equipmentTypeMap.get(event.equipment.code);
+            if (equipmentType) {
+                if (!accumulator[equipmentType])
+                    accumulator[equipmentType] = [];
+                accumulator[equipmentType].push(event);
+            }
+        }
+        return accumulator;
+    }, {});
+    return eventsByType;
 };
 exports.default = createAvailabilityAllocation;
 //# sourceMappingURL=availabilityAllocation.js.map

@@ -9,3 +9,6 @@ export declare const dateParts: (date: string, splitSeparator?: string) => {
     month: number;
     year: number;
 };
+export declare const translations: {
+    [key: string]: string;
+};

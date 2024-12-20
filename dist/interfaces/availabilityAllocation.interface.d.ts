@@ -1,5 +1,3 @@
-export type EquipmentType = "Caminhões" | "Colhedoras" | "Tratores" | "Empilhadeiras" | "Pulverizadores";
-export type EquipmentTypes = "harvester" | "tractor" | "truck" | "forklift" | "pulverizer";
 export interface Equipment {
     code: number;
     description: string;
@@ -25,20 +23,26 @@ export interface Event {
         end: number;
     };
 }
-export interface AvailabilityAndAllocationResult {
+export type AvailabilityAndAllocationResult = {
     goal: number;
     groups: [
         {
             group: string;
             average: number;
-            workFronts: [
-                {
-                    workFrontCode: number;
-                    equipments: number;
-                    availability: number;
-                }
-            ];
+            workFronts: {
+                workFrontCode: number;
+                equipments: number;
+                availability: number;
+            }[];
         }
-    ];
-}
+    ] | {
+        group: string;
+        average: number;
+        workFronts: {
+            workFrontCode: number;
+            equipments: number;
+            availability: number;
+        }[];
+    }[];
+};
 export type EquipmentsGroupsType = Record<string, Record<number, number>>;

@@ -26,22 +26,32 @@ export interface Event {
   }
 }
 
-export interface AvailabilityAndAllocationResult {
-  goal: number,
+export type AvailabilityAndAllocationResult = {
+  goal: number;
   groups: [
     {
-      group: string,
-      average: number,
-      workFronts: [
-        {
-          workFrontCode: number,
-          equipments: number,
-          availability: number,
-        }
-      ],
-    },
-  ],
-}
+      group: string;
+      average: number;
+      workFronts:
+      {
+        workFrontCode: number;
+        equipments: number;
+        availability: number
+      }[]
+    }
+  ] |
+  {
+    group: string;
+    average: number;
+    workFronts:
+    {
+      workFrontCode: number;
+      equipments: number;
+      availability: number
+    }[]
+  }[];
+};
+
 export type EquipmentsGroupsType = Record<
   string,
   Record<number, number>
