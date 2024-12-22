@@ -1,7 +1,13 @@
 import dayjs from "dayjs";
-import { calcMechanicalAvailability, convertHourToDecimal, dateFilter, getCurrentHour, normalizeCalc, translations } from "../helper/helper"
+import { calcMechanicalAvailability, dateFilter, getCurrentHour, normalizeCalc, translations } from "../helper/helper"
 import { AvailabilityAndAllocationResult, Equipment, EquipmentsGroupsType, Event } from "../interfaces/availabilityAllocation.interface";
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
+dayjs.extend(utc);
+dayjs.extend(timezone);
+// dayjs.tz.setDefault('America/Sao_Paulo');
 
+export const localTimeZone = 'America/Sao_Paulo';
 /**
   * GET the available equipments based on the events registered by FRONT and GROUP
   * @param equipments the group of equipments allocated in the front
@@ -52,32 +58,41 @@ const sumEquipmentsByGroup = async (
 };
 
 /**
- * GET the mechanical availability by equipment
+ * GET the mechanical availability by front
  * @param events
  */
 const getMechanicalAvailability = async (events: Record<string, Event[]>, currentHour: number): Promise<Map<string, Map<string, number>>> => {
   try {
     let mechanicalAvailability = new Map<string, Map<string, number>>();
     let workFrontCode: number = 0;
-    let totalMaintenanceTime: string = '';
+    let totalMaintenanceTime: number = 0;
     let eventCode: string = '';
+    let uniqMaintenanceEquip: number = 0;
+    let diffS = 0;
+    let diff = 0;
 
     for (const [type, eventsOfType] of Object.entries(events)) {
       for (const [total, event] of Object.entries(eventsOfType)) {
         const startTime = dayjs(event.time.start);
         const endTime = dayjs(event.time.end);
-        const diff = endTime.diff(startTime, 'seconds') / 3600;
-        workFrontCode = event.workFront.code;
-        totalMaintenanceTime = diff > 0 ? total + diff : total;
-        eventCode = event.code;
-        const uniqMaintenanceEquip = new Set(eventsOfType.map(event => event.equipment.code)).size;
-
-        if (!mechanicalAvailability.has(type)) {
-          mechanicalAvailability.set(type, new Map<string, number>());
+        diffS = endTime.diff(startTime, "seconds");
+        diff += diffS / 3600;
+        totalMaintenanceTime = 0;
+        if (diff > 0) {
+          if (event.interference) {
+            workFrontCode = event.workFront.code;
+            totalMaintenanceTime = diff;
+            eventCode = event.code;
+            uniqMaintenanceEquip = new Set(eventsOfType.map(event => event.equipment.code)).size;
+          }
         }
-
-        mechanicalAvailability.get(type)?.set(workFrontCode.toString(), calcMechanicalAvailability(+totalMaintenanceTime, uniqMaintenanceEquip, currentHour));
       }
+
+      if (!mechanicalAvailability.has(type)) {
+        mechanicalAvailability.set(type, new Map<string, number>());
+      }
+      console.log(totalMaintenanceTime);
+      mechanicalAvailability.get(type)?.set(workFrontCode.toString(), calcMechanicalAvailability(totalMaintenanceTime, uniqMaintenanceEquip, currentHour));
     }
     return mechanicalAvailability;
   } catch (error) {
@@ -135,7 +150,9 @@ const groupEventsByTypeAndFront = (events: Event[], equipments: Equipment[]): Re
     if (event.interference) {
       const equipmentType = equipmentTypeMap.get(event.equipment.code);
       if (equipmentType) {
-        if (!accumulator[equipmentType]) accumulator[equipmentType] = [];
+        if (!accumulator[equipmentType]) {
+          accumulator[equipmentType] = [];
+        }
         accumulator[equipmentType].push(event);
       }
     }

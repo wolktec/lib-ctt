@@ -3,8 +3,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.localTimeZone = void 0;
 const dayjs_1 = __importDefault(require("dayjs"));
 const helper_1 = require("../helper/helper");
+const timezone_1 = __importDefault(require("dayjs/plugin/timezone"));
+const utc_1 = __importDefault(require("dayjs/plugin/utc"));
+dayjs_1.default.extend(utc_1.default);
+dayjs_1.default.extend(timezone_1.default);
+// dayjs.tz.setDefault('America/Sao_Paulo');
+exports.localTimeZone = 'America/Sao_Paulo';
 /**
   * GET the available equipments based on the events registered by FRONT and GROUP
   * @param equipments the group of equipments allocated in the front
@@ -46,29 +53,39 @@ const sumEquipmentsByGroup = async (equipments, events) => {
     }
 };
 /**
- * GET the mechanical availability by equipment
+ * GET the mechanical availability by front
  * @param events
  */
 const getMechanicalAvailability = async (events, currentHour) => {
     try {
         let mechanicalAvailability = new Map();
         let workFrontCode = 0;
-        let totalMaintenanceTime = '';
+        let totalMaintenanceTime = 0;
         let eventCode = '';
+        let uniqMaintenanceEquip = 0;
+        let diffS = 0;
+        let diff = 0;
         for (const [type, eventsOfType] of Object.entries(events)) {
             for (const [total, event] of Object.entries(eventsOfType)) {
                 const startTime = (0, dayjs_1.default)(event.time.start);
                 const endTime = (0, dayjs_1.default)(event.time.end);
-                const diff = endTime.diff(startTime, 'seconds') / 3600;
-                workFrontCode = event.workFront.code;
-                totalMaintenanceTime = diff > 0 ? total + diff : total;
-                eventCode = event.code;
-                const uniqMaintenanceEquip = new Set(eventsOfType.map(event => event.equipment.code)).size;
-                if (!mechanicalAvailability.has(type)) {
-                    mechanicalAvailability.set(type, new Map());
+                diffS = endTime.diff(startTime, "seconds");
+                diff += diffS / 3600;
+                totalMaintenanceTime = 0;
+                if (diff > 0) {
+                    if (event.interference) {
+                        workFrontCode = event.workFront.code;
+                        totalMaintenanceTime = diff;
+                        eventCode = event.code;
+                        uniqMaintenanceEquip = new Set(eventsOfType.map(event => event.equipment.code)).size;
+                    }
                 }
-                mechanicalAvailability.get(type)?.set(workFrontCode.toString(), (0, helper_1.calcMechanicalAvailability)(+totalMaintenanceTime, uniqMaintenanceEquip, currentHour));
             }
+            if (!mechanicalAvailability.has(type)) {
+                mechanicalAvailability.set(type, new Map());
+            }
+            console.log(totalMaintenanceTime);
+            mechanicalAvailability.get(type)?.set(workFrontCode.toString(), (0, helper_1.calcMechanicalAvailability)(totalMaintenanceTime, uniqMaintenanceEquip, currentHour));
         }
         return mechanicalAvailability;
     }
@@ -119,8 +136,9 @@ const groupEventsByTypeAndFront = (events, equipments) => {
         if (event.interference) {
             const equipmentType = equipmentTypeMap.get(event.equipment.code);
             if (equipmentType) {
-                if (!accumulator[equipmentType])
+                if (!accumulator[equipmentType]) {
                     accumulator[equipmentType] = [];
+                }
                 accumulator[equipmentType].push(event);
             }
         }

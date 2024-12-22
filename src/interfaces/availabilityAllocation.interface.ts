@@ -17,7 +17,7 @@ export interface Event {
   },
   name: string,
   interference?: {
-    code: number;
+    id: number;
     name: string;
   },
   time: {
