@@ -3,16 +3,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = void 0;
-exports.convertHourToDecimal = convertHourToDecimal;
-exports.calcMechanicalAvailability = calcMechanicalAvailability;
-exports.normalizeCalc = normalizeCalc;
+exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = exports.normalizeCalc = exports.calcMechanicalAvailability = exports.convertHourToDecimal = void 0;
 const dayjs_1 = __importDefault(require("dayjs"));
 function convertHourToDecimal(hour) {
     const [hours, minutes] = hour.split(':').map(Number);
     const decimalMinutes = minutes / 60;
     return hours + decimalMinutes;
 }
+exports.convertHourToDecimal = convertHourToDecimal;
 function calcMechanicalAvailability(totalMaintenance, countMaintenance, currentHour // 24 dia anterior ou hora atual
 ) {
     if (totalMaintenance === 0) {
@@ -21,12 +19,14 @@ function calcMechanicalAvailability(totalMaintenance, countMaintenance, currentH
     const calc = normalizeCalc(((currentHour - (totalMaintenance / countMaintenance)) / currentHour) * 100, 2);
     return calc;
 }
+exports.calcMechanicalAvailability = calcMechanicalAvailability;
 function normalizeCalc(value, fixed = 1) {
     if (Number.isNaN(value) || !Number.isFinite(value)) {
         return 0;
     }
     return parseFloat(value.toFixed(fixed));
 }
+exports.normalizeCalc = normalizeCalc;
 const getCurrentHour = (date) => {
     const currentDate = (0, dayjs_1.default)().subtract(3, "hours");
     const isSame = (0, exports.isSameDay)(date, currentDate.valueOf());

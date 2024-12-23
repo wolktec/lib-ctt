@@ -18,7 +18,6 @@ exports.localTimeZone = 'America/Sao_Paulo';
   * @param events the events of the equipment
  */
 const createAvailabilityAllocation = async (equipments, events, date) => {
-    // : Promise<AvailabilityAndAllocationResult>
     let teste;
     let startDate = (0, helper_1.dateFilter)(date, '-');
     let currentHour = (0, helper_1.getCurrentHour)(startDate);
@@ -84,7 +83,6 @@ const getMechanicalAvailability = async (events, currentHour) => {
             if (!mechanicalAvailability.has(type)) {
                 mechanicalAvailability.set(type, new Map());
             }
-            console.log(totalMaintenanceTime);
             mechanicalAvailability.get(type)?.set(workFrontCode.toString(), (0, helper_1.calcMechanicalAvailability)(totalMaintenanceTime, uniqMaintenanceEquip, currentHour));
         }
         return mechanicalAvailability;

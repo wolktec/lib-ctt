@@ -15,7 +15,7 @@ export interface Event {
     };
     name: string;
     interference?: {
-        code: number;
+        id: number;
         name: string;
     };
     time: {
@@ -23,7 +23,7 @@ export interface Event {
         end: number;
     };
 }
-export type AvailabilityAndAllocationResult = {
+export declare type AvailabilityAndAllocationResult = {
     goal: number;
     groups: [
         {
@@ -45,4 +45,4 @@ export type AvailabilityAndAllocationResult = {
         }[];
     }[];
 };
-export type EquipmentsGroupsType = Record<string, Record<number, number>>;
+export declare type EquipmentsGroupsType = Record<string, Record<number, number>>;
