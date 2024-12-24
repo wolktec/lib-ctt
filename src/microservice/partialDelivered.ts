@@ -1,5 +1,5 @@
 import { dateFilter, getCurrentHour, normalizeCalc } from "../helper/helper";
-import { Ton, WorkFronts } from "../interfaces/partialDelivered.interface";
+import { EstimatedTons, Ton, WorkFronts } from "../interfaces/partialDelivered.interface";
 
 const createPartialDelivered = async (workFronts: WorkFronts[], realTons: Ton, date: string) => {
   let startDate = dateFilter(date, '-');
@@ -9,10 +9,17 @@ const createPartialDelivered = async (workFronts: WorkFronts[], realTons: Ton, d
   let estimatedPerGoal = calcEstimatedPerGoal(workFronts, estimatedTons);
 }
 
-const calcEstimatedTons = (realTons: Ton, currentHour: number): Ton => {
-  let estimatedTons: Ton = {};
+const calcEstimatedTons = (realTons: Ton, currentHour: number): EstimatedTons => {
+  let estimatedTons: EstimatedTons = {
+    estimated: {
+      total: 0,
+      goal: 0,
+      progress: 0,
+    },
+  };
   Object.entries(realTons).forEach(([workFront, ton]) => {
     estimatedTons[+workFront] = normalizeCalc((ton / currentHour) * 24, 2);
+    estimatedTons.estimated.total += normalizeCalc((ton / currentHour) * 24, 2);
   });
   return estimatedTons;
 }
@@ -25,17 +32,18 @@ const calcTonPerHour = (realTons: Ton, currentHour: number): Ton => {
   return tonPerHour;
 }
 
-const calcEstimatedPerGoal = (workFronts: WorkFronts[], estimatedTons: Ton) => {
+const calcEstimatedPerGoal = (workFronts: WorkFronts[], estimatedTons: EstimatedTons) => {
   let estimatedPerGoal: Ton = {}
   workFronts.forEach(workFrontGoal => {
     Object.entries(estimatedTons).forEach(([workFront, ton]) => {
-      if (workFrontGoal.code == +workFront) {
-        console.log(workFrontGoal)
-        estimatedPerGoal[+workFront] =  normalizeCalc((ton / workFrontGoal.goal) * 100);
+      if (workFront !== "estimated" && typeof ton === "number") {
+        if (workFrontGoal.code == +workFront) {
+          estimatedPerGoal[+workFront] = normalizeCalc((ton / workFrontGoal.goal) * 100);
+        }
       }
     });
   });
-  
+
   return estimatedPerGoal;
 }
 
