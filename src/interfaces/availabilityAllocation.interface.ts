@@ -1,10 +1,10 @@
-export interface Equipment {
+export interface CttEquipment {
   code: number,
   description: string,
   work_front_code: number
 }
 
-export interface Event {
+export interface CttEvent {
   code: string,
   equipment: {
     code: number
@@ -26,7 +26,7 @@ export interface Event {
   }
 }
 
-export type AvailabilityAndAllocationResult = {
+export type CttAvailabilityAndAllocationResult = {
   goal: number;
   groups: [
     {
@@ -52,7 +52,7 @@ export type AvailabilityAndAllocationResult = {
   }[];
 };
 
-export type EquipmentsGroupsType = Record<
+export type CttEquipmentsGroupsType = Record<
   string,
   Record<number, number>
 >;

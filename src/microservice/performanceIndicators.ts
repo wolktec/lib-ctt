@@ -1,7 +1,6 @@
 import { groupEquipmentsProductivityByFront } from "../helper/helper";
-import { Equipment, Event } from "../interfaces/availabilityAllocation.interface";
-import { WorkFronts } from "../interfaces/partialDelivered.interface";
-import { EquipmentProductivity, EquipmentProductivityFront } from "../interfaces/performanceIndicators.interface";
+import { CttEquipment, CttEvent } from "../interfaces/availabilityAllocation.interface";
+import { CttEquipmentProductivity, CttEquipmentProductivityFront } from "../interfaces/performanceIndicators.interface";
 
 /**
   * GET the performance indicators by Front
@@ -9,12 +8,12 @@ import { EquipmentProductivity, EquipmentProductivityFront } from "../interfaces
   * @param events events from the day
   * @param date '2023-12-23 15:41:51' datetime filter
  */
-const createPerformanceIndicators = async (equipmentProductivity: EquipmentProductivity[], events: Event[], equipments: Equipment[], date: string) => {
+const createPerformanceIndicators = async (equipmentProductivity: CttEquipmentProductivity[], events: CttEvent[], equipments: CttEquipment[], date: string) => {
   let equipmentsProductivityByFront = groupEquipmentsProductivityByFront(equipmentProductivity, equipments);
   const tripQtd = getTripQtdByFront(equipmentsProductivityByFront);
 }
 
-const getTripQtdByFront = (equipmentProductivity: EquipmentProductivityFront[]): Record<string, number> => {
+const getTripQtdByFront = (equipmentProductivity: CttEquipmentProductivityFront[]): Record<string, number> => {
   const tripQtd = equipmentProductivity.reduce((account, equipment) => {
     if (account[equipment.workFrontCode]) {
       account[equipment.workFrontCode] += equipment.trips;

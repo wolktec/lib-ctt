@@ -1,11 +1,11 @@
-export type Ton = Record<string, number>;
+export type CttTon = Record<string, number>;
 
-export interface WorkFronts {
+export interface CttWorkFronts {
   code: number,
   goal: number
 }
 
-export interface EstimatedTons {
+export interface CttEstimatedTons {
   estimated: {
     total: number;
     goal: number;
@@ -14,7 +14,7 @@ export interface EstimatedTons {
   [key: string]: number | { total: number; goal: number; progress: number };
 }
 
-export interface DeliveredReturn {
+export interface CttDeliveredReturn {
   workFrontCode: number;
   goal: number;
   realTons: number;
@@ -23,8 +23,8 @@ export interface DeliveredReturn {
   estimatedPerGoal: number;
 }
 
-export interface PartialDeliveredResult {
-  delivered: DeliveredReturn[];
+export interface CttPartialDeliveredResult {
+  delivered: CttDeliveredReturn[];
   estimated: {
     total: number;
     goal: number;
