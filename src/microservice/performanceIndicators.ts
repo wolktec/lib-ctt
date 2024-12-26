@@ -1,4 +1,4 @@
-import { groupEquipmentsProductivityByFront, normalizeCalc } from "../helper/helper";
+import { getEventTime, groupEquipmentsProductivityByFront, msToTime, normalizeCalc } from "../helper/helper";
 import { CttEquipment, CttEvent } from "../interfaces/availabilityAllocation.interface";
 import { CttEquipmentProductivity, CttEquipmentProductivityFront } from "../interfaces/performanceIndicators.interface";
 
@@ -10,9 +10,15 @@ import { CttEquipmentProductivity, CttEquipmentProductivityFront } from "../inte
  */
 const createPerformanceIndicators = async (equipmentProductivity: CttEquipmentProductivity[], events: CttEvent[], equipments: CttEquipment[], date: string) => {
   try {
+    if (!equipmentProductivity || !events || !equipments) {
+      return 'Parametros inválidos';
+    }
+
     let equipmentsProductivityByFront = groupEquipmentsProductivityByFront(equipmentProductivity, equipments);
     const tripQtd = getTripQtdByFront(equipmentsProductivityByFront);
     const averageWeight = getAverageWeight(equipmentsProductivityByFront);
+    const awaitingTransshipment = getAwaitingTransshipment(events);
+
   } catch (error) {
     console.error("Ocorreu um erro:", error);
     throw error;
@@ -57,6 +63,27 @@ const getAverageWeight = (equipmentsProductivity: CttEquipmentProductivityFront[
   }, {} as Record<string, number>);
 
   return averages;
+}
+
+const getAwaitingTransshipment = (events: CttEvent[]) => {
+  let awaitingTransshipment: Record<string, number> = {};
+  events.forEach(event => {
+    if (event.interference && event.interference.name === 'Aguardando Transbordo') {
+      const { workFront } = event;
+      if (awaitingTransshipment[workFront.code]) {
+        awaitingTransshipment[workFront.code] += getEventTime(event);
+      } else {
+        awaitingTransshipment[workFront.code] = getEventTime(event);
+      }
+    }
+  });
+  const formattedTransshipment: Record<string, string> = {};
+  for (const [code, timeInHours] of Object.entries(awaitingTransshipment)) {
+    const timeInMs = timeInHours * 3600 * 1000;
+    formattedTransshipment[code] = msToTime(timeInMs);
+  }
+
+  return formattedTransshipment;
 }
 
 export default createPerformanceIndicators;

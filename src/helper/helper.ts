@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import { CttEquipmentProductivity, CttEquipmentProductivityFront } from "../interfaces/performanceIndicators.interface";
-import { CttEquipment } from "../interfaces/availabilityAllocation.interface";
+import { CttEquipment, CttEvent } from "../interfaces/availabilityAllocation.interface";
 
 export function convertHourToDecimal(hour: string): number {
   const [hours, minutes] = hour.split(':').map(Number);
@@ -115,4 +115,38 @@ export const groupEquipmentsProductivityByFront = (equipmentsProductivity: CttEq
   });
 
   return equipmentsProductivityByFront;
+}
+
+export const getEventTime = (event: CttEvent) => {
+  let diffS: number = 0;
+  const startTime = dayjs(event.time.start);
+  const endTime = dayjs(event.time.end);
+  diffS = endTime.diff(startTime, "seconds");
+  return diffS / 3600;
+}
+
+export const msToTime = (ms: number): string => {
+  return secToTime(ms / 1000);
+}
+
+export const secToTime = (sec: number): string => {
+  let hours = Math.floor(sec / 3600);
+  let minutes = Math.floor((sec - hours * 3600) / 60);
+  let seconds = Math.round(sec - hours * 3600 - minutes * 60);
+
+  if(seconds >= 60) {
+      minutes += 1;
+      seconds = 0;
+  }
+
+  if (minutes >= 60) {
+      hours += 1;
+      minutes = 0;
+  }
+
+  return `${twoCaracters(hours)}:${twoCaracters(minutes)}:${twoCaracters(seconds)}`;
+}
+
+const twoCaracters = (num: number): string => {
+  return num < 10 ? `0${num}` : num.toString();
 }

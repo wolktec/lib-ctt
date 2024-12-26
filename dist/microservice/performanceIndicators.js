@@ -9,9 +9,13 @@ const helper_1 = require("../helper/helper");
  */
 const createPerformanceIndicators = async (equipmentProductivity, events, equipments, date) => {
     try {
+        if (!equipmentProductivity || !events || !equipments) {
+            return 'Parametros inválidos';
+        }
         let equipmentsProductivityByFront = (0, helper_1.groupEquipmentsProductivityByFront)(equipmentProductivity, equipments);
         const tripQtd = getTripQtdByFront(equipmentsProductivityByFront);
         const averageWeight = getAverageWeight(equipmentsProductivityByFront);
+        const awaitingTransshipment = getAwaitingTransshipment(events);
     }
     catch (error) {
         console.error("Ocorreu um erro:", error);
@@ -52,6 +56,26 @@ const getAverageWeight = (equipmentsProductivity) => {
         return averages;
     }, {});
     return averages;
+};
+const getAwaitingTransshipment = (events) => {
+    let awaitingTransshipment = {};
+    events.forEach(event => {
+        if (event.interference && event.interference.name === 'Aguardando Transbordo') {
+            const { workFront } = event;
+            if (awaitingTransshipment[workFront.code]) {
+                awaitingTransshipment[workFront.code] += (0, helper_1.getEventTime)(event);
+            }
+            else {
+                awaitingTransshipment[workFront.code] = (0, helper_1.getEventTime)(event);
+            }
+        }
+    });
+    const formattedTransshipment = {};
+    for (const [code, timeInHours] of Object.entries(awaitingTransshipment)) {
+        const timeInMs = timeInHours * 3600 * 1000;
+        formattedTransshipment[code] = (0, helper_1.msToTime)(timeInMs);
+    }
+    return formattedTransshipment;
 };
 exports.default = createPerformanceIndicators;
 //# sourceMappingURL=performanceIndicators.js.map

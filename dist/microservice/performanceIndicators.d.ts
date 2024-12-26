@@ -6,5 +6,5 @@ import { CttEquipmentProductivity } from "../interfaces/performanceIndicators.in
   * @param events events from the day
   * @param date '2023-12-23 15:41:51' datetime filter
  */
-declare const createPerformanceIndicators: (equipmentProductivity: CttEquipmentProductivity[], events: CttEvent[], equipments: CttEquipment[], date: string) => Promise<void>;
+declare const createPerformanceIndicators: (equipmentProductivity: CttEquipmentProductivity[], events: CttEvent[], equipments: CttEquipment[], date: string) => Promise<"Parametros inválidos" | undefined>;
 export default createPerformanceIndicators;

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.groupEquipmentsProductivityByFront = exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = exports.normalizeCalc = exports.calcMechanicalAvailability = exports.convertHourToDecimal = void 0;
+exports.secToTime = exports.msToTime = exports.getEventTime = exports.groupEquipmentsProductivityByFront = exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = exports.normalizeCalc = exports.calcMechanicalAvailability = exports.convertHourToDecimal = void 0;
 const dayjs_1 = __importDefault(require("dayjs"));
 function convertHourToDecimal(hour) {
     const [hours, minutes] = hour.split(':').map(Number);
@@ -99,4 +99,34 @@ const groupEquipmentsProductivityByFront = (equipmentsProductivity, equipments) 
     return equipmentsProductivityByFront;
 };
 exports.groupEquipmentsProductivityByFront = groupEquipmentsProductivityByFront;
+const getEventTime = (event) => {
+    let diffS = 0;
+    const startTime = (0, dayjs_1.default)(event.time.start);
+    const endTime = (0, dayjs_1.default)(event.time.end);
+    diffS = endTime.diff(startTime, "seconds");
+    return diffS / 3600;
+};
+exports.getEventTime = getEventTime;
+const msToTime = (ms) => {
+    return (0, exports.secToTime)(ms / 1000);
+};
+exports.msToTime = msToTime;
+const secToTime = (sec) => {
+    let hours = Math.floor(sec / 3600);
+    let minutes = Math.floor((sec - hours * 3600) / 60);
+    let seconds = Math.round(sec - hours * 3600 - minutes * 60);
+    if (seconds >= 60) {
+        minutes += 1;
+        seconds = 0;
+    }
+    if (minutes >= 60) {
+        hours += 1;
+        minutes = 0;
+    }
+    return `${twoCaracters(hours)}:${twoCaracters(minutes)}:${twoCaracters(seconds)}`;
+};
+exports.secToTime = secToTime;
+const twoCaracters = (num) => {
+    return num < 10 ? `0${num}` : num.toString();
+};
 //# sourceMappingURL=helper.js.map

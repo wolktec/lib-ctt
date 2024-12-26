@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { calcMechanicalAvailability, dateFilter, getCurrentHour, normalizeCalc, translations } from "../helper/helper"
+import { calcMechanicalAvailability, dateFilter, getCurrentHour, getEventTime, normalizeCalc, translations } from "../helper/helper"
 import { CttAvailabilityAndAllocationResult, CttEquipment, CttEquipmentsGroupsType, CttEvent } from "../interfaces/availabilityAllocation.interface";
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
@@ -72,10 +72,7 @@ const getMechanicalAvailability = async (events: Record<string, CttEvent[]>, cur
 
     for (const [type, eventsOfType] of Object.entries(events)) {
       for (const [total, event] of Object.entries(eventsOfType)) {
-        const startTime = dayjs(event.time.start);
-        const endTime = dayjs(event.time.end);
-        diffS = endTime.diff(startTime, "seconds");
-        diff += diffS / 3600;
+        diff += getEventTime(event);
         totalMaintenanceTime = 0;
         if (diff > 0) {
           if (event.interference) {
@@ -138,6 +135,7 @@ const formatAvailabilityReturn = async (groupedEquipments: CttEquipmentsGroupsTy
 
 /**
  * Agrupa os eventos por tipo de equipamento
+ * //TODO: Passar apenas as interferencias de manutenção e abastecimento
  */
 const groupEventsByTypeAndFront = (events: CttEvent[], equipments: CttEquipment[]): Record<string, CttEvent[]> => {
   const equipmentTypeMap = new Map<number, string>();

@@ -65,10 +65,7 @@ const getMechanicalAvailability = async (events, currentHour) => {
         let diff = 0;
         for (const [type, eventsOfType] of Object.entries(events)) {
             for (const [total, event] of Object.entries(eventsOfType)) {
-                const startTime = (0, dayjs_1.default)(event.time.start);
-                const endTime = (0, dayjs_1.default)(event.time.end);
-                diffS = endTime.diff(startTime, "seconds");
-                diff += diffS / 3600;
+                diff += (0, helper_1.getEventTime)(event);
                 totalMaintenanceTime = 0;
                 if (diff > 0) {
                     if (event.interference) {
@@ -123,6 +120,7 @@ const formatAvailabilityReturn = async (groupedEquipments, mechanicalAvailabilit
 };
 /**
  * Agrupa os eventos por tipo de equipamento
+ * //TODO: Passar apenas as interferencias de manutenção e abastecimento
  */
 const groupEventsByTypeAndFront = (events, equipments) => {
     const equipmentTypeMap = new Map();
