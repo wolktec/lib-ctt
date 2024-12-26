@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = exports.normalizeCalc = exports.calcMechanicalAvailability = exports.convertHourToDecimal = void 0;
+exports.groupEquipmentsProductivityByFront = exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = exports.normalizeCalc = exports.calcMechanicalAvailability = exports.convertHourToDecimal = void 0;
 const dayjs_1 = __importDefault(require("dayjs"));
 function convertHourToDecimal(hour) {
     const [hours, minutes] = hour.split(':').map(Number);
@@ -88,4 +88,15 @@ exports.translations = {
     "Empilhadeiras": "forklift",
     "Pulverizadores": "pulverizer"
 };
+const groupEquipmentsProductivityByFront = (equipmentsProductivity, equipments) => {
+    const equipmentsProductivityByFront = equipmentsProductivity.map(equipmentProductivity => {
+        const matchingItem = equipments.find(equipment => equipment.code === equipmentProductivity.equipmentCode);
+        return {
+            ...equipmentProductivity,
+            workFrontCode: matchingItem ? matchingItem.work_front_code : 0,
+        };
+    });
+    return equipmentsProductivityByFront;
+};
+exports.groupEquipmentsProductivityByFront = groupEquipmentsProductivityByFront;
 //# sourceMappingURL=helper.js.map

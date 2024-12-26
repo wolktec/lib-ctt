@@ -1,4 +1,6 @@
 import dayjs from "dayjs";
+import { EquipmentProductivity, EquipmentProductivityFront } from "../interfaces/performanceIndicators.interface";
+import { Equipment } from "../interfaces/availabilityAllocation.interface";
 
 export function convertHourToDecimal(hour: string): number {
   const [hours, minutes] = hour.split(':').map(Number);
@@ -102,3 +104,15 @@ export const translations: { [key: string]: string } = {
   "Empilhadeiras": "forklift",
   "Pulverizadores": "pulverizer"
 };
+
+export const groupEquipmentsProductivityByFront = (equipmentsProductivity: EquipmentProductivity[], equipments: Equipment[]): EquipmentProductivityFront[] => {
+  const equipmentsProductivityByFront: EquipmentProductivityFront[] = equipmentsProductivity.map(equipmentProductivity => {
+    const matchingItem = equipments.find(equipment => equipment.code === equipmentProductivity.equipmentCode);
+    return {
+      ...equipmentProductivity,
+      workFrontCode: matchingItem ? matchingItem.work_front_code : 0,
+    };
+  });
+
+  return equipmentsProductivityByFront;
+}
