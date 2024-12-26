@@ -1,6 +1,12 @@
 import { dateFilter, getCurrentHour, normalizeCalc } from "../helper/helper";
 import { DeliveredReturn, EstimatedTons, PartialDeliveredResult, Ton, WorkFronts } from "../interfaces/partialDelivered.interface";
 
+/**
+  * GET the partial develired tons by Front
+  * @param workFronts the fronts code with the goals
+  * @param realTons object with the tons by Front, it comes from the productivity API
+  * @param date '2023-12-23 15:41:51' datetime filter
+ */
 const createPartialDelivered = async (workFronts: WorkFronts[], realTons: Ton, date: string): Promise<PartialDeliveredResult> => {
   let startDate = dateFilter(date, '-');
   let currentHour = getCurrentHour(startDate);

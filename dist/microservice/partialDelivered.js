@@ -1,6 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const helper_1 = require("../helper/helper");
+/**
+  * GET the partial develired tons by Front
+  * @param workFronts the fronts code with the goals
+  * @param realTons object with the tons by Front, it comes from the productivity API
+  * @param date '2023-12-23 15:41:51' datetime filter
+ */
 const createPartialDelivered = async (workFronts, realTons, date) => {
     let startDate = (0, helper_1.dateFilter)(date, '-');
     let currentHour = (0, helper_1.getCurrentHour)(startDate);
