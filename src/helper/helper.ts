@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
-import { EquipmentProductivity, EquipmentProductivityFront } from "../interfaces/performanceIndicators.interface";
-import { Equipment } from "../interfaces/availabilityAllocation.interface";
+import { CttEquipmentProductivity, CttEquipmentProductivityFront } from "../interfaces/performanceIndicators.interface";
+import { CttEquipment } from "../interfaces/availabilityAllocation.interface";
 
 export function convertHourToDecimal(hour: string): number {
   const [hours, minutes] = hour.split(':').map(Number);
@@ -105,8 +105,8 @@ export const translations: { [key: string]: string } = {
   "Pulverizadores": "pulverizer"
 };
 
-export const groupEquipmentsProductivityByFront = (equipmentsProductivity: EquipmentProductivity[], equipments: Equipment[]): EquipmentProductivityFront[] => {
-  const equipmentsProductivityByFront: EquipmentProductivityFront[] = equipmentsProductivity.map(equipmentProductivity => {
+export const groupEquipmentsProductivityByFront = (equipmentsProductivity: CttEquipmentProductivity[], equipments: CttEquipment[]): CttEquipmentProductivityFront[] => {
+  const equipmentsProductivityByFront: CttEquipmentProductivityFront[] = equipmentsProductivity.map(equipmentProductivity => {
     const matchingItem = equipments.find(equipment => equipment.code === equipmentProductivity.equipmentCode);
     return {
       ...equipmentProductivity,

@@ -18,7 +18,6 @@ exports.localTimeZone = 'America/Sao_Paulo';
   * @param events the events of the equipment
  */
 const createAvailabilityAllocation = async (equipments, events, date) => {
-    let teste;
     let startDate = (0, helper_1.dateFilter)(date, '-');
     let currentHour = (0, helper_1.getCurrentHour)(startDate);
     let equipmentsGroups = await sumEquipmentsByGroup(equipments, events);

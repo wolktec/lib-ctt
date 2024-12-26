@@ -8,12 +8,19 @@ const helper_1 = require("../helper/helper");
   * @param date '2023-12-23 15:41:51' datetime filter
  */
 const createPartialDelivered = async (workFronts, realTons, date) => {
-    let startDate = (0, helper_1.dateFilter)(date, '-');
-    let currentHour = (0, helper_1.getCurrentHour)(startDate);
-    const estimatedTons = calcEstimatedTons(realTons, currentHour);
-    const tonPerHour = calcTonPerHour(realTons, currentHour);
-    let estimatedPerGoal = calcEstimatedPerGoal(workFronts, estimatedTons);
-    return formatDeliveredPartialReturn(estimatedTons, tonPerHour, estimatedPerGoal, realTons, workFronts);
+    try {
+        let startDate = (0, helper_1.dateFilter)(date, '-');
+        let currentHour = (0, helper_1.getCurrentHour)(startDate);
+        let estimatedTons = calcEstimatedTons(realTons, currentHour);
+        const tonPerHour = calcTonPerHour(realTons, currentHour);
+        let estimatedPerGoal = calcEstimatedPerGoal(workFronts, estimatedTons);
+        estimatedTons = calcEstimatedPercentage(workFronts, estimatedTons);
+        return formatDeliveredPartialReturn(estimatedTons, tonPerHour, estimatedPerGoal, realTons, workFronts);
+    }
+    catch (error) {
+        console.error("Ocorreu um erro:", error);
+        throw error;
+    }
 };
 const calcEstimatedTons = (realTons, currentHour) => {
     let estimatedTons = {
@@ -70,6 +77,14 @@ const formatDeliveredPartialReturn = async (estimatedTons, tonPerHour, estimated
         delivered,
         estimated: estimatedTons.estimated,
     };
+};
+const calcEstimatedPercentage = (workFronts, estimatedTons) => {
+    let frontGoal = 0;
+    workFronts.forEach(workFront => {
+        frontGoal += workFront.goal;
+    });
+    estimatedTons.estimated.progress = (0, helper_1.normalizeCalc)((estimatedTons.estimated.total / frontGoal) * 100, 2);
+    return estimatedTons;
 };
 exports.default = createPartialDelivered;
 //# sourceMappingURL=partialDelivered.js.map

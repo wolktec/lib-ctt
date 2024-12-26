@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import { calcMechanicalAvailability, dateFilter, getCurrentHour, normalizeCalc, translations } from "../helper/helper"
-import { AvailabilityAndAllocationResult, Equipment, EquipmentsGroupsType, Event } from "../interfaces/availabilityAllocation.interface";
+import { CttAvailabilityAndAllocationResult, CttEquipment, CttEquipmentsGroupsType, CttEvent } from "../interfaces/availabilityAllocation.interface";
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 dayjs.extend(utc);
@@ -13,8 +13,7 @@ export const localTimeZone = 'America/Sao_Paulo';
   * @param equipments the group of equipments allocated in the front
   * @param events the events of the equipment
  */
-const createAvailabilityAllocation = async (equipments: Equipment[], events: Event[], date: string): Promise<AvailabilityAndAllocationResult> => {
-  let teste: AvailabilityAndAllocationResult;
+const createAvailabilityAllocation = async (equipments: CttEquipment[], events: CttEvent[], date: string): Promise<CttAvailabilityAndAllocationResult> => {
   let startDate = dateFilter(date, '-');
   let currentHour = getCurrentHour(startDate);
 
@@ -24,18 +23,19 @@ const createAvailabilityAllocation = async (equipments: Equipment[], events: Eve
   let mechanicalAvailability = await getMechanicalAvailability(groupedEvents, currentHour);
   let averageAvailability = calcAverageAvailability(mechanicalAvailability);
   const formattedValues = await formatAvailabilityReturn(equipmentsGroups, mechanicalAvailability, averageAvailability);
+  
   return formattedValues;
 }
 
 const sumEquipmentsByGroup = async (
-  equipments: Equipment[],
-  events: Event[]
-): Promise<EquipmentsGroupsType> => {
+  equipments: CttEquipment[],
+  events: CttEvent[]
+): Promise<CttEquipmentsGroupsType> => {
   try {
     const eventEquipmentCodes = new Set(events.map(event => event.equipment.code));
 
     // soma equipamentos que possuem eventos e agrupa por frente e grupo
-    let groupedEquipments: EquipmentsGroupsType = {};
+    let groupedEquipments: CttEquipmentsGroupsType = {};
     for (const equipment of equipments) {
       if (eventEquipmentCodes.has(equipment.code)) {
         if (!groupedEquipments[equipment.description]) {
@@ -60,7 +60,7 @@ const sumEquipmentsByGroup = async (
  * GET the mechanical availability by front
  * @param events
  */
-const getMechanicalAvailability = async (events: Record<string, Event[]>, currentHour: number): Promise<Map<string, Map<string, number>>> => {
+const getMechanicalAvailability = async (events: Record<string, CttEvent[]>, currentHour: number): Promise<Map<string, Map<string, number>>> => {
   try {
     let mechanicalAvailability = new Map<string, Map<string, number>>();
     let workFrontCode: number = 0;
@@ -118,7 +118,7 @@ const calcAverageAvailability = (mechanicalAvailability: Map<string, Map<string,
   return averageAvailabilityByType;
 }
 
-const formatAvailabilityReturn = async (groupedEquipments: EquipmentsGroupsType, mechanicalAvailability: Map<string, Map<string, number>>, averageAvailability: Map<string, number>): Promise<AvailabilityAndAllocationResult> => {
+const formatAvailabilityReturn = async (groupedEquipments: CttEquipmentsGroupsType, mechanicalAvailability: Map<string, Map<string, number>>, averageAvailability: Map<string, number>): Promise<CttAvailabilityAndAllocationResult> => {
   let availabilityAllocation = {
     goal: 88,
     groups: Object.entries(groupedEquipments).map(([group, workFronts]) => ({
@@ -139,7 +139,7 @@ const formatAvailabilityReturn = async (groupedEquipments: EquipmentsGroupsType,
 /**
  * Agrupa os eventos por tipo de equipamento
  */
-const groupEventsByTypeAndFront = (events: Event[], equipments: Equipment[]): Record<string, Event[]> => {
+const groupEventsByTypeAndFront = (events: CttEvent[], equipments: CttEquipment[]): Record<string, CttEvent[]> => {
   const equipmentTypeMap = new Map<number, string>();
   equipments.forEach(equipment => {
     equipmentTypeMap.set(equipment.code, equipment.description);
@@ -156,7 +156,7 @@ const groupEventsByTypeAndFront = (events: Event[], equipments: Equipment[]): Re
       }
     }
     return accumulator;
-  }, {} as Record<string, Event[]>);
+  }, {} as Record<string, CttEvent[]>);
   return eventsByType;
 }
 export default createAvailabilityAllocation;

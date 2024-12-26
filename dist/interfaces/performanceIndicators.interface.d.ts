@@ -1,4 +1,4 @@
-export interface EquipmentProductivity {
+export interface CttEquipmentProductivity {
     equipmentCode: number;
     totalWeight: number;
     averageWeight: number;
@@ -6,6 +6,6 @@ export interface EquipmentProductivity {
     trips: number;
     loads: number;
 }
-export interface EquipmentProductivityFront extends EquipmentProductivity {
+export interface CttEquipmentProductivityFront extends CttEquipmentProductivity {
     workFrontCode: number;
 }
