@@ -7,11 +7,19 @@ const createPartialDelivered = async (workFronts, realTons, date) => {
     const estimatedTons = calcEstimatedTons(realTons, currentHour);
     const tonPerHour = calcTonPerHour(realTons, currentHour);
     let estimatedPerGoal = calcEstimatedPerGoal(workFronts, estimatedTons);
+    return formatDeliveredPartialReturn(estimatedTons, tonPerHour, estimatedPerGoal, realTons, workFronts);
 };
 const calcEstimatedTons = (realTons, currentHour) => {
-    let estimatedTons = {};
+    let estimatedTons = {
+        estimated: {
+            total: 0,
+            goal: 0,
+            progress: 0,
+        },
+    };
     Object.entries(realTons).forEach(([workFront, ton]) => {
         estimatedTons[+workFront] = (0, helper_1.normalizeCalc)((ton / currentHour) * 24, 2);
+        estimatedTons.estimated.total += (0, helper_1.normalizeCalc)((ton / currentHour) * 24, 2);
     });
     return estimatedTons;
 };
@@ -26,15 +34,36 @@ const calcEstimatedPerGoal = (workFronts, estimatedTons) => {
     let estimatedPerGoal = {};
     workFronts.forEach(workFrontGoal => {
         Object.entries(estimatedTons).forEach(([workFront, ton]) => {
-            if (workFrontGoal.code == +workFront) {
-                console.log(workFrontGoal);
-                estimatedPerGoal[+workFront] = (0, helper_1.normalizeCalc)((ton / workFrontGoal.goal) * 100);
+            if (workFront !== "estimated" && typeof ton === "number") {
+                if (workFrontGoal.code == +workFront) {
+                    estimatedPerGoal[+workFront] = (0, helper_1.normalizeCalc)((ton / workFrontGoal.goal) * 100);
+                }
             }
         });
     });
     return estimatedPerGoal;
 };
-const formatDeliveredPartialReturn = async () => {
+const formatDeliveredPartialReturn = async (estimatedTons, tonPerHour, estimatedPerGoal, realTons, workFronts) => {
+    const delivered = [];
+    const goalMap = new Map(workFronts.map((workFront) => [workFront.code, workFront.goal]));
+    for (const key of Object.keys(estimatedTons)) {
+        if (key === 'estimated') {
+            continue;
+        }
+        const workFrontCode = Number(key);
+        delivered.push({
+            workFrontCode,
+            goal: goalMap.get(workFrontCode) || 0,
+            realTons: realTons[key] || 0,
+            estimatedTons: estimatedTons[key],
+            tonPerHour: tonPerHour[key] || 0,
+            estimatedPerGoal: estimatedPerGoal[key] || 0,
+        });
+    }
+    return {
+        delivered,
+        estimated: estimatedTons.estimated,
+    };
 };
 exports.default = createPartialDelivered;
 //# sourceMappingURL=partialDelivered.js.map

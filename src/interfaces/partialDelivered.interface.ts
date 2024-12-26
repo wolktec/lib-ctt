@@ -13,3 +13,21 @@ export interface EstimatedTons {
   };
   [key: string]: number | { total: number; goal: number; progress: number };
 }
+
+export interface DeliveredReturn {
+  workFrontCode: number;
+  goal: number;
+  realTons: number;
+  estimatedTons: number;
+  tonPerHour: number;
+  estimatedPerGoal: number;
+}
+
+export interface PartialDeliveredResult {
+  delivered: DeliveredReturn[];
+  estimated: {
+    total: number;
+    goal: number;
+    progress: number;
+  };
+}
