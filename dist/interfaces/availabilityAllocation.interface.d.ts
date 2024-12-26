@@ -1,5 +1,3 @@
-export declare type EquipmentType = "Caminhões" | "Colhedoras" | "Tratores" | "Empilhadeiras" | "Pulverizadores";
-export declare type EquipmentTypes = "harvester" | "tractor" | "truck" | "forklift" | "pulverizer";
 export interface Equipment {
     code: number;
     description: string;
@@ -17,7 +15,7 @@ export interface Event {
     };
     name: string;
     interference?: {
-        code: number;
+        id: number;
         name: string;
     };
     time: {
@@ -25,20 +23,26 @@ export interface Event {
         end: number;
     };
 }
-export interface AvailabilityAndAllocationResult {
+export declare type AvailabilityAndAllocationResult = {
     goal: number;
     groups: [
         {
             group: string;
             average: number;
-            workFronts: [
-                {
-                    workFrontCode: number;
-                    equipments: number;
-                    availability: number;
-                }
-            ];
+            workFronts: {
+                workFrontCode: number;
+                equipments: number;
+                availability: number;
+            }[];
         }
-    ];
-}
-export declare type EquipmentsGroupsType = Record<string, Record<number | 'total', number>>;
+    ] | {
+        group: string;
+        average: number;
+        workFronts: {
+            workFrontCode: number;
+            equipments: number;
+            availability: number;
+        }[];
+    }[];
+};
+export declare type EquipmentsGroupsType = Record<string, Record<number, number>>;
