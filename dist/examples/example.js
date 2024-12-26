@@ -4,18 +4,18 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const index_1 = require("../index");
+const index_2 = require("../index");
 const mock_1 = __importDefault(require("../mock"));
-const availability = new index_1.availabilityAllocation();
-availability.getMechanicalAvailability(mock_1.default.events, '13:43')
+(0, index_1.createAvailabilityAllocation)(mock_1.default.equipments, mock_1.default.events, '18-12-2024 18:57:56')
     .then(result => {
-    console.log("Availability:", result);
+    console.log("AvailabilityAllocation:", JSON.stringify(result, null, 2));
 })
     .catch(error => {
     console.error("Erro:", error);
 });
-availability.createAvailabilityAllocation(mock_1.default.equipments, mock_1.default.events)
+(0, index_2.createPartialDelivered)(mock_1.default.workFronts, mock_1.default.realTons, '2023-12-23 15:41:51')
     .then(result => {
-    console.log("Equipments:", JSON.stringify(result, null, 2));
+    console.log("PartialDelivered:", JSON.stringify(result, null, 2));
 })
     .catch(error => {
     console.error("Erro:", error);
