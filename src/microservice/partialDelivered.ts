@@ -65,6 +65,10 @@ const formatDeliveredPartialReturn = async (estimatedTons: CttEstimatedTons, ton
   const delivered: CttDeliveredReturn[] = [];
   const goalMap = new Map(workFronts.map((workFront) => [workFront.code, workFront.goal]));
 
+  goalMap.forEach(goal => {
+    estimatedTons.estimated.goal += goal;
+  });
+
   for (const key of Object.keys(estimatedTons)) {
     if (key === 'estimated') {
       continue;

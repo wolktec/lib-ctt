@@ -59,6 +59,9 @@ const calcEstimatedPerGoal = (workFronts, estimatedTons) => {
 const formatDeliveredPartialReturn = async (estimatedTons, tonPerHour, estimatedPerGoal, realTons, workFronts) => {
     const delivered = [];
     const goalMap = new Map(workFronts.map((workFront) => [workFront.code, workFront.goal]));
+    goalMap.forEach(goal => {
+        estimatedTons.estimated.goal += goal;
+    });
     for (const key of Object.keys(estimatedTons)) {
         if (key === 'estimated') {
             continue;
