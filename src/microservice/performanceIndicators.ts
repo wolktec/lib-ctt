@@ -92,7 +92,7 @@ const getIdleTime = (events: CttEvent[], idleEvents: CttIdleEvents[]): Record<st
   for (const event of events) {
     const diffS = (event.time.end - event.time.start) / 1000;
     const idleEvent = idleEvents?.find(
-      idleEvent => idleEvent.name === event.interference?.name
+      idleEvent => idleEvent.name === event.name
     );
 
     if (idleEvent && idleEvent.engine_idle_sec && (diffS > idleEvent.engine_idle_sec && event.time.end > 0)) {

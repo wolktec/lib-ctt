@@ -82,7 +82,7 @@ const getIdleTime = (events, idleEvents) => {
     let idleTime = {};
     for (const event of events) {
         const diffS = (event.time.end - event.time.start) / 1000;
-        const idleEvent = idleEvents?.find(idleEvent => idleEvent.name === event.interference?.name);
+        const idleEvent = idleEvents?.find(idleEvent => idleEvent.name === event.name);
         if (idleEvent && idleEvent.engine_idle_sec && (diffS > idleEvent.engine_idle_sec && event.time.end > 0)) {
             if (idleTime[event.workFront.code]) {
                 idleTime[event.workFront.code] += diffS - idleEvent.engine_idle_sec;
