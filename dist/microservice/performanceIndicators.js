@@ -7,7 +7,7 @@ const helper_1 = require("../helper/helper");
   * @param events events from the day
   * @param date '2023-12-23 15:41:51' datetime filter
  */
-const createPerformanceIndicators = async (equipmentProductivity, events, equipments, date) => {
+const createPerformanceIndicators = async (equipmentProductivity, events, equipments, idleEvents, date) => {
     try {
         if (!equipmentProductivity || !events || !equipments) {
             return 'Parametros inválidos';
@@ -16,6 +16,7 @@ const createPerformanceIndicators = async (equipmentProductivity, events, equipm
         const tripQtd = getTripQtdByFront(equipmentsProductivityByFront);
         const averageWeight = getAverageWeight(equipmentsProductivityByFront);
         const awaitingTransshipment = getAwaitingTransshipment(events);
+        const idleTime = getIdleTime(events, idleEvents);
     }
     catch (error) {
         console.error("Ocorreu um erro:", error);
@@ -76,6 +77,27 @@ const getAwaitingTransshipment = (events) => {
         formattedTransshipment[code] = (0, helper_1.msToTime)(timeInMs);
     }
     return formattedTransshipment;
+};
+const getIdleTime = (events, idleEvents) => {
+    let idleTime = {};
+    for (const event of events) {
+        const diffS = (event.time.end - event.time.start) / 1000;
+        const idleEvent = idleEvents?.find(idleEvent => idleEvent.name === event.interference?.name);
+        if (idleEvent && idleEvent.engine_idle_sec && (diffS > idleEvent.engine_idle_sec && event.time.end > 0)) {
+            if (idleTime[event.workFront.code]) {
+                idleTime[event.workFront.code] += diffS - idleEvent.engine_idle_sec;
+            }
+            else {
+                idleTime[event.workFront.code] = diffS - idleEvent.engine_idle_sec;
+            }
+        }
+    }
+    const formattedIdle = {};
+    for (const [code, timeInHours] of Object.entries(idleTime)) {
+        const timeInMs = timeInHours * 1000;
+        formattedIdle[code] = (0, helper_1.msToTime)(timeInMs);
+    }
+    return formattedIdle;
 };
 exports.default = createPerformanceIndicators;
 //# sourceMappingURL=performanceIndicators.js.map
