@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.secToTime = exports.msToTime = exports.getEventTime = exports.groupEquipmentsProductivityByFront = exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = exports.normalizeCalc = exports.calcMechanicalAvailability = exports.convertHourToDecimal = void 0;
+exports.calcTelemetryByFront = exports.groupEquipmentTelemetryByFront = exports.secToTime = exports.msToTime = exports.getEventTime = exports.groupEquipmentsProductivityByFront = exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = exports.normalizeCalc = exports.calcMechanicalAvailability = exports.convertHourToDecimal = void 0;
 const dayjs_1 = __importDefault(require("dayjs"));
 function convertHourToDecimal(hour) {
     const [hours, minutes] = hour.split(':').map(Number);
@@ -129,4 +129,37 @@ exports.secToTime = secToTime;
 const twoCaracters = (num) => {
     return num < 10 ? `0${num}` : num.toString();
 };
+const groupEquipmentTelemetryByFront = (equipments, telemetry) => {
+    const telemetryByFront = [];
+    for (const equipment of equipments) {
+        const relatedRecords = telemetry.filter(hourMeter => +hourMeter.equipment_code === equipment.code);
+        if ((!relatedRecords || relatedRecords.length === 0) && equipment.description !== "Colhedoras") {
+            continue;
+        }
+        const sortedRecords = relatedRecords.sort((a, b) => a.occurrence - b.occurrence);
+        const firstRecord = sortedRecords[0];
+        const lastRecord = sortedRecords[sortedRecords.length - 1];
+        telemetryByFront.push({
+            equipmentCode: equipment.code,
+            workFrontCode: equipment.work_front_code,
+            firstRecord: firstRecord,
+            lastRecord: lastRecord
+        });
+    }
+    return telemetryByFront;
+};
+exports.groupEquipmentTelemetryByFront = groupEquipmentTelemetryByFront;
+const calcTelemetryByFront = (telemetryByFront) => {
+    let telemetryResult = {};
+    for (const telemetry of telemetryByFront) {
+        if (telemetryResult[telemetry.workFrontCode]) {
+            telemetryResult[telemetry.workFrontCode] += normalizeCalc(+telemetry.lastRecord.current_value - +telemetry.firstRecord.current_value, 2);
+        }
+        else {
+            telemetryResult[telemetry.workFrontCode] = normalizeCalc(+telemetry.lastRecord.current_value - +telemetry.firstRecord.current_value, 2);
+        }
+    }
+    return telemetryResult;
+};
+exports.calcTelemetryByFront = calcTelemetryByFront;
 //# sourceMappingURL=helper.js.map

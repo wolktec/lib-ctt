@@ -1,14 +1,23 @@
-import { getEventTime, groupEquipmentsProductivityByFront, msToTime, normalizeCalc } from "../helper/helper";
+import { calcTelemetryByFront, getEventTime, groupEquipmentsProductivityByFront, groupEquipmentTelemetryByFront, msToTime, normalizeCalc } from "../helper/helper";
 import { CttEquipment, CttEvent } from "../interfaces/availabilityAllocation.interface";
-import { CttEquipmentProductivity, CttEquipmentProductivityFront, CttIdleEvents } from "../interfaces/performanceIndicators.interface";
+import { CttEquipmentProductivity, CttEquipmentProductivityFront, CttIdleEvents, CttTelemetry } from "../interfaces/performanceIndicators.interface";
 
 /**
   * GET the performance indicators by Front
   * @param equipmentProductivity equipment coming from the productivity API
   * @param events events from the day
-  * @param date '2023-12-23 15:41:51' datetime filter
- */
-const createPerformanceIndicators = async (equipmentProductivity: CttEquipmentProductivity[], events: CttEvent[], equipments: CttEquipment[], idleEvents: CttIdleEvents[], date: string) => {
+  * @param equipments equipments from the day
+  * @param idleEvents data from the operation table
+  * @param telemetry telemetry of the day
+*/
+const createPerformanceIndicators = async (
+  equipmentProductivity: CttEquipmentProductivity[],
+  events: CttEvent[],
+  equipments: CttEquipment[],
+  idleEvents: CttIdleEvents[],
+  telemetry: CttTelemetry[]
+) => {
+
   try {
     if (!equipmentProductivity || !events || !equipments) {
       return 'Parametros inválidos';
@@ -19,6 +28,15 @@ const createPerformanceIndicators = async (equipmentProductivity: CttEquipmentPr
     const averageWeight = getAverageWeight(equipmentsProductivityByFront);
     const awaitingTransshipment = getAwaitingTransshipment(events);
     const idleTime = getIdleTime(events, idleEvents);
+
+    const hourmeterByFront = groupEquipmentTelemetryByFront(equipments, telemetry.filter(hourMeter => hourMeter.sensor_name === 'hour_meter'));
+    const engineHours = calcTelemetryByFront(hourmeterByFront);
+
+    const autoPilotByFront = groupEquipmentTelemetryByFront(equipments, telemetry.filter(hourMeter => hourMeter.sensor_name === 'autopilot_hour_meter'));
+    const autoPilot = calcTelemetryByFront(autoPilotByFront);
+
+    const autoPilotUse = calcAutopilotUse(autoPilot, engineHours);
+
   } catch (error) {
     console.error("Ocorreu um erro:", error);
     throw error;
@@ -110,6 +128,22 @@ const getIdleTime = (events: CttEvent[], idleEvents: CttIdleEvents[]): Record<st
   }
 
   return formattedIdle;
+}
+
+const calcAutopilotUse = (autoPilot: Record<string, number>, engineHours: Record<string, number>): Record<string, number> => {
+  const autopilotUse: Record<string, number> = {};
+  for (const workFrontCode in autoPilot) {
+    if (engineHours[workFrontCode]) {
+      autopilotUse[workFrontCode] = normalizeCalc(autoPilot[workFrontCode] / engineHours[workFrontCode] * 100, 2);
+    } else {
+      autopilotUse[workFrontCode] = 0;
+    }
+  }
+  return autopilotUse;
+}
+
+const calcTrucksLack = (event: CttEvent[]) => {
+  
 }
 
 export default createPerformanceIndicators;

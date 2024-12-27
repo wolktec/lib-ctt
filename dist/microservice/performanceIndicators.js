@@ -5,9 +5,11 @@ const helper_1 = require("../helper/helper");
   * GET the performance indicators by Front
   * @param equipmentProductivity equipment coming from the productivity API
   * @param events events from the day
-  * @param date '2023-12-23 15:41:51' datetime filter
- */
-const createPerformanceIndicators = async (equipmentProductivity, events, equipments, idleEvents, date) => {
+  * @param equipments equipments from the day
+  * @param idleEvents data from the operation table
+  * @param telemetry telemetry of the day
+*/
+const createPerformanceIndicators = async (equipmentProductivity, events, equipments, idleEvents, telemetry) => {
     try {
         if (!equipmentProductivity || !events || !equipments) {
             return 'Parametros inválidos';
@@ -17,6 +19,11 @@ const createPerformanceIndicators = async (equipmentProductivity, events, equipm
         const averageWeight = getAverageWeight(equipmentsProductivityByFront);
         const awaitingTransshipment = getAwaitingTransshipment(events);
         const idleTime = getIdleTime(events, idleEvents);
+        const hourmeterByFront = (0, helper_1.groupEquipmentTelemetryByFront)(equipments, telemetry.filter(hourMeter => hourMeter.sensor_name === 'hour_meter'));
+        const engineHours = (0, helper_1.calcTelemetryByFront)(hourmeterByFront);
+        const autoPilotByFront = (0, helper_1.groupEquipmentTelemetryByFront)(equipments, telemetry.filter(hourMeter => hourMeter.sensor_name === 'autopilot_hour_meter'));
+        const autoPilot = (0, helper_1.calcTelemetryByFront)(autoPilotByFront);
+        const autoPilotUse = calcAutopilotUse(autoPilot, engineHours);
     }
     catch (error) {
         console.error("Ocorreu um erro:", error);
@@ -98,6 +105,20 @@ const getIdleTime = (events, idleEvents) => {
         formattedIdle[code] = (0, helper_1.msToTime)(timeInMs);
     }
     return formattedIdle;
+};
+const calcAutopilotUse = (autoPilot, engineHours) => {
+    const autopilotUse = {};
+    for (const workFrontCode in autoPilot) {
+        if (engineHours[workFrontCode]) {
+            autopilotUse[workFrontCode] = (0, helper_1.normalizeCalc)(autoPilot[workFrontCode] / engineHours[workFrontCode] * 100, 2);
+        }
+        else {
+            autopilotUse[workFrontCode] = 0;
+        }
+    }
+    return autopilotUse;
+};
+const calcTrucksLack = (event) => {
 };
 exports.default = createPerformanceIndicators;
 //# sourceMappingURL=performanceIndicators.js.map

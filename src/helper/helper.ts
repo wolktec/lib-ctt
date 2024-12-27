@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { CttEquipmentProductivity, CttEquipmentProductivityFront } from "../interfaces/performanceIndicators.interface";
+import { CttEquipmentProductivity, CttEquipmentProductivityFront, CttTelemetry, CttTelemetryByFront } from "../interfaces/performanceIndicators.interface";
 import { CttEquipment, CttEvent } from "../interfaces/availabilityAllocation.interface";
 
 export function convertHourToDecimal(hour: string): number {
@@ -134,14 +134,14 @@ export const secToTime = (sec: number): string => {
   let minutes = Math.floor((sec - hours * 3600) / 60);
   let seconds = Math.round(sec - hours * 3600 - minutes * 60);
 
-  if(seconds >= 60) {
-      minutes += 1;
-      seconds = 0;
+  if (seconds >= 60) {
+    minutes += 1;
+    seconds = 0;
   }
 
   if (minutes >= 60) {
-      hours += 1;
-      minutes = 0;
+    hours += 1;
+    minutes = 0;
   }
 
   return `${twoCaracters(hours)}:${twoCaracters(minutes)}:${twoCaracters(seconds)}`;
@@ -149,4 +149,39 @@ export const secToTime = (sec: number): string => {
 
 const twoCaracters = (num: number): string => {
   return num < 10 ? `0${num}` : num.toString();
+}
+
+export const groupEquipmentTelemetryByFront = (equipments: CttEquipment[], telemetry: CttTelemetry[]): CttTelemetryByFront[] => {
+  const telemetryByFront: CttTelemetryByFront[] = [];
+  for (const equipment of equipments) {
+    const relatedRecords = telemetry.filter(hourMeter => +hourMeter.equipment_code === equipment.code);
+
+    if ((!relatedRecords || relatedRecords.length === 0) && equipment.description !== "Colhedoras") {
+      continue;
+    }
+
+    const sortedRecords = relatedRecords.sort((a, b) => a.occurrence - b.occurrence);
+    const firstRecord = sortedRecords[0];
+    const lastRecord = sortedRecords[sortedRecords.length - 1];
+
+    telemetryByFront.push({
+      equipmentCode: equipment.code,
+      workFrontCode: equipment.work_front_code,
+      firstRecord: firstRecord,
+      lastRecord: lastRecord
+    });
+  }
+  return telemetryByFront;
+}
+
+export const calcTelemetryByFront = (telemetryByFront: CttTelemetryByFront[]) => {
+  let telemetryResult: Record<string, number> = {};
+  for (const telemetry of telemetryByFront) {
+    if (telemetryResult[telemetry.workFrontCode]) {
+      telemetryResult[telemetry.workFrontCode] += normalizeCalc(+telemetry.lastRecord.current_value - +telemetry.firstRecord.current_value, 2);
+    } else {
+      telemetryResult[telemetry.workFrontCode] = normalizeCalc(+telemetry.lastRecord.current_value - +telemetry.firstRecord.current_value, 2);
+    }
+  }
+  return telemetryResult;
 }

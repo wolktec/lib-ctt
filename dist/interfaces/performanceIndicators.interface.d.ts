@@ -14,3 +14,18 @@ export interface CttIdleEvents {
     has_engine_idle: boolean;
     engine_idle_sec: number;
 }
+export interface CttTelemetry {
+    "occurrence": number;
+    "sensor_name": string;
+    "current_value": string;
+    "max_value": string;
+    "min_value": string;
+    "mean_value": string;
+    "equipment_code": string;
+}
+export interface CttTelemetryByFront {
+    equipmentCode: number;
+    workFrontCode: number;
+    firstRecord: CttTelemetry;
+    lastRecord: CttTelemetry;
+}
