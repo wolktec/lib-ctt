@@ -9,7 +9,7 @@ const helper_1 = require("../helper/helper");
   * @param idleEvents data from the operation table
   * @param telemetry telemetry of the day
 */
-const createPerformanceIndicators = async (equipmentProductivity, events, equipments, idleEvents, telemetry) => {
+const createPerformanceIndicators = async (equipmentProductivity, events, equipments, idleEvents, telemetry, tonPerHour) => {
     try {
         if (!equipmentProductivity || !events || !equipments) {
             return 'Parametros inválidos';
@@ -25,6 +25,7 @@ const createPerformanceIndicators = async (equipmentProductivity, events, equipm
         const autoPilot = (0, helper_1.calcTelemetryByFront)(autoPilotByFront);
         const autoPilotUse = calcAutopilotUse(autoPilot, engineHours);
         const trucksLack = calcTrucksLack(events);
+        const tOffenders = calcTOffenders(trucksLack.trucksLack, tonPerHour);
     }
     catch (error) {
         console.error("Ocorreu um erro:", error);
@@ -137,7 +138,24 @@ const calcTrucksLack = (events) => {
         const timeInMs = timeInHours * 3600 * 1000;
         formattedTrucksLack[code] = (0, helper_1.msToTime)(timeInMs);
     }
-    return formattedTrucksLack;
+    return {
+        "formattedTrucksLack": formattedTrucksLack,
+        "trucksLack": trucksLack
+    };
+};
+const calcTOffenders = (trucksLack, tonPerHour) => {
+    let tOffenders = {};
+    for (const workFrontCode in trucksLack) {
+        if (tonPerHour.hasOwnProperty(workFrontCode)) {
+            if (tOffenders[workFrontCode]) {
+                tOffenders[workFrontCode] += trucksLack[workFrontCode] * tonPerHour[workFrontCode];
+            }
+            else {
+                tOffenders[workFrontCode] = trucksLack[workFrontCode] * tonPerHour[workFrontCode];
+            }
+        }
+    }
+    return tOffenders;
 };
 exports.default = createPerformanceIndicators;
 //# sourceMappingURL=performanceIndicators.js.map

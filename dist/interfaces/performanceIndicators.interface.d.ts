@@ -29,3 +29,7 @@ export interface CttTelemetryByFront {
     firstRecord: CttTelemetry;
     lastRecord: CttTelemetry;
 }
+export interface CttTrucksLack {
+    formattedTrucksLack: Record<string, string>;
+    trucksLack: Record<string, number>;
+}

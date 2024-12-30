@@ -1,6 +1,7 @@
 import { calcTelemetryByFront, getEventTime, groupEquipmentsProductivityByFront, groupEquipmentTelemetryByFront, msToTime, normalizeCalc } from "../helper/helper";
 import { CttEquipment, CttEvent } from "../interfaces/availabilityAllocation.interface";
-import { CttEquipmentProductivity, CttEquipmentProductivityFront, CttIdleEvents, CttTelemetry } from "../interfaces/performanceIndicators.interface";
+import { CttTon } from "../interfaces/partialDelivered.interface";
+import { CttEquipmentProductivity, CttEquipmentProductivityFront, CttIdleEvents, CttTelemetry, CttTrucksLack } from "../interfaces/performanceIndicators.interface";
 
 /**
   * GET the performance indicators by Front
@@ -15,7 +16,8 @@ const createPerformanceIndicators = async (
   events: CttEvent[],
   equipments: CttEquipment[],
   idleEvents: CttIdleEvents[],
-  telemetry: CttTelemetry[]
+  telemetry: CttTelemetry[],
+  tonPerHour: CttTon
 ) => {
 
   try {
@@ -37,7 +39,7 @@ const createPerformanceIndicators = async (
 
     const autoPilotUse = calcAutopilotUse(autoPilot, engineHours);
     const trucksLack = calcTrucksLack(events);
-
+    const tOffenders = calcTOffenders(trucksLack.trucksLack, tonPerHour);
   } catch (error) {
     console.error("Ocorreu um erro:", error);
     throw error;
@@ -143,7 +145,7 @@ const calcAutopilotUse = (autoPilot: Record<string, number>, engineHours: Record
   return autopilotUse;
 }
 
-const calcTrucksLack = (events: CttEvent[]) => {
+const calcTrucksLack = (events: CttEvent[]): CttTrucksLack => {
   let trucksLack: Record<string, number> = {};
   events.forEach(event => {
     if (event.interference && event.interference.name === 'Falta caminhão') {
@@ -162,7 +164,24 @@ const calcTrucksLack = (events: CttEvent[]) => {
     formattedTrucksLack[code] = msToTime(timeInMs);
   }
 
-  return formattedTrucksLack;
+  return {
+    "formattedTrucksLack": formattedTrucksLack,
+    "trucksLack": trucksLack
+  };
+}
+
+const calcTOffenders = (trucksLack: Record<string, number>, tonPerHour: CttTon) => {
+  let tOffenders: Record<string, number> = {};
+  for (const workFrontCode in trucksLack) {
+    if (tonPerHour.hasOwnProperty(workFrontCode)) {
+      if (tOffenders[workFrontCode]) {
+        tOffenders[workFrontCode] += trucksLack[workFrontCode] * tonPerHour[workFrontCode];
+      } else {
+        tOffenders[workFrontCode] = trucksLack[workFrontCode] * tonPerHour[workFrontCode];
+      }
+    }
+  }
+  return tOffenders;
 }
 
 export default createPerformanceIndicators;
