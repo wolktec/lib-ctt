@@ -36,6 +36,7 @@ const createPerformanceIndicators = async (
     const autoPilot = calcTelemetryByFront(autoPilotByFront);
 
     const autoPilotUse = calcAutopilotUse(autoPilot, engineHours);
+    const trucksLack = calcTrucksLack(events);
 
   } catch (error) {
     console.error("Ocorreu um erro:", error);
@@ -142,8 +143,26 @@ const calcAutopilotUse = (autoPilot: Record<string, number>, engineHours: Record
   return autopilotUse;
 }
 
-const calcTrucksLack = (event: CttEvent[]) => {
-  
+const calcTrucksLack = (events: CttEvent[]) => {
+  let trucksLack: Record<string, number> = {};
+  events.forEach(event => {
+    if (event.interference && event.interference.name === 'Falta caminhão') {
+      const { workFront } = event;
+      if (trucksLack[workFront.code]) {
+        trucksLack[workFront.code] += getEventTime(event);
+      } else {
+        trucksLack[workFront.code] = getEventTime(event);
+      }
+    }
+  });
+
+  const formattedTrucksLack: Record<string, string> = {};
+  for (const [code, timeInHours] of Object.entries(trucksLack)) {
+    const timeInMs = timeInHours * 3600 * 1000;
+    formattedTrucksLack[code] = msToTime(timeInMs);
+  }
+
+  return formattedTrucksLack;
 }
 
 export default createPerformanceIndicators;
