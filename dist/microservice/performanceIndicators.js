@@ -9,11 +9,8 @@ const helper_1 = require("../helper/helper");
   * @param idleEvents data from the operation table
   * @param telemetry telemetry of the day
 */
-const createPerformanceIndicators = async (equipmentProductivity, events, equipments, idleEvents, telemetry, tonPerHour) => {
+const createPerformanceIndicators = async (equipmentProductivity, events, equipments, idleEvents, telemetry, tonPerHour, workFronts, interferences) => {
     try {
-        if (!equipmentProductivity || !events || !equipments) {
-            return 'Parametros inválidos';
-        }
         let equipmentsProductivityByFront = (0, helper_1.groupEquipmentsProductivityByFront)(equipmentProductivity, equipments);
         const tripQtd = getTripQtdByFront(equipmentsProductivityByFront);
         const averageWeight = getAverageWeight(equipmentsProductivityByFront);
@@ -30,6 +27,12 @@ const createPerformanceIndicators = async (equipmentProductivity, events, equipm
         const elevatorHours = (0, helper_1.calcTelemetryByFront)(elevatorHoursByFront);
         const agriculturalEfficiency = calcAgriculturalEfficiency(elevatorHours, engineHours);
         const maneuvers = calcManuvers(events);
+        const unproductiveTime = await (0, helper_1.calcJourney)(events, interferences);
+        const ctOffenders = await calcCtOffenders(unproductiveTime.totalInterferenceByFront, equipments, tonPerHour);
+        const unproductiveTimeFormatted = formatUnproductiveTime(unproductiveTime.totalInterferenceByFront);
+        const summary = calcSummary(ctOffenders);
+        const formatPerformanceIndicator = formatPerformanceIndicatorReturn(tripQtd, averageWeight, awaitingTransshipment, idleTime, autoPilotUse, trucksLack.formattedTrucksLack, tOffenders, agriculturalEfficiency, maneuvers, workFronts, ctOffenders, unproductiveTimeFormatted, summary);
+        return formatPerformanceIndicator;
     }
     catch (error) {
         console.error("Ocorreu um erro:", error);
@@ -115,11 +118,12 @@ const getIdleTime = (events, idleEvents) => {
 const calcAutopilotUse = (autoPilot, engineHours) => {
     const autopilotUse = {};
     for (const workFrontCode in autoPilot) {
+        autopilotUse[workFrontCode] = { value: 0, goal: 75 };
         if (engineHours[workFrontCode]) {
-            autopilotUse[workFrontCode] = (0, helper_1.normalizeCalc)(autoPilot[workFrontCode] / engineHours[workFrontCode] * 100, 2);
+            autopilotUse[workFrontCode].value = (0, helper_1.normalizeCalc)(autoPilot[workFrontCode] / engineHours[workFrontCode] * 100, 2);
         }
         else {
-            autopilotUse[workFrontCode] = 0;
+            autopilotUse[workFrontCode].value = 0;
         }
     }
     return autopilotUse;
@@ -196,6 +200,94 @@ const calcManuvers = (events) => {
         formattedManuvers[code] = (0, helper_1.msToTime)(timeInMs);
     }
     return formattedManuvers;
+};
+const calcCtOffenders = async (unproductiveTime, equipments, tonPerHour) => {
+    const harvesterEquipments = {};
+    let ctOffenders = {};
+    for (const [workFrontCode, time] of Object.entries(unproductiveTime)) {
+        for (const equipment of equipments) {
+            if (equipment.work_front_code !== +workFrontCode || equipment.description !== 'Colhedoras') {
+                continue;
+            }
+            harvesterEquipments[workFrontCode] = (harvesterEquipments[workFrontCode] || 0) + 1;
+        }
+        if (ctOffenders[workFrontCode]) {
+            ctOffenders[workFrontCode] += (0, helper_1.normalizeCalc)((time * tonPerHour[workFrontCode]) / harvesterEquipments[workFrontCode], 2);
+        }
+        else {
+            ctOffenders[workFrontCode] = (0, helper_1.normalizeCalc)((time * tonPerHour[workFrontCode]) / harvesterEquipments[workFrontCode], 2);
+        }
+    }
+    return ctOffenders;
+};
+const calcAverageRadius = () => {
+};
+const formatUnproductiveTime = (unproductiveTime) => {
+    const formatUnproductiveTime = {};
+    for (const [code, timeInHours] of Object.entries(unproductiveTime)) {
+        const timeInMs = timeInHours * 3600 * 1000;
+        formatUnproductiveTime[code] = (0, helper_1.msToTime)(timeInMs);
+    }
+    return formatUnproductiveTime;
+};
+const calcSummary = (ctOffenders) => {
+    let total = 0;
+    const formatCtOffender = {};
+    for (const [workFrontCode, ctOffender] of Object.entries(ctOffenders)) {
+        total += ctOffender;
+        if (formatCtOffender[workFrontCode]) {
+            formatCtOffender[workFrontCode] += ctOffender;
+        }
+        else {
+            formatCtOffender[workFrontCode] = ctOffender;
+        }
+    }
+    let summary = [];
+    for (const [workFrontCode, ctOffender] of Object.entries(formatCtOffender)) {
+        summary.push({
+            "label": `Frente ${workFrontCode}`,
+            "lostTons": (0, helper_1.normalizeCalc)(ctOffender),
+            "progress": (0, helper_1.normalizeCalc)(ctOffender * 100, 2)
+        });
+    }
+    summary.push({
+        "label": `Geral`,
+        "lostTons": (0, helper_1.normalizeCalc)(total),
+        "progress": (0, helper_1.normalizeCalc)(total * 100, 2)
+    });
+    return summary;
+};
+const formatPerformanceIndicatorReturn = (tripQtd, averageWeight, awaitingTransshipment, idleTime, autoPilotUse, trucksLack, tOffenders, agriculturalEfficiency, maneuvers, workFronts, ctOffenders, unproductiveTime, summary) => {
+    const availabilityAllocation = {
+        workFronts: workFronts.map(workfront => {
+            const workfrontCode = workfront.code;
+            return {
+                workFrontCode: workfrontCode,
+                trips: tripQtd[workfrontCode] || 0,
+                averageWeight: averageWeight[workfrontCode] || 0,
+                trucksLack: trucksLack[workfrontCode] || "",
+                awaitingTransshipment: awaitingTransshipment[workfrontCode] || "",
+                engineIdle: idleTime[workfrontCode] || "",
+                autopilotUse: {
+                    value: autoPilotUse[workfrontCode]?.value || 0,
+                    goal: autoPilotUse[workfrontCode]?.goal || 0,
+                },
+                elevatorUse: 0,
+                unproductiveTime: unproductiveTime[workfrontCode],
+                ctOffenders: ctOffenders[workfrontCode] || 0,
+                tOffenders: tOffenders[workfrontCode] || 0,
+                agriculturalEfficiency: {
+                    value: agriculturalEfficiency[workfrontCode]?.value || 0,
+                    goal: agriculturalEfficiency[workfrontCode]?.goal || 0,
+                },
+                maneuvers: maneuvers[workfrontCode] || "",
+                zone: 0,
+                averageRadius: 0,
+            };
+        }),
+        summary: summary
+    };
+    return availabilityAllocation;
 };
 exports.default = createPerformanceIndicators;
 //# sourceMappingURL=performanceIndicators.js.map

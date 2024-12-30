@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { CttEquipmentProductivity, CttEquipmentProductivityFront, CttTelemetry, CttTelemetryByFront } from "../interfaces/performanceIndicators.interface";
+import { CttEquipmentProductivity, CttEquipmentProductivityFront, CttInterferences, CttTelemetry, CttTelemetryByFront, Journey } from "../interfaces/performanceIndicators.interface";
 import { CttEquipment, CttEvent } from "../interfaces/availabilityAllocation.interface";
 
 export function convertHourToDecimal(hour: string): number {
@@ -188,4 +188,151 @@ export const calcTelemetryByFront = (telemetryByFront: CttTelemetryByFront[]): R
     }
   }
   return telemetryResult;
+}
+
+export const calcJourney = async (events: CttEvent[], interferences: CttInterferences[]): Promise<Journey> => {
+  if (events.length == 0) {
+    return {
+      totalOperationalTime: 0,
+      operationalEvents: [],
+      equipmentOperational: [],
+      totalMaintenanceTime: 0,
+      maintenanceEvents: [],
+      equipmentsMaintenance: [],
+      totalInterferenceTime: 0,
+      interferenceEvents: [],
+      equipmentInterference: [],
+      totalInterferenceOperationalTime: 0,
+      interferenceOperationalEvents: [],
+      equipmentsInterferenceOperational: [],
+      totalInterferenceByFront: {}
+    };
+  }
+
+  let totalOperationalTime = 0;
+  const uniqEquip: Set<number> = new Set();
+  const operationalEvents: CttEvent[] = [];
+
+  let totalInterferenceTime = 0;
+  const uniqInterferenceEquip: Set<number> = new Set();
+  const maintenanceEvents: CttEvent[] = [];
+
+  let totalMaintenanceTime = 0;
+  const uniqMaintenanceEquip: Set<number> = new Set();
+  const interferenceEvents: CttEvent[] = [];
+
+  let totalInterferenceOperationalTime = 0;
+  const uniqInterferenceOperationalEquip: Set<number> = new Set();
+  const interferenceOperationalEvents: CttEvent[] = [];
+
+  let totalInterferenceTimeFront: Record<string, number> = {};
+  let totalInterferenceOprtlTimeFront: Record<string, number> = {};
+
+
+  //Interferências de manutenção
+  const interferenceIds = interferences.filter(e => e.interference_type?.name === 'Manutenção').map(e => e.id)
+  //Interferências operacionais
+  const interferenceOperationalStops = interferences.filter(e => e.interference_type?.name === 'Operação').map(e => e.id)
+
+  //Interferências de clima
+  const interferenceWeatherStops = [600, 601];
+
+  for (const event of events) {
+    const startTime = dayjs(event.time.start);
+    const endTime = dayjs(event.time.end);
+    const diffS = endTime.diff(startTime, "seconds");
+    const diff = diffS / 3600;
+    if (diff > 0) {
+      // Eventos produtivos
+      if (!event.interference && event.name !== "Motor Desligado") {
+        totalOperationalTime += diff;
+        const code = event.equipment.code;
+        uniqEquip.add(code);
+        operationalEvents.push(event);
+      }
+
+      // Eventos de manutenção
+      if (
+        event.interference &&
+        interferenceIds.includes(event.interference.id)
+      ) {
+        totalMaintenanceTime += diff;
+        const code = event.equipment.code;
+        uniqMaintenanceEquip.add(code);
+        maintenanceEvents.push(event);
+      }
+
+      // Eventos de interferência operacional
+      if (
+        event.interference &&
+        interferenceOperationalStops.includes(event.interference.id) &&
+        !interferenceWeatherStops.includes(event.interference.id)
+      ) {
+        if (totalInterferenceOprtlTimeFront[event.workFront.code]) {
+          totalInterferenceOprtlTimeFront[event.workFront.code] += diff;
+        } else {
+          totalInterferenceOprtlTimeFront[event.workFront.code] = diff;
+        }
+        totalInterferenceOperationalTime += diff;
+        const code = event.equipment.code;
+        uniqInterferenceOperationalEquip.add(code);
+        interferenceOperationalEvents.push(event);
+      }
+
+      // Eventos de interferência
+      if (
+        event.interference &&
+        !interferenceIds.includes(event.interference.id) &&
+        !interferenceOperationalStops.includes(event.interference.id) &&
+        !interferenceWeatherStops.includes(event.interference.id)
+      ) {
+        if (totalInterferenceTimeFront[event.workFront.code]) {
+          totalInterferenceTimeFront[event.workFront.code] += diff;
+        } else {
+          totalInterferenceTimeFront[event.workFront.code] = diff;
+        }
+        totalInterferenceTime += diff;
+        const code = event.equipment.code;
+        uniqInterferenceEquip.add(code);
+        interferenceEvents.push(event);
+      }
+    }
+  }
+
+  const uniqOperationalEquip: Set<number> = new Set([...uniqEquip, ...uniqMaintenanceEquip, ...uniqInterferenceEquip]);
+
+  const totalInterference = totalInterferenceTime + totalInterferenceOperationalTime;
+
+  let totalInterferenceByFront: Record<string, number> = {};
+  totalInterferenceByFront = calcTotalInterferenceByFront(totalInterferenceTimeFront, totalInterferenceOprtlTimeFront);
+
+  return {
+    totalOperationalTime,
+    operationalEvents,
+    equipmentOperational: Array.from(uniqOperationalEquip),
+    totalMaintenanceTime,
+    maintenanceEvents,
+    equipmentsMaintenance: Array.from(uniqMaintenanceEquip),
+    totalInterferenceTime: totalInterference,
+    interferenceEvents,
+    equipmentInterference: Array.from(uniqInterferenceEquip),
+    totalInterferenceOperationalTime: totalInterference,
+    interferenceOperationalEvents,
+    equipmentsInterferenceOperational: Array.from(
+      uniqInterferenceOperationalEquip
+    ),
+    totalInterferenceByFront
+  };
+};
+
+export const calcTotalInterferenceByFront = (totalInterferenceTimeFront: Record<string, number>, totalInterferenceOprtlTimeFront: Record<string, number>): Record<string, number> => {
+  const totalInterferenceByFront: Record<string, number> = {};
+  for (const workFrontCode in totalInterferenceTimeFront) {
+    if (totalInterferenceOprtlTimeFront[workFrontCode]) {
+      totalInterferenceByFront[workFrontCode] += normalizeCalc(totalInterferenceTimeFront[workFrontCode] + totalInterferenceOprtlTimeFront[workFrontCode], 2);
+    } else {
+      totalInterferenceByFront[workFrontCode] = normalizeCalc(totalInterferenceTimeFront[workFrontCode] + totalInterferenceOprtlTimeFront[workFrontCode], 2);
+    }
+  }
+  return totalInterferenceByFront;
 }

@@ -1,4 +1,4 @@
-import { CttEquipmentProductivity, CttEquipmentProductivityFront, CttTelemetry, CttTelemetryByFront } from "../interfaces/performanceIndicators.interface";
+import { CttEquipmentProductivity, CttEquipmentProductivityFront, CttInterferences, CttTelemetry, CttTelemetryByFront, Journey } from "../interfaces/performanceIndicators.interface";
 import { CttEquipment, CttEvent } from "../interfaces/availabilityAllocation.interface";
 export declare function convertHourToDecimal(hour: string): number;
 export declare function calcMechanicalAvailability(totalMaintenance: number, countMaintenance: number, currentHour: number): number;
@@ -20,3 +20,5 @@ export declare const msToTime: (ms: number) => string;
 export declare const secToTime: (sec: number) => string;
 export declare const groupEquipmentTelemetryByFront: (equipments: CttEquipment[], telemetry: CttTelemetry[]) => CttTelemetryByFront[];
 export declare const calcTelemetryByFront: (telemetryByFront: CttTelemetryByFront[]) => Record<string, number>;
+export declare const calcJourney: (events: CttEvent[], interferences: CttInterferences[]) => Promise<Journey>;
+export declare const calcTotalInterferenceByFront: (totalInterferenceTimeFront: Record<string, number>, totalInterferenceOprtlTimeFront: Record<string, number>) => Record<string, number>;

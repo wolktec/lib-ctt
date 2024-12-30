@@ -1,7 +1,18 @@
-import { calcTelemetryByFront, getEventTime, groupEquipmentsProductivityByFront, groupEquipmentTelemetryByFront, msToTime, normalizeCalc } from "../helper/helper";
+import { calcJourney, calcTelemetryByFront, getEventTime, groupEquipmentsProductivityByFront, groupEquipmentTelemetryByFront, msToTime, normalizeCalc } from "../helper/helper";
 import { CttEquipment, CttEvent } from "../interfaces/availabilityAllocation.interface";
-import { CttTon } from "../interfaces/partialDelivered.interface";
-import { CttEquipmentProductivity, CttEquipmentProductivityFront, CttIdleEvents, CttTelemetry, CttTrucksLack } from "../interfaces/performanceIndicators.interface";
+import { CttTon, CttWorkFronts } from "../interfaces/partialDelivered.interface";
+import {
+  CttAgriculturalEfficiency,
+  CttAutoPilotUse,
+  CttEquipmentProductivity,
+  CttEquipmentProductivityFront,
+  CttIdleEvents,
+  CttInterferences,
+  CttPerformanceIndicators,
+  CttSummaryReturn,
+  CttTelemetry,
+  CttTrucksLack
+} from "../interfaces/performanceIndicators.interface";
 
 /**
   * GET the performance indicators by Front
@@ -17,14 +28,12 @@ const createPerformanceIndicators = async (
   equipments: CttEquipment[],
   idleEvents: CttIdleEvents[],
   telemetry: CttTelemetry[],
-  tonPerHour: CttTon
-) => {
+  tonPerHour: CttTon,
+  workFronts: CttWorkFronts[],
+  interferences: CttInterferences[]
+): Promise<CttPerformanceIndicators> => {
 
   try {
-    if (!equipmentProductivity || !events || !equipments) {
-      return 'Parametros inválidos';
-    }
-
     let equipmentsProductivityByFront = groupEquipmentsProductivityByFront(equipmentProductivity, equipments);
     const tripQtd = getTripQtdByFront(equipmentsProductivityByFront);
     const averageWeight = getAverageWeight(equipmentsProductivityByFront);
@@ -36,8 +45,8 @@ const createPerformanceIndicators = async (
 
     const autoPilotByFront = groupEquipmentTelemetryByFront(equipments, telemetry.filter(hourMeter => hourMeter.sensor_name === 'autopilot_hour_meter'));
     const autoPilot = calcTelemetryByFront(autoPilotByFront);
-
     const autoPilotUse = calcAutopilotUse(autoPilot, engineHours);
+
     const trucksLack = calcTrucksLack(events);
     const tOffenders = calcTOffenders(trucksLack.trucksLack, tonPerHour);
 
@@ -46,6 +55,30 @@ const createPerformanceIndicators = async (
 
     const agriculturalEfficiency = calcAgriculturalEfficiency(elevatorHours, engineHours);
     const maneuvers = calcManuvers(events);
+
+    const unproductiveTime = await calcJourney(events, interferences);
+    const ctOffenders = await calcCtOffenders(unproductiveTime.totalInterferenceByFront, equipments, tonPerHour);
+    const unproductiveTimeFormatted = formatUnproductiveTime(unproductiveTime.totalInterferenceByFront);
+
+    const summary = calcSummary(ctOffenders);
+
+    const formatPerformanceIndicator = formatPerformanceIndicatorReturn(
+      tripQtd,
+      averageWeight,
+      awaitingTransshipment,
+      idleTime,
+      autoPilotUse,
+      trucksLack.formattedTrucksLack,
+      tOffenders,
+      agriculturalEfficiency,
+      maneuvers,
+      workFronts,
+      ctOffenders,
+      unproductiveTimeFormatted,
+      summary
+    );
+
+    return formatPerformanceIndicator;
 
   } catch (error) {
     console.error("Ocorreu um erro:", error);
@@ -140,13 +173,14 @@ const getIdleTime = (events: CttEvent[], idleEvents: CttIdleEvents[]): Record<st
   return formattedIdle;
 }
 
-const calcAutopilotUse = (autoPilot: Record<string, number>, engineHours: Record<string, number>): Record<string, number> => {
-  const autopilotUse: Record<string, number> = {};
+const calcAutopilotUse = (autoPilot: Record<string, number>, engineHours: Record<string, number>): CttAutoPilotUse => {
+  const autopilotUse: CttAutoPilotUse = {};
   for (const workFrontCode in autoPilot) {
+    autopilotUse[workFrontCode] = { value: 0, goal: 75 };
     if (engineHours[workFrontCode]) {
-      autopilotUse[workFrontCode] = normalizeCalc(autoPilot[workFrontCode] / engineHours[workFrontCode] * 100, 2);
+      autopilotUse[workFrontCode].value = normalizeCalc(autoPilot[workFrontCode] / engineHours[workFrontCode] * 100, 2);
     } else {
-      autopilotUse[workFrontCode] = 0;
+      autopilotUse[workFrontCode].value = 0;
     }
   }
   return autopilotUse;
@@ -191,8 +225,8 @@ const calcTOffenders = (trucksLack: Record<string, number>, tonPerHour: CttTon):
   return tOffenders;
 }
 
-const calcAgriculturalEfficiency = (elevatorHours: Record<string, number>, engineHours: Record<string, number>) => {
-  let agriculturalEfficiency: Record<string, { value: number; goal: number }> = {};
+const calcAgriculturalEfficiency = (elevatorHours: Record<string, number>, engineHours: Record<string, number>): CttAgriculturalEfficiency => {
+  let agriculturalEfficiency: CttAgriculturalEfficiency = {};
   for (const workFrontCode in elevatorHours) {
     if (engineHours.hasOwnProperty(workFrontCode)) {
       if (agriculturalEfficiency[workFrontCode]) {
@@ -206,7 +240,7 @@ const calcAgriculturalEfficiency = (elevatorHours: Record<string, number>, engin
   return agriculturalEfficiency;
 }
 
-const calcManuvers = (events: CttEvent[]) => {
+const calcManuvers = (events: CttEvent[]): Record<string, string> => {
   let manuvers: Record<string, number> = {};
   for (const event of events) {
     const { workFront } = event;
@@ -231,4 +265,119 @@ const calcManuvers = (events: CttEvent[]) => {
   return formattedManuvers;
 }
 
+const calcCtOffenders = async (unproductiveTime: Record<string, number>, equipments: CttEquipment[], tonPerHour: CttTon): Promise<Record<string, number>> => {
+  const harvesterEquipments: Record<string, number> = {}
+  let ctOffenders: Record<string, number> = {}
+  for (const [workFrontCode, time] of Object.entries(unproductiveTime)) {
+    for (const equipment of equipments) {
+      if (equipment.work_front_code !== +workFrontCode || equipment.description !== 'Colhedoras') {
+        continue;
+      }
+      harvesterEquipments[workFrontCode] = (harvesterEquipments[workFrontCode] || 0) + 1;
+    }
+
+    if (ctOffenders[workFrontCode]) {
+      ctOffenders[workFrontCode] += normalizeCalc((time * tonPerHour[workFrontCode]) / harvesterEquipments[workFrontCode], 2);
+    } else {
+      ctOffenders[workFrontCode] = normalizeCalc((time * tonPerHour[workFrontCode]) / harvesterEquipments[workFrontCode], 2);
+    }
+  }
+
+  return ctOffenders;
+}
+
+const calcAverageRadius = () => {
+
+}
+
+const formatUnproductiveTime = (unproductiveTime: Record<string, number>): Record<string, string> => {
+  const formatUnproductiveTime: Record<string, string> = {};
+  for (const [code, timeInHours] of Object.entries(unproductiveTime)) {
+    const timeInMs = timeInHours * 3600 * 1000;
+    formatUnproductiveTime[code] = msToTime(timeInMs);
+  }
+
+  return formatUnproductiveTime;
+}
+
+const calcSummary = (ctOffenders: Record<string, number>): CttSummaryReturn[] => {
+  let total: number = 0;
+  const formatCtOffender: Record<string, number> = {};
+
+  for (const [workFrontCode, ctOffender] of Object.entries(ctOffenders)) {
+    total += ctOffender;
+
+    if (formatCtOffender[workFrontCode]) {
+      formatCtOffender[workFrontCode] += ctOffender;
+    } else {
+      formatCtOffender[workFrontCode] = ctOffender;
+    }
+  }
+
+  let summary: CttSummaryReturn[] = [];
+  for (const [workFrontCode, ctOffender] of Object.entries(formatCtOffender)) {
+    summary.push({
+      "label": `Frente ${workFrontCode}`,
+      "lostTons": normalizeCalc(ctOffender),
+      "progress": normalizeCalc(ctOffender * 100, 2)
+    });
+  }
+
+  summary.push({
+    "label": `Geral`,
+    "lostTons": normalizeCalc(total),
+    "progress": normalizeCalc(total * 100, 2)
+  });
+
+  return summary;
+}
+
+const formatPerformanceIndicatorReturn = (
+  tripQtd: Record<string, number>,
+  averageWeight: Record<string, number>,
+  awaitingTransshipment: Record<string, string>,
+  idleTime: Record<string, string>,
+  autoPilotUse: CttAutoPilotUse,
+  trucksLack: Record<string, string>,
+  tOffenders: Record<string, number>,
+  agriculturalEfficiency: CttAgriculturalEfficiency,
+  maneuvers: Record<string, string>,
+  workFronts: CttWorkFronts[],
+  ctOffenders: Record<string, number>,
+  unproductiveTime: Record<string, string>,
+  summary: CttSummaryReturn[]
+): CttPerformanceIndicators => {
+  const availabilityAllocation: CttPerformanceIndicators = {
+    workFronts: workFronts.map(workfront => {
+      const workfrontCode = workfront.code;
+
+      return {
+        workFrontCode: workfrontCode,
+        trips: tripQtd[workfrontCode] || 0,
+        averageWeight: averageWeight[workfrontCode] || 0,
+        trucksLack: trucksLack[workfrontCode] || "",
+        awaitingTransshipment: awaitingTransshipment[workfrontCode] || "",
+        engineIdle: idleTime[workfrontCode] || "",
+        autopilotUse: {
+          value: autoPilotUse[workfrontCode]?.value || 0,
+          goal: autoPilotUse[workfrontCode]?.goal || 0,
+        },
+        elevatorUse: 0,
+        unproductiveTime: unproductiveTime[workfrontCode],
+        ctOffenders: ctOffenders[workfrontCode] || 0,
+        tOffenders: tOffenders[workfrontCode] || 0,
+        agriculturalEfficiency: {
+          value: agriculturalEfficiency[workfrontCode]?.value || 0,
+          goal: agriculturalEfficiency[workfrontCode]?.goal || 0,
+        },
+        maneuvers: maneuvers[workfrontCode] || "",
+        zone: 0,
+        averageRadius: 0,
+      };
+    }),
+    summary: summary
+  };
+
+  return availabilityAllocation;
+}
 export default createPerformanceIndicators;

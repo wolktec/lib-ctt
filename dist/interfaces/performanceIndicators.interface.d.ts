@@ -1,3 +1,4 @@
+import { CttEvent } from "./availabilityAllocation.interface";
 export interface CttEquipmentProductivity {
     equipmentCode: number;
     totalWeight: number;
@@ -32,4 +33,64 @@ export interface CttTelemetryByFront {
 export interface CttTrucksLack {
     formattedTrucksLack: Record<string, string>;
     trucksLack: Record<string, number>;
+}
+export declare type CttAutoPilotUse = Record<string, {
+    value: number;
+    goal: number;
+}>;
+export declare type CttAgriculturalEfficiency = Record<string, {
+    value: number;
+    goal: number;
+}>;
+export interface CttInterferences {
+    id: number;
+    interference_type?: {
+        name: string;
+    };
+}
+export interface CttPerformanceIndicators {
+    workFronts: Array<{
+        workFrontCode: number;
+        trips: number;
+        averageWeight: number;
+        trucksLack: string;
+        awaitingTransshipment: string;
+        engineIdle: string;
+        autopilotUse: {
+            value: number;
+            goal: number;
+        };
+        elevatorUse: number;
+        unproductiveTime: string;
+        ctOffenders: number;
+        tOffenders: number;
+        agriculturalEfficiency: {
+            value: number;
+            goal: number;
+        };
+        maneuvers: string;
+        zone: number;
+        averageRadius: number;
+    }>;
+    summary: CttSummaryReturn[];
+}
+export interface Journey {
+    totalOperationalTime: number;
+    operationalEvents: CttEvent[];
+    equipmentOperational: number[];
+    totalMaintenanceTime: number;
+    maintenanceEvents: CttEvent[];
+    equipmentsMaintenance: number[];
+    totalInterferenceTime: number;
+    interferenceEvents: CttEvent[];
+    equipmentInterference: number[];
+    totalInterferenceOperationalTime: number;
+    interferenceOperationalEvents: CttEvent[];
+    equipmentsInterferenceOperational: number[];
+    totalInterferenceByFront: Record<string, number>;
+}
+export interface CttSummaryReturn {
+    label: string;
+    lostTons: number;
+    progress: number;
 }

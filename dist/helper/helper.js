@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.calcTelemetryByFront = exports.groupEquipmentTelemetryByFront = exports.secToTime = exports.msToTime = exports.getEventTime = exports.groupEquipmentsProductivityByFront = exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = exports.normalizeCalc = exports.calcMechanicalAvailability = exports.convertHourToDecimal = void 0;
+exports.calcTotalInterferenceByFront = exports.calcJourney = exports.calcTelemetryByFront = exports.groupEquipmentTelemetryByFront = exports.secToTime = exports.msToTime = exports.getEventTime = exports.groupEquipmentsProductivityByFront = exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = exports.normalizeCalc = exports.calcMechanicalAvailability = exports.convertHourToDecimal = void 0;
 const dayjs_1 = __importDefault(require("dayjs"));
 function convertHourToDecimal(hour) {
     const [hours, minutes] = hour.split(':').map(Number);
@@ -165,4 +165,130 @@ const calcTelemetryByFront = (telemetryByFront) => {
     return telemetryResult;
 };
 exports.calcTelemetryByFront = calcTelemetryByFront;
+const calcJourney = async (events, interferences) => {
+    if (events.length == 0) {
+        return {
+            totalOperationalTime: 0,
+            operationalEvents: [],
+            equipmentOperational: [],
+            totalMaintenanceTime: 0,
+            maintenanceEvents: [],
+            equipmentsMaintenance: [],
+            totalInterferenceTime: 0,
+            interferenceEvents: [],
+            equipmentInterference: [],
+            totalInterferenceOperationalTime: 0,
+            interferenceOperationalEvents: [],
+            equipmentsInterferenceOperational: [],
+            totalInterferenceByFront: {}
+        };
+    }
+    let totalOperationalTime = 0;
+    const uniqEquip = new Set();
+    const operationalEvents = [];
+    let totalInterferenceTime = 0;
+    const uniqInterferenceEquip = new Set();
+    const maintenanceEvents = [];
+    let totalMaintenanceTime = 0;
+    const uniqMaintenanceEquip = new Set();
+    const interferenceEvents = [];
+    let totalInterferenceOperationalTime = 0;
+    const uniqInterferenceOperationalEquip = new Set();
+    const interferenceOperationalEvents = [];
+    let totalInterferenceTimeFront = {};
+    let totalInterferenceOprtlTimeFront = {};
+    //Interferências de manutenção
+    const interferenceIds = interferences.filter(e => e.interference_type?.name === 'Manutenção').map(e => e.id);
+    //Interferências operacionais
+    const interferenceOperationalStops = interferences.filter(e => e.interference_type?.name === 'Operação').map(e => e.id);
+    //Interferências de clima
+    const interferenceWeatherStops = [600, 601];
+    for (const event of events) {
+        const startTime = (0, dayjs_1.default)(event.time.start);
+        const endTime = (0, dayjs_1.default)(event.time.end);
+        const diffS = endTime.diff(startTime, "seconds");
+        const diff = diffS / 3600;
+        if (diff > 0) {
+            // Eventos produtivos
+            if (!event.interference && event.name !== "Motor Desligado") {
+                totalOperationalTime += diff;
+                const code = event.equipment.code;
+                uniqEquip.add(code);
+                operationalEvents.push(event);
+            }
+            // Eventos de manutenção
+            if (event.interference &&
+                interferenceIds.includes(event.interference.id)) {
+                totalMaintenanceTime += diff;
+                const code = event.equipment.code;
+                uniqMaintenanceEquip.add(code);
+                maintenanceEvents.push(event);
+            }
+            // Eventos de interferência operacional
+            if (event.interference &&
+                interferenceOperationalStops.includes(event.interference.id) &&
+                !interferenceWeatherStops.includes(event.interference.id)) {
+                if (totalInterferenceOprtlTimeFront[event.workFront.code]) {
+                    totalInterferenceOprtlTimeFront[event.workFront.code] += diff;
+                }
+                else {
+                    totalInterferenceOprtlTimeFront[event.workFront.code] = diff;
+                }
+                totalInterferenceOperationalTime += diff;
+                const code = event.equipment.code;
+                uniqInterferenceOperationalEquip.add(code);
+                interferenceOperationalEvents.push(event);
+            }
+            // Eventos de interferência
+            if (event.interference &&
+                !interferenceIds.includes(event.interference.id) &&
+                !interferenceOperationalStops.includes(event.interference.id) &&
+                !interferenceWeatherStops.includes(event.interference.id)) {
+                if (totalInterferenceTimeFront[event.workFront.code]) {
+                    totalInterferenceTimeFront[event.workFront.code] += diff;
+                }
+                else {
+                    totalInterferenceTimeFront[event.workFront.code] = diff;
+                }
+                totalInterferenceTime += diff;
+                const code = event.equipment.code;
+                uniqInterferenceEquip.add(code);
+                interferenceEvents.push(event);
+            }
+        }
+    }
+    const uniqOperationalEquip = new Set([...uniqEquip, ...uniqMaintenanceEquip, ...uniqInterferenceEquip]);
+    const totalInterference = totalInterferenceTime + totalInterferenceOperationalTime;
+    let totalInterferenceByFront = {};
+    totalInterferenceByFront = (0, exports.calcTotalInterferenceByFront)(totalInterferenceTimeFront, totalInterferenceOprtlTimeFront);
+    return {
+        totalOperationalTime,
+        operationalEvents,
+        equipmentOperational: Array.from(uniqOperationalEquip),
+        totalMaintenanceTime,
+        maintenanceEvents,
+        equipmentsMaintenance: Array.from(uniqMaintenanceEquip),
+        totalInterferenceTime: totalInterference,
+        interferenceEvents,
+        equipmentInterference: Array.from(uniqInterferenceEquip),
+        totalInterferenceOperationalTime: totalInterference,
+        interferenceOperationalEvents,
+        equipmentsInterferenceOperational: Array.from(uniqInterferenceOperationalEquip),
+        totalInterferenceByFront
+    };
+};
+exports.calcJourney = calcJourney;
+const calcTotalInterferenceByFront = (totalInterferenceTimeFront, totalInterferenceOprtlTimeFront) => {
+    const totalInterferenceByFront = {};
+    for (const workFrontCode in totalInterferenceTimeFront) {
+        if (totalInterferenceOprtlTimeFront[workFrontCode]) {
+            totalInterferenceByFront[workFrontCode] += normalizeCalc(totalInterferenceTimeFront[workFrontCode] + totalInterferenceOprtlTimeFront[workFrontCode], 2);
+        }
+        else {
+            totalInterferenceByFront[workFrontCode] = normalizeCalc(totalInterferenceTimeFront[workFrontCode] + totalInterferenceOprtlTimeFront[workFrontCode], 2);
+        }
+    }
+    return totalInterferenceByFront;
+};
+exports.calcTotalInterferenceByFront = calcTotalInterferenceByFront;
 //# sourceMappingURL=helper.js.map
