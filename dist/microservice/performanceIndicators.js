@@ -29,6 +29,7 @@ const createPerformanceIndicators = async (equipmentProductivity, events, equipm
         const elevatorHoursByFront = (0, helper_1.groupEquipmentTelemetryByFront)(equipments, telemetry.filter(hourMeter => hourMeter.sensor_name === 'elevator_conveyor_belt_hour_meter'));
         const elevatorHours = (0, helper_1.calcTelemetryByFront)(elevatorHoursByFront);
         const agriculturalEfficiency = calcAgriculturalEfficiency(elevatorHours, engineHours);
+        const maneuvers = calcManuvers(events);
     }
     catch (error) {
         console.error("Ocorreu um erro:", error);
@@ -160,21 +161,41 @@ const calcTOffenders = (trucksLack, tonPerHour) => {
     }
     return tOffenders;
 };
-// elevator_conveyor_belt_hour_meter
 const calcAgriculturalEfficiency = (elevatorHours, engineHours) => {
     let agriculturalEfficiency = {};
     for (const workFrontCode in elevatorHours) {
         if (engineHours.hasOwnProperty(workFrontCode)) {
             if (agriculturalEfficiency[workFrontCode]) {
-                agriculturalEfficiency[workFrontCode].value += (0, helper_1.normalizeCalc)((elevatorHours[workFrontCode] / engineHours[workFrontCode]) * 100);
+                agriculturalEfficiency[workFrontCode].value += (0, helper_1.normalizeCalc)((elevatorHours[workFrontCode] / engineHours[workFrontCode]) * 100, 2);
             }
             else {
                 agriculturalEfficiency[workFrontCode] = { value: 0, goal: 70 };
-                agriculturalEfficiency[workFrontCode].value = (0, helper_1.normalizeCalc)((elevatorHours[workFrontCode] / engineHours[workFrontCode]) * 100);
+                agriculturalEfficiency[workFrontCode].value = (0, helper_1.normalizeCalc)((elevatorHours[workFrontCode] / engineHours[workFrontCode]) * 100, 2);
             }
         }
     }
     return agriculturalEfficiency;
+};
+const calcManuvers = (events) => {
+    let manuvers = {};
+    for (const event of events) {
+        const { workFront } = event;
+        if (event.name !== 'Manobra') {
+            continue;
+        }
+        if (manuvers[workFront.code]) {
+            manuvers[workFront.code] += (0, helper_1.getEventTime)(event);
+        }
+        else {
+            manuvers[workFront.code] = (0, helper_1.getEventTime)(event);
+        }
+    }
+    const formattedManuvers = {};
+    for (const [code, timeInHours] of Object.entries(manuvers)) {
+        const timeInMs = timeInHours * 3600 * 1000;
+        formattedManuvers[code] = (0, helper_1.msToTime)(timeInMs);
+    }
+    return formattedManuvers;
 };
 exports.default = createPerformanceIndicators;
 //# sourceMappingURL=performanceIndicators.js.map

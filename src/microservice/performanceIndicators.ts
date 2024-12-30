@@ -45,6 +45,8 @@ const createPerformanceIndicators = async (
     const elevatorHours = calcTelemetryByFront(elevatorHoursByFront);
 
     const agriculturalEfficiency = calcAgriculturalEfficiency(elevatorHours, engineHours);
+    const maneuvers = calcManuvers(events);
+
   } catch (error) {
     console.error("Ocorreu um erro:", error);
     throw error;
@@ -188,20 +190,45 @@ const calcTOffenders = (trucksLack: Record<string, number>, tonPerHour: CttTon):
   }
   return tOffenders;
 }
-// elevator_conveyor_belt_hour_meter
+
 const calcAgriculturalEfficiency = (elevatorHours: Record<string, number>, engineHours: Record<string, number>) => {
   let agriculturalEfficiency: Record<string, { value: number; goal: number }> = {};
   for (const workFrontCode in elevatorHours) {
     if (engineHours.hasOwnProperty(workFrontCode)) {
       if (agriculturalEfficiency[workFrontCode]) {
-        agriculturalEfficiency[workFrontCode].value += normalizeCalc((elevatorHours[workFrontCode] / engineHours[workFrontCode]) * 100);
+        agriculturalEfficiency[workFrontCode].value += normalizeCalc((elevatorHours[workFrontCode] / engineHours[workFrontCode]) * 100, 2);
       } else {
         agriculturalEfficiency[workFrontCode] = { value: 0, goal: 70 };
-        agriculturalEfficiency[workFrontCode].value = normalizeCalc((elevatorHours[workFrontCode] / engineHours[workFrontCode]) * 100);
+        agriculturalEfficiency[workFrontCode].value = normalizeCalc((elevatorHours[workFrontCode] / engineHours[workFrontCode]) * 100, 2);
       }
     }
   }
   return agriculturalEfficiency;
+}
+
+const calcManuvers = (events: CttEvent[]) => {
+  let manuvers: Record<string, number> = {};
+  for (const event of events) {
+    const { workFront } = event;
+
+    if (event.name !== 'Manobra') {
+      continue;
+    }
+
+    if (manuvers[workFront.code]) {
+      manuvers[workFront.code] += getEventTime(event);
+    } else {
+      manuvers[workFront.code] = getEventTime(event);
+    }
+  }
+
+  const formattedManuvers: Record<string, string> = {};
+  for (const [code, timeInHours] of Object.entries(manuvers)) {
+    const timeInMs = timeInHours * 3600 * 1000;
+    formattedManuvers[code] = msToTime(timeInMs);
+  }
+
+  return formattedManuvers;
 }
 
 export default createPerformanceIndicators;
