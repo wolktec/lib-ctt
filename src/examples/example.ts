@@ -1,5 +1,6 @@
 import { createAvailabilityAllocation } from "../index";
 import { createPartialDelivered } from "../index";
+import createPerformanceIndicators from "../microservice/performanceIndicators";
 import mock from '../mock';
 
 createAvailabilityAllocation(mock.equipments, mock.events, '18-12-2024 18:57:56')
@@ -11,6 +12,14 @@ createAvailabilityAllocation(mock.equipments, mock.events, '18-12-2024 18:57:56'
   });
 
 createPartialDelivered(mock.workFronts, mock.realTons, '2023-12-23 15:41:51')
+  .then(result => {
+    console.log("PartialDelivered:", JSON.stringify(result, null, 2));
+  })
+  .catch(error => {
+    console.error("Erro:", error);
+  });
+
+createPerformanceIndicators(mock.equipmentProductivity, mock.events, mock.equipments, mock.idleEvent, mock.hourMeterTelemetry, {}, mock.workFronts, [])
   .then(result => {
     console.log("PartialDelivered:", JSON.stringify(result, null, 2));
   })
