@@ -153,28 +153,32 @@ const twoCaracters = (num: number): string => {
 
 export const groupEquipmentTelemetryByFront = (equipments: CttEquipment[], telemetry: CttTelemetry[]): CttTelemetryByFront[] => {
   const telemetryByFront: CttTelemetryByFront[] = [];
-  for (const equipment of equipments) {
-    const relatedRecords = telemetry.filter(hourMeter => +hourMeter.equipment_code === equipment.code);
+  for (const hourMeter of telemetry) {
+    const equipment = equipments.find(equip => +hourMeter.equipment_code === equip.code);
 
-    if ((!relatedRecords || relatedRecords.length === 0) && equipment.description !== "Colhedoras") {
+    if (!equipment || equipment.description !== "Colhedoras") {
       continue;
     }
 
+    const relatedRecords = telemetry.filter(t => +t.equipment_code === equipment.code);
     const sortedRecords = relatedRecords.sort((a, b) => a.occurrence - b.occurrence);
     const firstRecord = sortedRecords[0];
     const lastRecord = sortedRecords[sortedRecords.length - 1];
 
-    telemetryByFront.push({
-      equipmentCode: equipment.code,
-      workFrontCode: equipment.work_front_code,
-      firstRecord: firstRecord,
-      lastRecord: lastRecord
-    });
+    if (!telemetryByFront.some(t => t.equipmentCode === equipment.code)) {
+      telemetryByFront.push({
+        equipmentCode: equipment.code,
+        workFrontCode: equipment.work_front_code,
+        firstRecord: firstRecord,
+        lastRecord: lastRecord,
+      });
+    }
   }
+
   return telemetryByFront;
 }
 
-export const calcTelemetryByFront = (telemetryByFront: CttTelemetryByFront[]) => {
+export const calcTelemetryByFront = (telemetryByFront: CttTelemetryByFront[]): Record<string, number> => {
   let telemetryResult: Record<string, number> = {};
   for (const telemetry of telemetryByFront) {
     if (telemetryResult[telemetry.workFrontCode]) {

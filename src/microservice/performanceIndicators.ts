@@ -40,6 +40,11 @@ const createPerformanceIndicators = async (
     const autoPilotUse = calcAutopilotUse(autoPilot, engineHours);
     const trucksLack = calcTrucksLack(events);
     const tOffenders = calcTOffenders(trucksLack.trucksLack, tonPerHour);
+
+    const elevatorHoursByFront = groupEquipmentTelemetryByFront(equipments, telemetry.filter(hourMeter => hourMeter.sensor_name === 'elevator_conveyor_belt_hour_meter'));
+    const elevatorHours = calcTelemetryByFront(elevatorHoursByFront);
+
+    const agriculturalEfficiency = calcAgriculturalEfficiency(elevatorHours, engineHours);
   } catch (error) {
     console.error("Ocorreu um erro:", error);
     throw error;
@@ -170,7 +175,7 @@ const calcTrucksLack = (events: CttEvent[]): CttTrucksLack => {
   };
 }
 
-const calcTOffenders = (trucksLack: Record<string, number>, tonPerHour: CttTon) => {
+const calcTOffenders = (trucksLack: Record<string, number>, tonPerHour: CttTon): Record<string, number> => {
   let tOffenders: Record<string, number> = {};
   for (const workFrontCode in trucksLack) {
     if (tonPerHour.hasOwnProperty(workFrontCode)) {
@@ -182,6 +187,21 @@ const calcTOffenders = (trucksLack: Record<string, number>, tonPerHour: CttTon) 
     }
   }
   return tOffenders;
+}
+// elevator_conveyor_belt_hour_meter
+const calcAgriculturalEfficiency = (elevatorHours: Record<string, number>, engineHours: Record<string, number>) => {
+  let agriculturalEfficiency: Record<string, { value: number; goal: number }> = {};
+  for (const workFrontCode in elevatorHours) {
+    if (engineHours.hasOwnProperty(workFrontCode)) {
+      if (agriculturalEfficiency[workFrontCode]) {
+        agriculturalEfficiency[workFrontCode].value += normalizeCalc((elevatorHours[workFrontCode] / engineHours[workFrontCode]) * 100);
+      } else {
+        agriculturalEfficiency[workFrontCode] = { value: 0, goal: 70 };
+        agriculturalEfficiency[workFrontCode].value = normalizeCalc((elevatorHours[workFrontCode] / engineHours[workFrontCode]) * 100);
+      }
+    }
+  }
+  return agriculturalEfficiency;
 }
 
 export default createPerformanceIndicators;
