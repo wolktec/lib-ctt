@@ -1,0 +1,61 @@
+name: Release with PR Labels
+
+on:
+  pull_request:
+    types:
+      - closed
+
+jobs:
+  release:
+    if: github.event.pull_request.merged == true && github.base_ref == 'main'
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      # Determine version bump type from labels
+      - name: Determine version bump
+        id: determine_bump
+        run: |
+          if [[ "$(jq -r '.pull_request.labels[].name' $GITHUB_EVENT_PATH)" == *"major"* ]]; then
+            echo "VERSION_BUMP=major" >> $GITHUB_ENV
+          elif [[ "$(jq -r '.pull_request.labels[].name' $GITHUB_EVENT_PATH)" == *"minor"* ]]; then
+            echo "VERSION_BUMP=minor" >> $GITHUB_ENV
+          elif [[ "$(jq -r '.pull_request.labels[].name' $GITHUB_EVENT_PATH)" == *"patch"* ]]; then
+            echo "VERSION_BUMP=patch" >> $GITHUB_ENV
+          else
+            echo "No valid label found. Exiting..." >&2
+            exit 1
+          fi
+
+      # Bump version based on label
+      - name: Bump version
+        id: bump_version
+        run: |
+          npm version ${{ env.VERSION_BUMP }} --no-commit-hooks
+          VERSION=$(node -p "require('./package.json').version")
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      # Commit and push changes
+      - name: Push version changes
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git commit -am "Bump version to ${{ env.VERSION }}"
+          git tag "v${{ env.VERSION }}"
+          git push origin main --tags
+
+      # Create GitHub Release
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ env.VERSION }}" --title "Release ${{ env.VERSION }}" --notes "Automatically generated release."
