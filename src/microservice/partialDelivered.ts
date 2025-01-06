@@ -7,7 +7,7 @@ import { CttDeliveredReturn, CttEstimatedTons, CttPartialDeliveredResult, CttTon
   * @param realTons object with the tons by Front, it comes from the productivity API
   * @param date '2023-12-23 15:41:51' datetime filter
  */
-const createPartialDelivered = async (workFronts: CttWorkFronts[], realTons: CttTon, date: string) => {
+const createPartialDelivered = async (workFronts: CttWorkFronts[], realTons: CttTon, date: string): Promise<CttPartialDeliveredResult> => {
   try {
     let startDate = dateFilter(date, '-');
     let currentHour = getCurrentHour(startDate);

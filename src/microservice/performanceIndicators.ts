@@ -21,6 +21,9 @@ import {
   * @param equipments equipments from the day
   * @param idleEvents data from the operation table
   * @param telemetry telemetry of the day
+  * @param tonPerHour calc of ton per hour in the PartialDelivered
+  * @param workFronts the fronts code with the goals
+  * @param interferences interferences coming from the interference table
 */
 const createPerformanceIndicators = async (
   equipmentProductivity: CttEquipmentProductivity[],

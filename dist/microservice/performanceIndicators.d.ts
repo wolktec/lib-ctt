@@ -8,6 +8,9 @@ import { CttEquipmentProductivity, CttIdleEvents, CttInterferences, CttPerforman
   * @param equipments equipments from the day
   * @param idleEvents data from the operation table
   * @param telemetry telemetry of the day
+  * @param tonPerHour calc of ton per hour in the PartialDelivered
+  * @param workFronts the fronts code with the goals
+  * @param interferences interferences coming from the interference table
 */
 declare const createPerformanceIndicators: (equipmentProductivity: CttEquipmentProductivity[], events: CttEvent[], equipments: CttEquipment[], idleEvents: CttIdleEvents[], telemetry: CttTelemetry[], tonPerHour: CttTon, workFronts: CttWorkFronts[], interferences: CttInterferences[]) => Promise<CttPerformanceIndicators>;
 export default createPerformanceIndicators;
