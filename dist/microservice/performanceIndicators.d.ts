@@ -1,5 +1,5 @@
 import { CttEquipment, CttEvent } from "../interfaces/availabilityAllocation.interface";
-import { CttTon, CttWorkFronts } from "../interfaces/partialDelivered.interface";
+import { CttDeliveredReturn, CttWorkFronts } from "../interfaces/partialDelivered.interface";
 import { CttEquipmentProductivity, CttIdleEvents, CttInterferences, CttPerformanceIndicators, CttTelemetry } from "../interfaces/performanceIndicators.interface";
 /**
   * GET the performance indicators by Front
@@ -12,5 +12,5 @@ import { CttEquipmentProductivity, CttIdleEvents, CttInterferences, CttPerforman
   * @param workFronts the fronts code with the goals
   * @param interferences interferences coming from the interference table
 */
-declare const createPerformanceIndicators: (equipmentProductivity: CttEquipmentProductivity[], events: CttEvent[], equipments: CttEquipment[], idleEvents: CttIdleEvents[], telemetry: CttTelemetry[], tonPerHour: CttTon, workFronts: CttWorkFronts[], interferences: CttInterferences[]) => Promise<CttPerformanceIndicators>;
+declare const createPerformanceIndicators: (equipmentProductivity: CttEquipmentProductivity[], events: CttEvent[], equipments: CttEquipment[], idleEvents: CttIdleEvents[], telemetry: CttTelemetry[], tonPerHour: CttDeliveredReturn[], workFronts: CttWorkFronts[], interferences: CttInterferences[]) => Promise<CttPerformanceIndicators>;
 export default createPerformanceIndicators;

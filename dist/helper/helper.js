@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.calcTotalInterferenceByFront = exports.calcJourney = exports.calcTelemetryByFront = exports.groupEquipmentTelemetryByFront = exports.secToTime = exports.msToTime = exports.getEventTime = exports.groupEquipmentsProductivityByFront = exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = exports.normalizeCalc = exports.calcMechanicalAvailability = exports.convertHourToDecimal = void 0;
+exports.createValueWithGoal = exports.removeOutliers = exports.getTotalHourmeter = exports.calcTotalInterferenceByFront = exports.calcJourney = exports.calcTelemetryByFront = exports.groupEquipmentTelemetryByFront = exports.secToTime = exports.msToTime = exports.getEventTime = exports.groupEquipmentsProductivityByFront = exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = exports.normalizeCalc = exports.calcMechanicalAvailability = exports.convertHourToDecimal = void 0;
 const dayjs_1 = __importDefault(require("dayjs"));
 function convertHourToDecimal(hour) {
     const [hours, minutes] = hour.split(':').map(Number);
@@ -291,4 +291,72 @@ const calcTotalInterferenceByFront = (totalInterferenceTimeFront, totalInterfere
     return totalInterferenceByFront;
 };
 exports.calcTotalInterferenceByFront = calcTotalInterferenceByFront;
+const getTotalHourmeter = (hourmeters, firstHourmeterValue) => {
+    if (!hourmeters || hourmeters.length === 0) {
+        return 0;
+    }
+    const hourmeterWithoutAnomalies = removeOutliers(hourmeters.map(e => Number(e.current_value)));
+    if (hourmeterWithoutAnomalies.length > 0) {
+        let firstHourmeter = firstHourmeterValue ?? Number(hourmeterWithoutAnomalies[0]);
+        let lastHourmeter = Number(hourmeterWithoutAnomalies[hourmeterWithoutAnomalies.length - 1]);
+        const total = lastHourmeter - firstHourmeter;
+        return total;
+    }
+    return 0;
+};
+exports.getTotalHourmeter = getTotalHourmeter;
+function removeOutliers(values, totalDays = 1) {
+    let filteredData = [];
+    // Verificar se o array tem menos de dois elementos
+    if (values.length < 2) {
+        return values;
+    }
+    if (values[values.length - 1] - values[0] < totalDays * 24) {
+        return [values[0], values[values.length - 1]];
+    }
+    // Filtrar o primeiro item se não for anômalo
+    let firstIsAnomaly = false;
+    if (Math.abs(values[1] - values[0]) <= 5000 && values[1] - values[0] > 0) {
+        filteredData.push(values[0]);
+    }
+    else {
+        firstIsAnomaly = true;
+    }
+    let countSequence = 0;
+    let lastValid = 0;
+    // Verificar e filtrar os itens intermediários
+    for (let i = 1; i < values.length - 1; i++) {
+        lastValid = filteredData[filteredData.length - 1] ?? lastValid;
+        const diffPrev = Math.abs(values[i] - lastValid);
+        const diffNext = Math.abs(values[i] - values[i + 1]);
+        if ((diffPrev <= 5000 || firstIsAnomaly) && diffNext <= 5000) {
+            countSequence = 0;
+            filteredData.push(values[i]);
+        }
+        if (diffPrev > 5000 || diffNext >= 5000) {
+            countSequence++;
+        }
+        if (countSequence === 30) {
+            countSequence = 0;
+            filteredData = [];
+            lastValid = values[i];
+        }
+    }
+    // Filtrar o último item se não for anômalo
+    const lastIndex = values.length - 1;
+    if (Math.abs(values[lastIndex] - values[lastIndex - 1]) <= 5000) {
+        filteredData.push(values[lastIndex]);
+    }
+    return filteredData;
+}
+exports.removeOutliers = removeOutliers;
+const createValueWithGoal = (value, hasTotalField = false, hasAverageField = false) => {
+    return {
+        value: Number(value.toFixed(2)),
+        goal: null,
+        hasTotalField,
+        hasAverageField,
+    };
+};
+exports.createValueWithGoal = createValueWithGoal;
 //# sourceMappingURL=helper.js.map

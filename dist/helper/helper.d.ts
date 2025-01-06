@@ -22,3 +22,6 @@ export declare const groupEquipmentTelemetryByFront: (equipments: CttEquipment[]
 export declare const calcTelemetryByFront: (telemetryByFront: CttTelemetryByFront[]) => Record<string, number>;
 export declare const calcJourney: (events: CttEvent[], interferences: CttInterferences[]) => Promise<Journey>;
 export declare const calcTotalInterferenceByFront: (totalInterferenceTimeFront: Record<string, number>, totalInterferenceOprtlTimeFront: Record<string, number>) => Record<string, number>;
+export declare const getTotalHourmeter: (hourmeters: CttTelemetry[], firstHourmeterValue?: number) => number;
+export declare function removeOutliers(values: number[], totalDays?: number): number[];
+export declare const createValueWithGoal: (value: number, hasTotalField?: boolean, hasAverageField?: boolean) => any;

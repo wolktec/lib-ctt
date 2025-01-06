@@ -33,8 +33,9 @@ const createPerformanceIndicators = async (equipmentProductivity, events, equipm
         const unproductiveTime = await (0, helper_1.calcJourney)(events, interferences);
         const ctOffenders = await calcCtOffenders(unproductiveTime.totalInterferenceByFront, equipments, tonPerHour);
         const unproductiveTimeFormatted = formatUnproductiveTime(unproductiveTime.totalInterferenceByFront);
+        const averageRadius = await calcAverageRadius(events, telemetry.filter(hourMeter => hourMeter.sensor_name === 'odometer'));
         const summary = calcSummary(ctOffenders);
-        const formatPerformanceIndicator = formatPerformanceIndicatorReturn(tripQtd, averageWeight, awaitingTransshipment, idleTime, autoPilotUse, trucksLack.formattedTrucksLack, tOffenders, agriculturalEfficiency, maneuvers, workFronts, ctOffenders, unproductiveTimeFormatted, summary);
+        const formatPerformanceIndicator = formatPerformanceIndicatorReturn(tripQtd, averageWeight, awaitingTransshipment, idleTime, autoPilotUse, trucksLack.formattedTrucksLack, tOffenders, agriculturalEfficiency, maneuvers, workFronts, ctOffenders, unproductiveTimeFormatted, averageRadius, summary);
         return formatPerformanceIndicator;
     }
     catch (error) {
@@ -154,15 +155,16 @@ const calcTrucksLack = (events) => {
         "trucksLack": trucksLack
     };
 };
-const calcTOffenders = (trucksLack, tonPerHour) => {
+const calcTOffenders = (trucksLack, delivered) => {
     let tOffenders = {};
     for (const workFrontCode in trucksLack) {
-        if (tonPerHour.hasOwnProperty(workFrontCode)) {
+        const tonPerHourEntry = delivered.find(entry => entry.workFrontCode === +workFrontCode);
+        if (tonPerHourEntry) {
             if (tOffenders[workFrontCode]) {
-                tOffenders[workFrontCode] += trucksLack[workFrontCode] * tonPerHour[workFrontCode];
+                tOffenders[workFrontCode] += trucksLack[workFrontCode] * tonPerHourEntry.tonPerHour;
             }
             else {
-                tOffenders[workFrontCode] = trucksLack[workFrontCode] * tonPerHour[workFrontCode];
+                tOffenders[workFrontCode] = trucksLack[workFrontCode] * tonPerHourEntry.tonPerHour;
             }
         }
     }
@@ -204,7 +206,7 @@ const calcManuvers = (events) => {
     }
     return formattedManuvers;
 };
-const calcCtOffenders = async (unproductiveTime, equipments, tonPerHour) => {
+const calcCtOffenders = async (unproductiveTime, equipments, delivered) => {
     const harvesterEquipments = {};
     let ctOffenders = {};
     for (const [workFrontCode, time] of Object.entries(unproductiveTime)) {
@@ -214,16 +216,36 @@ const calcCtOffenders = async (unproductiveTime, equipments, tonPerHour) => {
             }
             harvesterEquipments[workFrontCode] = (harvesterEquipments[workFrontCode] || 0) + 1;
         }
-        if (ctOffenders[workFrontCode]) {
-            ctOffenders[workFrontCode] += (0, helper_1.normalizeCalc)((time * tonPerHour[workFrontCode]) / harvesterEquipments[workFrontCode], 2);
-        }
-        else {
-            ctOffenders[workFrontCode] = (0, helper_1.normalizeCalc)((time * tonPerHour[workFrontCode]) / harvesterEquipments[workFrontCode], 2);
+        const tonPerHourEntry = delivered.find(entry => entry.workFrontCode === +workFrontCode);
+        if (tonPerHourEntry) {
+            if (ctOffenders[workFrontCode]) {
+                ctOffenders[workFrontCode] += (0, helper_1.normalizeCalc)((time * tonPerHourEntry.tonPerHour) / harvesterEquipments[workFrontCode], 2);
+            }
+            else {
+                ctOffenders[workFrontCode] = (0, helper_1.normalizeCalc)((time * tonPerHourEntry.tonPerHour) / harvesterEquipments[workFrontCode], 2);
+            }
         }
     }
     return ctOffenders;
 };
-const calcAverageRadius = () => {
+const calcAverageRadius = async (events, odometerReadings) => {
+    try {
+        const displacementEvents = events.filter(event => (event.name === 'Deslocamento Carregamento' ||
+            event.name === 'Deslocamento Descarga'));
+        const distances = await Promise.all(displacementEvents.map(async (event) => {
+            return (0, helper_1.getTotalHourmeter)(odometerReadings);
+        }));
+        let averageRadius = {};
+        events.forEach(event => {
+            const { workFront } = event;
+            const totalDistance = distances.reduce((sum, distance) => sum + distance, 0);
+            averageRadius[workFront.code] = displacementEvents.length > 0 ? (0, helper_1.normalizeCalc)(totalDistance / displacementEvents.length) : 0;
+        });
+        return averageRadius;
+    }
+    catch (err) {
+        throw err;
+    }
 };
 const formatUnproductiveTime = (unproductiveTime) => {
     const formatUnproductiveTime = {};
@@ -260,7 +282,7 @@ const calcSummary = (ctOffenders) => {
     });
     return summary;
 };
-const formatPerformanceIndicatorReturn = (tripQtd, averageWeight, awaitingTransshipment, idleTime, autoPilotUse, trucksLack, tOffenders, agriculturalEfficiency, maneuvers, workFronts, ctOffenders, unproductiveTime, summary) => {
+const formatPerformanceIndicatorReturn = (tripQtd, averageWeight, awaitingTransshipment, idleTime, autoPilotUse, trucksLack, tOffenders, agriculturalEfficiency, maneuvers, workFronts, ctOffenders, unproductiveTime, averageRadius, summary) => {
     const availabilityAllocation = {
         workFronts: workFronts.map(workfront => {
             const workfrontCode = workfront.code;
@@ -285,7 +307,7 @@ const formatPerformanceIndicatorReturn = (tripQtd, averageWeight, awaitingTranss
                 },
                 maneuvers: maneuvers[workfrontCode] || "",
                 zone: 0,
-                averageRadius: 0,
+                averageRadius: averageRadius[workfrontCode] || 0,
             };
         }),
         summary: summary

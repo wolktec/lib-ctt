@@ -1,6 +1,6 @@
-import { calcJourney, calcTelemetryByFront, getEventTime, groupEquipmentsProductivityByFront, groupEquipmentTelemetryByFront, msToTime, normalizeCalc } from "../helper/helper";
+import { calcJourney, calcTelemetryByFront, createValueWithGoal, getEventTime, getTotalHourmeter, groupEquipmentsProductivityByFront, groupEquipmentTelemetryByFront, msToTime, normalizeCalc } from "../helper/helper";
 import { CttEquipment, CttEvent } from "../interfaces/availabilityAllocation.interface";
-import { CttTon, CttWorkFronts } from "../interfaces/partialDelivered.interface";
+import { CttDeliveredReturn, CttTon, CttWorkFronts } from "../interfaces/partialDelivered.interface";
 import {
   CttAgriculturalEfficiency,
   CttAutoPilotUse,
@@ -31,7 +31,7 @@ const createPerformanceIndicators = async (
   equipments: CttEquipment[],
   idleEvents: CttIdleEvents[],
   telemetry: CttTelemetry[],
-  tonPerHour: CttTon,
+  tonPerHour: CttDeliveredReturn[],
   workFronts: CttWorkFronts[],
   interferences: CttInterferences[]
 ): Promise<CttPerformanceIndicators> => {
@@ -62,6 +62,7 @@ const createPerformanceIndicators = async (
     const unproductiveTime = await calcJourney(events, interferences);
     const ctOffenders = await calcCtOffenders(unproductiveTime.totalInterferenceByFront, equipments, tonPerHour);
     const unproductiveTimeFormatted = formatUnproductiveTime(unproductiveTime.totalInterferenceByFront);
+    const averageRadius = await calcAverageRadius(events, telemetry.filter(hourMeter => hourMeter.sensor_name === 'odometer'));
 
     const summary = calcSummary(ctOffenders);
 
@@ -78,6 +79,7 @@ const createPerformanceIndicators = async (
       workFronts,
       ctOffenders,
       unproductiveTimeFormatted,
+      averageRadius,
       summary
     );
 
@@ -214,14 +216,17 @@ const calcTrucksLack = (events: CttEvent[]): CttTrucksLack => {
   };
 }
 
-const calcTOffenders = (trucksLack: Record<string, number>, tonPerHour: CttTon): Record<string, number> => {
+const calcTOffenders = (trucksLack: Record<string, number>, delivered: CttDeliveredReturn[]): Record<string, number> => {
   let tOffenders: Record<string, number> = {};
+
   for (const workFrontCode in trucksLack) {
-    if (tonPerHour.hasOwnProperty(workFrontCode)) {
+    const tonPerHourEntry = delivered.find(entry => entry.workFrontCode === +workFrontCode);
+
+    if (tonPerHourEntry) {
       if (tOffenders[workFrontCode]) {
-        tOffenders[workFrontCode] += trucksLack[workFrontCode] * tonPerHour[workFrontCode];
+        tOffenders[workFrontCode] += trucksLack[workFrontCode] * tonPerHourEntry.tonPerHour;
       } else {
-        tOffenders[workFrontCode] = trucksLack[workFrontCode] * tonPerHour[workFrontCode];
+        tOffenders[workFrontCode] = trucksLack[workFrontCode] * tonPerHourEntry.tonPerHour;
       }
     }
   }
@@ -268,7 +273,7 @@ const calcManuvers = (events: CttEvent[]): Record<string, string> => {
   return formattedManuvers;
 }
 
-const calcCtOffenders = async (unproductiveTime: Record<string, number>, equipments: CttEquipment[], tonPerHour: CttTon): Promise<Record<string, number>> => {
+const calcCtOffenders = async (unproductiveTime: Record<string, number>, equipments: CttEquipment[], delivered: CttDeliveredReturn[]): Promise<Record<string, number>> => {
   const harvesterEquipments: Record<string, number> = {}
   let ctOffenders: Record<string, number> = {}
   for (const [workFrontCode, time] of Object.entries(unproductiveTime)) {
@@ -278,19 +283,46 @@ const calcCtOffenders = async (unproductiveTime: Record<string, number>, equipme
       }
       harvesterEquipments[workFrontCode] = (harvesterEquipments[workFrontCode] || 0) + 1;
     }
+    const tonPerHourEntry = delivered.find(entry => entry.workFrontCode === +workFrontCode);
 
-    if (ctOffenders[workFrontCode]) {
-      ctOffenders[workFrontCode] += normalizeCalc((time * tonPerHour[workFrontCode]) / harvesterEquipments[workFrontCode], 2);
-    } else {
-      ctOffenders[workFrontCode] = normalizeCalc((time * tonPerHour[workFrontCode]) / harvesterEquipments[workFrontCode], 2);
+    if (tonPerHourEntry) {
+      if (ctOffenders[workFrontCode]) {
+        ctOffenders[workFrontCode] += normalizeCalc((time * tonPerHourEntry.tonPerHour) / harvesterEquipments[workFrontCode], 2);
+      } else {
+        ctOffenders[workFrontCode] = normalizeCalc((time * tonPerHourEntry.tonPerHour) / harvesterEquipments[workFrontCode], 2);
+      }
     }
+
   }
 
   return ctOffenders;
 }
 
-const calcAverageRadius = () => {
+const calcAverageRadius = async (events: CttEvent[], odometerReadings: CttTelemetry[]): Promise<Record<string, number>> => {
+  try {
+    const displacementEvents = events.filter(
+      event =>
+      (event.name === 'Deslocamento Carregamento' ||
+        event.name === 'Deslocamento Descarga')
+    );
 
+    const distances = await Promise.all(
+      displacementEvents.map(async event => {
+        return getTotalHourmeter(odometerReadings);
+      })
+    );
+
+    let averageRadius: Record<string, number> = {};
+    events.forEach(event => {
+      const { workFront } = event;
+      const totalDistance = distances.reduce((sum, distance) => sum + distance, 0);
+      averageRadius[workFront.code] = displacementEvents.length > 0 ? normalizeCalc(totalDistance / displacementEvents.length) : 0;
+    });
+
+    return averageRadius;
+  } catch (err) {
+    throw err;
+  }
 }
 
 const formatUnproductiveTime = (unproductiveTime: Record<string, number>): Record<string, string> => {
@@ -348,6 +380,7 @@ const formatPerformanceIndicatorReturn = (
   workFronts: CttWorkFronts[],
   ctOffenders: Record<string, number>,
   unproductiveTime: Record<string, string>,
+  averageRadius: Record<string, number>,
   summary: CttSummaryReturn[]
 ): CttPerformanceIndicators => {
   const availabilityAllocation: CttPerformanceIndicators = {
@@ -375,7 +408,7 @@ const formatPerformanceIndicatorReturn = (
         },
         maneuvers: maneuvers[workfrontCode] || "",
         zone: 0,
-        averageRadius: 0,
+        averageRadius: averageRadius[workfrontCode] || 0,
       };
     }),
     summary: summary
