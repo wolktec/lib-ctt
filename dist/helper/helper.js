@@ -24,9 +24,7 @@ function normalizeCalc(value, fixed = 1) {
     if (Number.isNaN(value) || !Number.isFinite(value)) {
         return 0;
     }
-    if (value < 0) {
-        value = value * 1;
-    }
+    value = value * 1;
     return parseFloat(value.toFixed(fixed));
 }
 exports.normalizeCalc = normalizeCalc;

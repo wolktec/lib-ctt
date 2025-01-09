@@ -37,10 +37,7 @@ export function normalizeCalc(value: number, fixed = 1) {
     return 0;
   }
 
-  if (value < 0) {
-    value = value * 1;
-  }
-
+  value = value * 1;
   return parseFloat(value.toFixed(fixed));
 }
 
