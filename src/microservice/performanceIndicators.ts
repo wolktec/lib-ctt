@@ -329,7 +329,7 @@ const formatUnproductiveTime = (unproductiveTime: Record<string, number>): Recor
   const formatUnproductiveTime: Record<string, string> = {};
   for (const [code, timeInHours] of Object.entries(unproductiveTime)) {
     const timeInMs = timeInHours * 3600 * 1000;
-    formatUnproductiveTime[code] = msToTime(timeInMs);
+    formatUnproductiveTime[code] = msToTime(timeInMs) ? msToTime(timeInMs) : '00:00:00';
   }
 
   return formatUnproductiveTime;

@@ -1,9 +1,19 @@
 import dayjs from "dayjs";
-import { CttEquipmentProductivity, CttEquipmentProductivityFront, CttInterferences, CttTelemetry, CttTelemetryByFront, Journey } from "../interfaces/performanceIndicators.interface";
-import { CttEquipment, CttEvent } from "../interfaces/availabilityAllocation.interface";
+import {
+  CttEquipmentProductivity,
+  CttEquipmentProductivityFront,
+  CttInterferences,
+  CttTelemetry,
+  CttTelemetryByFront,
+  Journey,
+} from "../interfaces/performanceIndicators.interface";
+import {
+  CttEquipment,
+  CttEvent,
+} from "../interfaces/availabilityAllocation.interface";
 
 export function convertHourToDecimal(hour: string): number {
-  const [hours, minutes] = hour.split(':').map(Number);
+  const [hours, minutes] = hour.split(":").map(Number);
   const decimalMinutes = minutes / 60;
   return hours + decimalMinutes;
 }
@@ -13,16 +23,22 @@ export function calcMechanicalAvailability(
   countMaintenance: number,
   currentHour: number // 24 dia anterior ou hora atual
 ) {
-
   if (totalMaintenance === 0) {
     return 100.0;
   }
-  const calc = normalizeCalc(((currentHour - (totalMaintenance / countMaintenance)) / currentHour) * 100, 2);
+  const calc = normalizeCalc(
+    ((currentHour - totalMaintenance / countMaintenance) / currentHour) * 100,
+    2
+  );
   return calc;
 }
 export function normalizeCalc(value: number, fixed = 1) {
   if (Number.isNaN(value) || !Number.isFinite(value)) {
     return 0;
+  }
+
+  if (value < 0) {
+    value = value * 1;
   }
 
   return parseFloat(value.toFixed(fixed));
@@ -35,7 +51,7 @@ export const getCurrentHour = (date: number) => {
 
   let hour = 24;
   if (isSame) {
-    hour = currentDate.get('hour');
+    hour = currentDate.get("hour");
   }
 
   return hour;
@@ -45,44 +61,43 @@ export const isSameDay = (date1: number, date2: number) => {
   const dt1 = dayjs(date1).subtract(3, "hours");
   const dt2 = dayjs(date2).subtract(3, "hours");
 
-  const isSame = dt1.isSame(dt2, 'day');
+  const isSame = dt1.isSame(dt2, "day");
 
-  return isSame
+  return isSame;
 };
 
-export const dateFilter = (
-  start_date?: string,
-  splitSeparator = '/'
-) => {
-
-  const dt1 = dateParts(start_date ?? dayjs().subtract(3, "hours").format("DD/MM/YYYY"), splitSeparator);
+export const dateFilter = (start_date?: string, splitSeparator = "/") => {
+  const dt1 = dateParts(
+    start_date ?? dayjs().subtract(3, "hours").format("DD/MM/YYYY"),
+    splitSeparator
+  );
   const startDate = dayjs()
-    .set('M', dt1.month)
-    .set('y', dt1.year)
-    .set('D', dt1.day)
-    .set('hour', 0)
-    .set('minute', 0)
-    .set('second', 0)
-    .set('millisecond', 0)
+    .set("M", dt1.month)
+    .set("y", dt1.year)
+    .set("D", dt1.day)
+    .set("hour", 0)
+    .set("minute", 0)
+    .set("second", 0)
+    .set("millisecond", 0)
     .add(3, "hours");
 
   if (!startDate.isValid()) {
-    console.error("Data inválida")
+    console.error("Data inválida");
   }
 
-  const startDateTime = startDate.valueOf()
+  const startDateTime = startDate.valueOf();
 
-  return startDateTime
+  return startDateTime;
 };
 
 export const dateParts = (date: string, splitSeparator = "/") => {
   const dt = date.split(splitSeparator);
 
   if (dt.length !== 3) {
-    console.error('date', 'invalid format date, expect format: dd/MM/YYYY');
+    console.error("date", "invalid format date, expect format: dd/MM/YYYY");
   }
 
-  if (splitSeparator == '-') {
+  if (splitSeparator == "-") {
     return {
       day: parseInt(dt[2]),
       month: parseInt(dt[1]) - 1,
@@ -95,27 +110,33 @@ export const dateParts = (date: string, splitSeparator = "/") => {
     month: parseInt(dt[1]) - 1,
     year: parseInt(dt[2]),
   };
-}
-
-export const translations: { [key: string]: string } = {
-  "Caminhões": "truck",
-  "Colhedoras": "harvester",
-  "Tratores": "tractor",
-  "Empilhadeiras": "forklift",
-  "Pulverizadores": "pulverizer"
 };
 
-export const groupEquipmentsProductivityByFront = (equipmentsProductivity: CttEquipmentProductivity[], equipments: CttEquipment[]): CttEquipmentProductivityFront[] => {
-  const equipmentsProductivityByFront: CttEquipmentProductivityFront[] = equipmentsProductivity.map(equipmentProductivity => {
-    const matchingItem = equipments.find(equipment => equipment.code === equipmentProductivity.equipmentCode);
-    return {
-      ...equipmentProductivity,
-      workFrontCode: matchingItem ? matchingItem.work_front_code : 0,
-    };
-  });
+export const translations: { [key: string]: string } = {
+  Caminhões: "truck",
+  Colhedoras: "harvester",
+  Tratores: "tractor",
+  Empilhadeiras: "forklift",
+  Pulverizadores: "pulverizer",
+};
+
+export const groupEquipmentsProductivityByFront = (
+  equipmentsProductivity: CttEquipmentProductivity[],
+  equipments: CttEquipment[]
+): CttEquipmentProductivityFront[] => {
+  const equipmentsProductivityByFront: CttEquipmentProductivityFront[] =
+    equipmentsProductivity.map((equipmentProductivity) => {
+      const matchingItem = equipments.find(
+        (equipment) => equipment.code === equipmentProductivity.equipmentCode
+      );
+      return {
+        ...equipmentProductivity,
+        workFrontCode: matchingItem ? matchingItem.work_front_code : 0,
+      };
+    });
 
   return equipmentsProductivityByFront;
-}
+};
 
 export const getEventTime = (event: CttEvent) => {
   let diffS: number = 0;
@@ -123,11 +144,11 @@ export const getEventTime = (event: CttEvent) => {
   const endTime = dayjs(event.time.end);
   diffS = endTime.diff(startTime, "seconds");
   return diffS / 3600;
-}
+};
 
 export const msToTime = (ms: number): string => {
   return secToTime(ms / 1000);
-}
+};
 
 export const secToTime = (sec: number): string => {
   let hours = Math.floor(sec / 3600);
@@ -144,28 +165,39 @@ export const secToTime = (sec: number): string => {
     minutes = 0;
   }
 
-  return `${twoCaracters(hours)}:${twoCaracters(minutes)}:${twoCaracters(seconds)}`;
-}
+  return `${twoCaracters(hours)}:${twoCaracters(minutes)}:${twoCaracters(
+    seconds
+  )}`;
+};
 
 const twoCaracters = (num: number): string => {
   return num < 10 ? `0${num}` : num.toString();
-}
+};
 
-export const groupEquipmentTelemetryByFront = (equipments: CttEquipment[], telemetry: CttTelemetry[]): CttTelemetryByFront[] => {
+export const groupEquipmentTelemetryByFront = (
+  equipments: CttEquipment[],
+  telemetry: CttTelemetry[]
+): CttTelemetryByFront[] => {
   const telemetryByFront: CttTelemetryByFront[] = [];
   for (const hourMeter of telemetry) {
-    const equipment = equipments.find(equip => +hourMeter.equipment_code === equip.code);
+    const equipment = equipments.find(
+      (equip) => +hourMeter.equipment_code === equip.code
+    );
 
     if (!equipment || equipment.description !== "Colhedoras") {
       continue;
     }
 
-    const relatedRecords = telemetry.filter(t => +t.equipment_code === equipment.code);
-    const sortedRecords = relatedRecords.sort((a, b) => a.occurrence - b.occurrence);
+    const relatedRecords = telemetry.filter(
+      (t) => +t.equipment_code === equipment.code
+    );
+    const sortedRecords = relatedRecords.sort(
+      (a, b) => a.occurrence - b.occurrence
+    );
     const firstRecord = sortedRecords[0];
     const lastRecord = sortedRecords[sortedRecords.length - 1];
 
-    if (!telemetryByFront.some(t => t.equipmentCode === equipment.code)) {
+    if (!telemetryByFront.some((t) => t.equipmentCode === equipment.code)) {
       telemetryByFront.push({
         equipmentCode: equipment.code,
         workFrontCode: equipment.work_front_code,
@@ -176,21 +208,34 @@ export const groupEquipmentTelemetryByFront = (equipments: CttEquipment[], telem
   }
 
   return telemetryByFront;
-}
+};
 
-export const calcTelemetryByFront = (telemetryByFront: CttTelemetryByFront[]): Record<string, number> => {
+export const calcTelemetryByFront = (
+  telemetryByFront: CttTelemetryByFront[]
+): Record<string, number> => {
   let telemetryResult: Record<string, number> = {};
   for (const telemetry of telemetryByFront) {
     if (telemetryResult[telemetry.workFrontCode]) {
-      telemetryResult[telemetry.workFrontCode] += normalizeCalc(+telemetry.lastRecord.current_value - +telemetry.firstRecord.current_value, 2);
+      telemetryResult[telemetry.workFrontCode] += normalizeCalc(
+        +telemetry.lastRecord.current_value -
+          +telemetry.firstRecord.current_value,
+        2
+      );
     } else {
-      telemetryResult[telemetry.workFrontCode] = normalizeCalc(+telemetry.lastRecord.current_value - +telemetry.firstRecord.current_value, 2);
+      telemetryResult[telemetry.workFrontCode] = normalizeCalc(
+        +telemetry.lastRecord.current_value -
+          +telemetry.firstRecord.current_value,
+        2
+      );
     }
   }
   return telemetryResult;
-}
+};
 
-export const calcJourney = async (events: CttEvent[], interferences: CttInterferences[]): Promise<Journey> => {
+export const calcJourney = async (
+  events: CttEvent[],
+  interferences: CttInterferences[]
+): Promise<Journey> => {
   if (events.length == 0) {
     return {
       totalOperationalTime: 0,
@@ -205,7 +250,7 @@ export const calcJourney = async (events: CttEvent[], interferences: CttInterfer
       totalInterferenceOperationalTime: 0,
       interferenceOperationalEvents: [],
       equipmentsInterferenceOperational: [],
-      totalInterferenceByFront: {}
+      totalInterferenceByFront: {},
     };
   }
 
@@ -228,11 +273,14 @@ export const calcJourney = async (events: CttEvent[], interferences: CttInterfer
   let totalInterferenceTimeFront: Record<string, number> = {};
   let totalInterferenceOprtlTimeFront: Record<string, number> = {};
 
-
   //Interferências de manutenção
-  const interferenceIds = interferences.filter(e => e.interference_type?.name === 'Manutenção').map(e => e.id)
+  const interferenceIds = interferences
+    .filter((e) => e.interference_type?.name === "Manutenção")
+    .map((e) => e.id);
   //Interferências operacionais
-  const interferenceOperationalStops = interferences.filter(e => e.interference_type?.name === 'Operação').map(e => e.id)
+  const interferenceOperationalStops = interferences
+    .filter((e) => e.interference_type?.name === "Operação")
+    .map((e) => e.id);
 
   //Interferências de clima
   const interferenceWeatherStops = [600, 601];
@@ -299,12 +347,20 @@ export const calcJourney = async (events: CttEvent[], interferences: CttInterfer
     }
   }
 
-  const uniqOperationalEquip: Set<number> = new Set([...uniqEquip, ...uniqMaintenanceEquip, ...uniqInterferenceEquip]);
+  const uniqOperationalEquip: Set<number> = new Set([
+    ...uniqEquip,
+    ...uniqMaintenanceEquip,
+    ...uniqInterferenceEquip,
+  ]);
 
-  const totalInterference = totalInterferenceTime + totalInterferenceOperationalTime;
+  const totalInterference =
+    totalInterferenceTime + totalInterferenceOperationalTime;
 
   let totalInterferenceByFront: Record<string, number> = {};
-  totalInterferenceByFront = calcTotalInterferenceByFront(totalInterferenceTimeFront, totalInterferenceOprtlTimeFront);
+  totalInterferenceByFront = calcTotalInterferenceByFront(
+    totalInterferenceTimeFront,
+    totalInterferenceOprtlTimeFront
+  );
 
   return {
     totalOperationalTime,
@@ -321,36 +377,54 @@ export const calcJourney = async (events: CttEvent[], interferences: CttInterfer
     equipmentsInterferenceOperational: Array.from(
       uniqInterferenceOperationalEquip
     ),
-    totalInterferenceByFront
+    totalInterferenceByFront,
   };
 };
 
-export const calcTotalInterferenceByFront = (totalInterferenceTimeFront: Record<string, number>, totalInterferenceOprtlTimeFront: Record<string, number>): Record<string, number> => {
+export const calcTotalInterferenceByFront = (
+  totalInterferenceTimeFront: Record<string, number>,
+  totalInterferenceOprtlTimeFront: Record<string, number>
+): Record<string, number> => {
   const totalInterferenceByFront: Record<string, number> = {};
   for (const workFrontCode in totalInterferenceTimeFront) {
     if (totalInterferenceOprtlTimeFront[workFrontCode]) {
-      totalInterferenceByFront[workFrontCode] += normalizeCalc(totalInterferenceTimeFront[workFrontCode] + totalInterferenceOprtlTimeFront[workFrontCode], 2);
+      totalInterferenceByFront[workFrontCode] += normalizeCalc(
+        totalInterferenceTimeFront[workFrontCode] +
+          totalInterferenceOprtlTimeFront[workFrontCode],
+        2
+      );
     } else {
-      totalInterferenceByFront[workFrontCode] = normalizeCalc(totalInterferenceTimeFront[workFrontCode] + totalInterferenceOprtlTimeFront[workFrontCode], 2);
+      totalInterferenceByFront[workFrontCode] = normalizeCalc(
+        totalInterferenceTimeFront[workFrontCode] +
+          totalInterferenceOprtlTimeFront[workFrontCode],
+        2
+      );
     }
   }
   return totalInterferenceByFront;
-}
+};
 
-export const getTotalHourmeter = (hourmeters: CttTelemetry[], firstHourmeterValue?: number): number => {
+export const getTotalHourmeter = (
+  hourmeters: CttTelemetry[],
+  firstHourmeterValue?: number
+): number => {
   if (!hourmeters || hourmeters.length === 0) {
     return 0;
   }
-  const hourmeterWithoutAnomalies = removeOutliers(hourmeters.map(e => Number(e.current_value)));
+  const hourmeterWithoutAnomalies = removeOutliers(
+    hourmeters.map((e) => Number(e.current_value))
+  );
   if (hourmeterWithoutAnomalies.length > 0) {
-    let firstHourmeter = firstHourmeterValue ?? Number(hourmeterWithoutAnomalies[0]);
-    let lastHourmeter = Number(hourmeterWithoutAnomalies[hourmeterWithoutAnomalies.length - 1]);
+    let firstHourmeter =
+      firstHourmeterValue ?? Number(hourmeterWithoutAnomalies[0]);
+    let lastHourmeter = Number(
+      hourmeterWithoutAnomalies[hourmeterWithoutAnomalies.length - 1]
+    );
     const total = lastHourmeter - firstHourmeter;
     return total;
   }
-  return 0
+  return 0;
 };
-
 
 export function removeOutliers(values: number[], totalDays = 1): number[] {
   let filteredData: number[] = [];
@@ -386,7 +460,7 @@ export function removeOutliers(values: number[], totalDays = 1): number[] {
     }
 
     if (diffPrev > 5000 || diffNext >= 5000) {
-      countSequence++
+      countSequence++;
     }
 
     if (countSequence === 30) {
@@ -416,4 +490,4 @@ export const createValueWithGoal = (
     hasTotalField,
     hasAverageField,
   };
-}
+};

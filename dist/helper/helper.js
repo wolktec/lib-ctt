@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.createValueWithGoal = exports.removeOutliers = exports.getTotalHourmeter = exports.calcTotalInterferenceByFront = exports.calcJourney = exports.calcTelemetryByFront = exports.groupEquipmentTelemetryByFront = exports.secToTime = exports.msToTime = exports.getEventTime = exports.groupEquipmentsProductivityByFront = exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = exports.normalizeCalc = exports.calcMechanicalAvailability = exports.convertHourToDecimal = void 0;
 const dayjs_1 = __importDefault(require("dayjs"));
 function convertHourToDecimal(hour) {
-    const [hours, minutes] = hour.split(':').map(Number);
+    const [hours, minutes] = hour.split(":").map(Number);
     const decimalMinutes = minutes / 60;
     return hours + decimalMinutes;
 }
@@ -16,13 +16,16 @@ function calcMechanicalAvailability(totalMaintenance, countMaintenance, currentH
     if (totalMaintenance === 0) {
         return 100.0;
     }
-    const calc = normalizeCalc(((currentHour - (totalMaintenance / countMaintenance)) / currentHour) * 100, 2);
+    const calc = normalizeCalc(((currentHour - totalMaintenance / countMaintenance) / currentHour) * 100, 2);
     return calc;
 }
 exports.calcMechanicalAvailability = calcMechanicalAvailability;
 function normalizeCalc(value, fixed = 1) {
     if (Number.isNaN(value) || !Number.isFinite(value)) {
         return 0;
+    }
+    if (value < 0) {
+        value = value * 1;
     }
     return parseFloat(value.toFixed(fixed));
 }
@@ -32,7 +35,7 @@ const getCurrentHour = (date) => {
     const isSame = (0, exports.isSameDay)(date, currentDate.valueOf());
     let hour = 24;
     if (isSame) {
-        hour = currentDate.get('hour');
+        hour = currentDate.get("hour");
     }
     return hour;
 };
@@ -40,20 +43,20 @@ exports.getCurrentHour = getCurrentHour;
 const isSameDay = (date1, date2) => {
     const dt1 = (0, dayjs_1.default)(date1).subtract(3, "hours");
     const dt2 = (0, dayjs_1.default)(date2).subtract(3, "hours");
-    const isSame = dt1.isSame(dt2, 'day');
+    const isSame = dt1.isSame(dt2, "day");
     return isSame;
 };
 exports.isSameDay = isSameDay;
-const dateFilter = (start_date, splitSeparator = '/') => {
+const dateFilter = (start_date, splitSeparator = "/") => {
     const dt1 = (0, exports.dateParts)(start_date ?? (0, dayjs_1.default)().subtract(3, "hours").format("DD/MM/YYYY"), splitSeparator);
     const startDate = (0, dayjs_1.default)()
-        .set('M', dt1.month)
-        .set('y', dt1.year)
-        .set('D', dt1.day)
-        .set('hour', 0)
-        .set('minute', 0)
-        .set('second', 0)
-        .set('millisecond', 0)
+        .set("M", dt1.month)
+        .set("y", dt1.year)
+        .set("D", dt1.day)
+        .set("hour", 0)
+        .set("minute", 0)
+        .set("second", 0)
+        .set("millisecond", 0)
         .add(3, "hours");
     if (!startDate.isValid()) {
         console.error("Data inválida");
@@ -65,9 +68,9 @@ exports.dateFilter = dateFilter;
 const dateParts = (date, splitSeparator = "/") => {
     const dt = date.split(splitSeparator);
     if (dt.length !== 3) {
-        console.error('date', 'invalid format date, expect format: dd/MM/YYYY');
+        console.error("date", "invalid format date, expect format: dd/MM/YYYY");
     }
-    if (splitSeparator == '-') {
+    if (splitSeparator == "-") {
         return {
             day: parseInt(dt[2]),
             month: parseInt(dt[1]) - 1,
@@ -82,15 +85,15 @@ const dateParts = (date, splitSeparator = "/") => {
 };
 exports.dateParts = dateParts;
 exports.translations = {
-    "Caminhões": "truck",
-    "Colhedoras": "harvester",
-    "Tratores": "tractor",
-    "Empilhadeiras": "forklift",
-    "Pulverizadores": "pulverizer"
+    Caminhões: "truck",
+    Colhedoras: "harvester",
+    Tratores: "tractor",
+    Empilhadeiras: "forklift",
+    Pulverizadores: "pulverizer",
 };
 const groupEquipmentsProductivityByFront = (equipmentsProductivity, equipments) => {
-    const equipmentsProductivityByFront = equipmentsProductivity.map(equipmentProductivity => {
-        const matchingItem = equipments.find(equipment => equipment.code === equipmentProductivity.equipmentCode);
+    const equipmentsProductivityByFront = equipmentsProductivity.map((equipmentProductivity) => {
+        const matchingItem = equipments.find((equipment) => equipment.code === equipmentProductivity.equipmentCode);
         return {
             ...equipmentProductivity,
             workFrontCode: matchingItem ? matchingItem.work_front_code : 0,
@@ -132,15 +135,15 @@ const twoCaracters = (num) => {
 const groupEquipmentTelemetryByFront = (equipments, telemetry) => {
     const telemetryByFront = [];
     for (const hourMeter of telemetry) {
-        const equipment = equipments.find(equip => +hourMeter.equipment_code === equip.code);
+        const equipment = equipments.find((equip) => +hourMeter.equipment_code === equip.code);
         if (!equipment || equipment.description !== "Colhedoras") {
             continue;
         }
-        const relatedRecords = telemetry.filter(t => +t.equipment_code === equipment.code);
+        const relatedRecords = telemetry.filter((t) => +t.equipment_code === equipment.code);
         const sortedRecords = relatedRecords.sort((a, b) => a.occurrence - b.occurrence);
         const firstRecord = sortedRecords[0];
         const lastRecord = sortedRecords[sortedRecords.length - 1];
-        if (!telemetryByFront.some(t => t.equipmentCode === equipment.code)) {
+        if (!telemetryByFront.some((t) => t.equipmentCode === equipment.code)) {
             telemetryByFront.push({
                 equipmentCode: equipment.code,
                 workFrontCode: equipment.work_front_code,
@@ -156,10 +159,12 @@ const calcTelemetryByFront = (telemetryByFront) => {
     let telemetryResult = {};
     for (const telemetry of telemetryByFront) {
         if (telemetryResult[telemetry.workFrontCode]) {
-            telemetryResult[telemetry.workFrontCode] += normalizeCalc(+telemetry.lastRecord.current_value - +telemetry.firstRecord.current_value, 2);
+            telemetryResult[telemetry.workFrontCode] += normalizeCalc(+telemetry.lastRecord.current_value -
+                +telemetry.firstRecord.current_value, 2);
         }
         else {
-            telemetryResult[telemetry.workFrontCode] = normalizeCalc(+telemetry.lastRecord.current_value - +telemetry.firstRecord.current_value, 2);
+            telemetryResult[telemetry.workFrontCode] = normalizeCalc(+telemetry.lastRecord.current_value -
+                +telemetry.firstRecord.current_value, 2);
         }
     }
     return telemetryResult;
@@ -180,7 +185,7 @@ const calcJourney = async (events, interferences) => {
             totalInterferenceOperationalTime: 0,
             interferenceOperationalEvents: [],
             equipmentsInterferenceOperational: [],
-            totalInterferenceByFront: {}
+            totalInterferenceByFront: {},
         };
     }
     let totalOperationalTime = 0;
@@ -198,9 +203,13 @@ const calcJourney = async (events, interferences) => {
     let totalInterferenceTimeFront = {};
     let totalInterferenceOprtlTimeFront = {};
     //Interferências de manutenção
-    const interferenceIds = interferences.filter(e => e.interference_type?.name === 'Manutenção').map(e => e.id);
+    const interferenceIds = interferences
+        .filter((e) => e.interference_type?.name === "Manutenção")
+        .map((e) => e.id);
     //Interferências operacionais
-    const interferenceOperationalStops = interferences.filter(e => e.interference_type?.name === 'Operação').map(e => e.id);
+    const interferenceOperationalStops = interferences
+        .filter((e) => e.interference_type?.name === "Operação")
+        .map((e) => e.id);
     //Interferências de clima
     const interferenceWeatherStops = [600, 601];
     for (const event of events) {
@@ -257,7 +266,11 @@ const calcJourney = async (events, interferences) => {
             }
         }
     }
-    const uniqOperationalEquip = new Set([...uniqEquip, ...uniqMaintenanceEquip, ...uniqInterferenceEquip]);
+    const uniqOperationalEquip = new Set([
+        ...uniqEquip,
+        ...uniqMaintenanceEquip,
+        ...uniqInterferenceEquip,
+    ]);
     const totalInterference = totalInterferenceTime + totalInterferenceOperationalTime;
     let totalInterferenceByFront = {};
     totalInterferenceByFront = (0, exports.calcTotalInterferenceByFront)(totalInterferenceTimeFront, totalInterferenceOprtlTimeFront);
@@ -274,7 +287,7 @@ const calcJourney = async (events, interferences) => {
         totalInterferenceOperationalTime: totalInterference,
         interferenceOperationalEvents,
         equipmentsInterferenceOperational: Array.from(uniqInterferenceOperationalEquip),
-        totalInterferenceByFront
+        totalInterferenceByFront,
     };
 };
 exports.calcJourney = calcJourney;
@@ -282,10 +295,12 @@ const calcTotalInterferenceByFront = (totalInterferenceTimeFront, totalInterfere
     const totalInterferenceByFront = {};
     for (const workFrontCode in totalInterferenceTimeFront) {
         if (totalInterferenceOprtlTimeFront[workFrontCode]) {
-            totalInterferenceByFront[workFrontCode] += normalizeCalc(totalInterferenceTimeFront[workFrontCode] + totalInterferenceOprtlTimeFront[workFrontCode], 2);
+            totalInterferenceByFront[workFrontCode] += normalizeCalc(totalInterferenceTimeFront[workFrontCode] +
+                totalInterferenceOprtlTimeFront[workFrontCode], 2);
         }
         else {
-            totalInterferenceByFront[workFrontCode] = normalizeCalc(totalInterferenceTimeFront[workFrontCode] + totalInterferenceOprtlTimeFront[workFrontCode], 2);
+            totalInterferenceByFront[workFrontCode] = normalizeCalc(totalInterferenceTimeFront[workFrontCode] +
+                totalInterferenceOprtlTimeFront[workFrontCode], 2);
         }
     }
     return totalInterferenceByFront;
@@ -295,7 +310,7 @@ const getTotalHourmeter = (hourmeters, firstHourmeterValue) => {
     if (!hourmeters || hourmeters.length === 0) {
         return 0;
     }
-    const hourmeterWithoutAnomalies = removeOutliers(hourmeters.map(e => Number(e.current_value)));
+    const hourmeterWithoutAnomalies = removeOutliers(hourmeters.map((e) => Number(e.current_value)));
     if (hourmeterWithoutAnomalies.length > 0) {
         let firstHourmeter = firstHourmeterValue ?? Number(hourmeterWithoutAnomalies[0]);
         let lastHourmeter = Number(hourmeterWithoutAnomalies[hourmeterWithoutAnomalies.length - 1]);

@@ -11,14 +11,14 @@ const utc_1 = __importDefault(require("dayjs/plugin/utc"));
 dayjs_1.default.extend(utc_1.default);
 dayjs_1.default.extend(timezone_1.default);
 // dayjs.tz.setDefault('America/Sao_Paulo');
-exports.localTimeZone = 'America/Sao_Paulo';
+exports.localTimeZone = "America/Sao_Paulo";
 /**
-  * GET the available equipments based on the events registered by FRONT and GROUP
-  * @param equipments the group of equipments allocated in the front
-  * @param events the events of the equipment
+ * GET the available equipments based on the events registered by FRONT and GROUP
+ * @param equipments the group of equipments allocated in the front
+ * @param events the events of the equipment
  */
 const createAvailabilityAllocation = async (equipments, events, date) => {
-    let startDate = (0, helper_1.dateFilter)(date, '-');
+    let startDate = (0, helper_1.dateFilter)(date, "-");
     let currentHour = (0, helper_1.getCurrentHour)(startDate);
     let equipmentsGroups = await sumEquipmentsByGroup(equipments, events);
     const groupedEvents = groupEventsByTypeAndFront(events, equipments);
@@ -29,7 +29,7 @@ const createAvailabilityAllocation = async (equipments, events, date) => {
 };
 const sumEquipmentsByGroup = async (equipments, events) => {
     try {
-        const eventEquipmentCodes = new Set(events.map(event => event.equipment.code));
+        const eventEquipmentCodes = new Set(events.map((event) => event.equipment.code));
         // soma equipamentos que possuem eventos e agrupa por frente e grupo
         let groupedEquipments = {};
         for (const equipment of equipments) {
@@ -59,7 +59,7 @@ const getMechanicalAvailability = async (events, currentHour) => {
         let mechanicalAvailability = new Map();
         let workFrontCode = 0;
         let totalMaintenanceTime = 0;
-        let eventCode = '';
+        let eventCode = "";
         let uniqMaintenanceEquip = 0;
         let diffS = 0;
         let diff = 0;
@@ -72,14 +72,16 @@ const getMechanicalAvailability = async (events, currentHour) => {
                         workFrontCode = event.workFront.code;
                         totalMaintenanceTime = diff;
                         eventCode = event.code;
-                        uniqMaintenanceEquip = new Set(eventsOfType.map(event => event.equipment.code)).size;
+                        uniqMaintenanceEquip = new Set(eventsOfType.map((event) => event.equipment.code)).size;
                     }
                 }
             }
             if (!mechanicalAvailability.has(type)) {
                 mechanicalAvailability.set(type, new Map());
             }
-            mechanicalAvailability.get(type)?.set(workFrontCode.toString(), (0, helper_1.calcMechanicalAvailability)(totalMaintenanceTime, uniqMaintenanceEquip, currentHour));
+            mechanicalAvailability
+                .get(type)
+                ?.set(workFrontCode.toString(), (0, helper_1.calcMechanicalAvailability)(totalMaintenanceTime, uniqMaintenanceEquip, currentHour));
         }
         return mechanicalAvailability;
     }
@@ -108,11 +110,11 @@ const formatAvailabilityReturn = async (groupedEquipments, mechanicalAvailabilit
         groups: Object.entries(groupedEquipments).map(([group, workFronts]) => ({
             group: helper_1.translations[group],
             average: averageAvailability.get(group) || 0,
-            workFronts: Object.entries(workFronts)
-                .map(([workFrontCode, equipments]) => ({
+            workFronts: Object.entries(workFronts).map(([workFrontCode, equipments]) => ({
                 workFrontCode: +workFrontCode,
                 equipments,
-                availability: mechanicalAvailability.get(group)?.get(workFrontCode.toString()) || 0,
+                availability: mechanicalAvailability.get(group)?.get(workFrontCode.toString()) ||
+                    0,
             })),
         })),
     };
@@ -124,7 +126,7 @@ const formatAvailabilityReturn = async (groupedEquipments, mechanicalAvailabilit
  */
 const groupEventsByTypeAndFront = (events, equipments) => {
     const equipmentTypeMap = new Map();
-    equipments.forEach(equipment => {
+    equipments.forEach((equipment) => {
         equipmentTypeMap.set(equipment.code, equipment.description);
     });
     const eventsByType = events.reduce((accumulator, event) => {

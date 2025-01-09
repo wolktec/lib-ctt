@@ -251,7 +251,7 @@ const formatUnproductiveTime = (unproductiveTime) => {
     const formatUnproductiveTime = {};
     for (const [code, timeInHours] of Object.entries(unproductiveTime)) {
         const timeInMs = timeInHours * 3600 * 1000;
-        formatUnproductiveTime[code] = (0, helper_1.msToTime)(timeInMs);
+        formatUnproductiveTime[code] = (0, helper_1.msToTime)(timeInMs) ? (0, helper_1.msToTime)(timeInMs) : '00:00:00';
     }
     return formatUnproductiveTime;
 };
