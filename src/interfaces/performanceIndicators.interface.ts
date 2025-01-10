@@ -105,11 +105,25 @@ export interface Journey {
   totalInterferenceOperationalTime: number;
   interferenceOperationalEvents: CttEvent[];
   equipmentsInterferenceOperational: number[];
-  totalInterferenceByFront: Record<string, number>;
 }
 
 export interface CttSummaryReturn {
   label: string;
   lostTons: number;
   progress: number;
+}
+
+export interface JourneyFront {
+  totalOperationalTime: Record<string, number>;
+  operationalEvents: CttEvent[];
+  equipmentOperational: number[];
+  totalMaintenanceTime: Record<string, number>;
+  maintenanceEvents: CttEvent[];
+  equipmentsMaintenance: number[];
+  totalInterferenceTime: Record<string, number>;
+  interferenceEvents: CttEvent[];
+  equipmentInterference: number[];
+  totalInterferenceOperationalTime: Record<string, number>;
+  interferenceOperationalEvents: CttEvent[];
+  equipmentsInterferenceOperational: number[];
 }

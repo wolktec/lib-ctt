@@ -30,9 +30,10 @@ const createPerformanceIndicators = async (equipmentProductivity, events, equipm
         const elevatorHours = (0, helper_1.calcTelemetryByFront)(elevatorHoursByFront);
         const agriculturalEfficiency = calcAgriculturalEfficiency(elevatorHours, engineHours);
         const maneuvers = calcManuvers(events);
-        const unproductiveTime = await (0, helper_1.calcJourney)(events, interferences);
-        const ctOffenders = await calcCtOffenders(unproductiveTime.totalInterferenceByFront, equipments, tonPerHour);
-        const unproductiveTimeFormatted = formatUnproductiveTime(unproductiveTime.totalInterferenceByFront);
+        const unproductiveTime = (await (0, helper_1.calcJourneyByFront)(events, interferences))
+            .totalInterferenceTime;
+        const ctOffenders = await calcCtOffenders(unproductiveTime, equipments, tonPerHour);
+        const unproductiveTimeFormatted = formatUnproductiveTime(unproductiveTime);
         const averageRadius = await calcAverageRadius(events, telemetry.filter((hourMeter) => hourMeter.sensor_name === "odometer"));
         const summary = calcSummary(ctOffenders);
         const formatPerformanceIndicator = formatPerformanceIndicatorReturn(tripQtd, averageWeight, awaitingTransshipment, idleTime, autoPilotUse, trucksLack.formattedTrucksLack, tOffenders, agriculturalEfficiency, maneuvers, workFronts, ctOffenders, unproductiveTimeFormatted, averageRadius, summary);
@@ -84,17 +85,20 @@ const getAwaitingTransshipment = (events) => {
         if (event.interference &&
             event.interference.name === "Aguardando Transbordo") {
             const { workFront } = event;
-            if (awaitingTransshipment[workFront.code]) {
-                awaitingTransshipment[workFront.code] += (0, helper_1.getEventTime)(event);
-            }
-            else {
-                awaitingTransshipment[workFront.code] = (0, helper_1.getEventTime)(event);
+            if (event.time.end > 0) {
+                const diffS = (event.time.end - event.time.start) / 1000;
+                if (awaitingTransshipment[workFront.code]) {
+                    awaitingTransshipment[workFront.code] += diffS;
+                }
+                else {
+                    awaitingTransshipment[workFront.code] = diffS;
+                }
             }
         }
     });
     const formattedTransshipment = {};
     for (const [code, timeInHours] of Object.entries(awaitingTransshipment)) {
-        const timeInMs = timeInHours * 3600 * 1000;
+        const timeInMs = timeInHours * 1000;
         formattedTransshipment[code] = (0, helper_1.msToTime)(timeInMs);
     }
     return formattedTransshipment;
@@ -208,7 +212,6 @@ const calcManuvers = (events) => {
             }
         }
     }
-    console.log("manuvers", manuvers);
     const formattedManuvers = {};
     for (const [code, timeInHours] of Object.entries(manuvers)) {
         const timeInMs = timeInHours * 1000;
@@ -267,10 +270,13 @@ const calcAverageRadius = async (events, odometerReadings) => {
 const formatUnproductiveTime = (unproductiveTime) => {
     const formatUnproductiveTime = {};
     for (const [code, timeInHours] of Object.entries(unproductiveTime)) {
-        const timeInMs = timeInHours * 3600 * 1000;
-        formatUnproductiveTime[code] = (0, helper_1.msToTime)(timeInMs)
-            ? (0, helper_1.msToTime)(timeInMs)
-            : "00:00:00";
+        if (!timeInHours) {
+            formatUnproductiveTime[code] = "00:00:00";
+        }
+        else {
+            const timeInMs = timeInHours * 3600 * 1000;
+            formatUnproductiveTime[code] = (0, helper_1.msToTime)(timeInMs);
+        }
     }
     return formatUnproductiveTime;
 };
@@ -310,8 +316,8 @@ const formatPerformanceIndicatorReturn = (tripQtd, averageWeight, awaitingTranss
                 trips: tripQtd[workfrontCode] || 0,
                 averageWeight: averageWeight[workfrontCode] || 0,
                 trucksLack: trucksLack[workfrontCode] || "",
-                awaitingTransshipment: awaitingTransshipment[workfrontCode] || "",
-                engineIdle: idleTime[workfrontCode] || "",
+                awaitingTransshipment: awaitingTransshipment[workfrontCode] || "00:00:00",
+                engineIdle: idleTime[workfrontCode] || "00:00:00",
                 autopilotUse: {
                     value: autoPilotUse[workfrontCode]?.value || 0,
                     goal: autoPilotUse[workfrontCode]?.goal || 0,
@@ -324,7 +330,7 @@ const formatPerformanceIndicatorReturn = (tripQtd, averageWeight, awaitingTranss
                     value: agriculturalEfficiency[workfrontCode]?.value || 0,
                     goal: agriculturalEfficiency[workfrontCode]?.goal || 0,
                 },
-                maneuvers: maneuvers[workfrontCode] || "",
+                maneuvers: maneuvers[workfrontCode] || "00:00:00",
                 zone: 0,
                 averageRadius: averageRadius[workfrontCode] || 0,
             };
