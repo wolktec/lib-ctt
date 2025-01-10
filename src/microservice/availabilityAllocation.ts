@@ -15,6 +15,7 @@ import {
 } from "../interfaces/availabilityAllocation.interface";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
+import { CttInterferences } from "../interfaces/performanceIndicators.interface";
 dayjs.extend(utc);
 dayjs.extend(timezone);
 // dayjs.tz.setDefault('America/Sao_Paulo');
@@ -24,17 +25,24 @@ export const localTimeZone = "America/Sao_Paulo";
  * GET the available equipments based on the events registered by FRONT and GROUP
  * @param equipments the group of equipments allocated in the front
  * @param events the events of the equipment
+ * @param date '2023-12-23 15:41:51' datetime filter
+ * @param interferences interferences coming from the interference table
  */
 const createAvailabilityAllocation = async (
   equipments: CttEquipment[],
   events: CttEvent[],
-  date: string
+  date: string,
+  interferences: CttInterferences[]
 ): Promise<CttAvailabilityAndAllocationResult> => {
   let startDate = dateFilter(date, "-");
   let currentHour = getCurrentHour(startDate);
 
+  const groupedEvents = groupEventsByTypeAndFront(
+    events,
+    equipments,
+    interferences
+  );
   let equipmentsGroups = await sumEquipmentsByGroup(equipments, events);
-  const groupedEvents = groupEventsByTypeAndFront(events, equipments);
 
   let mechanicalAvailability = await getMechanicalAvailability(
     groupedEvents,
@@ -56,13 +64,14 @@ const sumEquipmentsByGroup = async (
 ): Promise<CttEquipmentsGroupsType> => {
   try {
     const eventEquipmentCodes = new Set(
-      events.map((event) => event.equipment.code)
+      events.map((event) => +event.equipment.code)
     );
 
-    // soma equipamentos que possuem eventos e agrupa por frente e grupo
     let groupedEquipments: CttEquipmentsGroupsType = {};
     for (const equipment of equipments) {
-      if (eventEquipmentCodes.has(equipment.code)) {
+      if (!eventEquipmentCodes.has(equipment.code)) {
+        continue;
+      } else {
         if (!groupedEquipments[equipment.description]) {
           groupedEquipments[equipment.description] = {};
         }
@@ -74,12 +83,12 @@ const sumEquipmentsByGroup = async (
             equipment.work_front_code
           ] = 0;
         }
-
         groupedEquipments[equipment.description][
           equipment.work_front_code
         ] += 1;
       }
     }
+
     return groupedEquipments;
   } catch (error) {
     console.error("Ocorreu um erro:", error);
@@ -116,25 +125,26 @@ const getMechanicalAvailability = async (
             uniqMaintenanceEquip = new Set(
               eventsOfType.map((event) => event.equipment.code)
             ).size;
+
+            if (!mechanicalAvailability.has(type)) {
+              mechanicalAvailability.set(type, new Map<string, number>());
+            }
+
+            mechanicalAvailability
+              .get(type)
+              ?.set(
+                workFrontCode.toString(),
+                calcMechanicalAvailability(
+                  totalMaintenanceTime,
+                  uniqMaintenanceEquip,
+                  currentHour
+                )
+              );
           }
         }
       }
-
-      if (!mechanicalAvailability.has(type)) {
-        mechanicalAvailability.set(type, new Map<string, number>());
-      }
-
-      mechanicalAvailability
-        .get(type)
-        ?.set(
-          workFrontCode.toString(),
-          calcMechanicalAvailability(
-            totalMaintenanceTime,
-            uniqMaintenanceEquip,
-            currentHour
-          )
-        );
     }
+    //console.log(mechanicalAvailability);
     return mechanicalAvailability;
   } catch (error) {
     console.error("Ocorreu um erro:", error);
@@ -167,7 +177,8 @@ const formatAvailabilityReturn = async (
   groupedEquipments: CttEquipmentsGroupsType,
   mechanicalAvailability: Map<string, Map<string, number>>,
   averageAvailability: Map<string, number>
-): Promise<CttAvailabilityAndAllocationResult> => {
+) => {
+  //console.log(averageAvailability);
   let availabilityAllocation = {
     goal: 88,
     groups: Object.entries(groupedEquipments).map(([group, workFronts]) => ({
@@ -194,15 +205,21 @@ const formatAvailabilityReturn = async (
  */
 const groupEventsByTypeAndFront = (
   events: CttEvent[],
-  equipments: CttEquipment[]
+  equipments: CttEquipment[],
+  interference: CttInterferences[]
 ): Record<string, CttEvent[]> => {
   const equipmentTypeMap = new Map<number, string>();
   equipments.forEach((equipment) => {
     equipmentTypeMap.set(equipment.code, equipment.description);
   });
 
+  const allowedTypes = ["Manutenção", "Abastecimento"];
+  const interferenceIds = interference
+    .filter((e) => allowedTypes.includes(e.interferenceType.name))
+    .map((e) => e.id);
+
   const eventsByType = events.reduce((accumulator, event) => {
-    if (event.interference) {
+    if (event.interference && interferenceIds.includes(event.interference.id)) {
       const equipmentType = equipmentTypeMap.get(event.equipment.code);
       if (equipmentType) {
         if (!accumulator[equipmentType]) {

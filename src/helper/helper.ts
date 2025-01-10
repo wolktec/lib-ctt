@@ -272,11 +272,11 @@ export const calcJourney = async (
 
   //Interferências de manutenção
   const interferenceIds = interferences
-    .filter((e) => e.interference_type?.name === "Manutenção")
+    .filter((e) => e.interferenceType.name === "Manutenção")
     .map((e) => e.id);
   //Interferências operacionais
   const interferenceOperationalStops = interferences
-    .filter((e) => e.interference_type?.name === "Operação")
+    .filter((e) => e.interferenceType.name === "Operação")
     .map((e) => e.id);
 
   //Interferências de clima
