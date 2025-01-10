@@ -6,6 +6,7 @@ import {
   CttTelemetry,
   CttTelemetryByFront,
   Journey,
+  JourneyFront,
 } from "../interfaces/performanceIndicators.interface";
 import {
   CttEquipment,
@@ -136,11 +137,9 @@ export const groupEquipmentsProductivityByFront = (
 };
 
 export const getEventTime = (event: CttEvent) => {
-  let diffS: number = 0;
-  const startTime = dayjs(event.time.start);
-  const endTime = dayjs(event.time.end);
-  diffS = endTime.diff(startTime, "seconds");
-  return diffS / 3600;
+  const startTime = dayjs(event.time.start / 1000);
+  const endTime = dayjs(event.time.end / 1000);
+  return endTime.diff(startTime, "seconds");
 };
 
 export const msToTime = (ms: number): string => {
@@ -149,8 +148,8 @@ export const msToTime = (ms: number): string => {
 
 export const secToTime = (sec: number): string => {
   let hours = Math.floor(sec / 3600);
-  let minutes = Math.floor((sec - hours * 3600) / 60);
-  let seconds = Math.round(sec - hours * 3600 - minutes * 60);
+  let minutes = Math.floor((sec % 3600) / 60);
+  let seconds = Math.round(sec % 60);
 
   if (seconds >= 60) {
     minutes += 1;
@@ -168,7 +167,7 @@ export const secToTime = (sec: number): string => {
 };
 
 const twoCaracters = (num: number): string => {
-  return num < 10 ? `0${num}` : num.toString();
+  return num < 10 ? `0${num}` : num.toString().padStart(2, "0");
 };
 
 export const groupEquipmentTelemetryByFront = (
@@ -247,7 +246,6 @@ export const calcJourney = async (
       totalInterferenceOperationalTime: 0,
       interferenceOperationalEvents: [],
       equipmentsInterferenceOperational: [],
-      totalInterferenceByFront: {},
     };
   }
 
@@ -267,11 +265,8 @@ export const calcJourney = async (
   const uniqInterferenceOperationalEquip: Set<number> = new Set();
   const interferenceOperationalEvents: CttEvent[] = [];
 
-  let totalInterferenceTimeFront: Record<string, number> = {};
-  let totalInterferenceOprtlTimeFront: Record<string, number> = {};
-
   //Interferências de manutenção
-  const interferenceIds = interferences
+  const interferenceMaintenceIds = interferences
     .filter((e) => e.interferenceType.name === "Manutenção")
     .map((e) => e.id);
   //Interferências operacionais
@@ -299,7 +294,7 @@ export const calcJourney = async (
       // Eventos de manutenção
       if (
         event.interference &&
-        interferenceIds.includes(event.interference.id)
+        interferenceMaintenceIds.includes(event.interference.id)
       ) {
         totalMaintenanceTime += diff;
         const code = event.equipment.code;
@@ -313,11 +308,6 @@ export const calcJourney = async (
         interferenceOperationalStops.includes(event.interference.id) &&
         !interferenceWeatherStops.includes(event.interference.id)
       ) {
-        if (totalInterferenceOprtlTimeFront[event.workFront.code]) {
-          totalInterferenceOprtlTimeFront[event.workFront.code] += diff;
-        } else {
-          totalInterferenceOprtlTimeFront[event.workFront.code] = diff;
-        }
         totalInterferenceOperationalTime += diff;
         const code = event.equipment.code;
         uniqInterferenceOperationalEquip.add(code);
@@ -327,15 +317,10 @@ export const calcJourney = async (
       // Eventos de interferência
       if (
         event.interference &&
-        !interferenceIds.includes(event.interference.id) &&
+        !interferenceMaintenceIds.includes(event.interference.id) &&
         !interferenceOperationalStops.includes(event.interference.id) &&
         !interferenceWeatherStops.includes(event.interference.id)
       ) {
-        if (totalInterferenceTimeFront[event.workFront.code]) {
-          totalInterferenceTimeFront[event.workFront.code] += diff;
-        } else {
-          totalInterferenceTimeFront[event.workFront.code] = diff;
-        }
         totalInterferenceTime += diff;
         const code = event.equipment.code;
         uniqInterferenceEquip.add(code);
@@ -353,12 +338,6 @@ export const calcJourney = async (
   const totalInterference =
     totalInterferenceTime + totalInterferenceOperationalTime;
 
-  let totalInterferenceByFront: Record<string, number> = {};
-  totalInterferenceByFront = calcTotalInterferenceByFront(
-    totalInterferenceTimeFront,
-    totalInterferenceOprtlTimeFront
-  );
-
   return {
     totalOperationalTime,
     operationalEvents,
@@ -374,7 +353,6 @@ export const calcJourney = async (
     equipmentsInterferenceOperational: Array.from(
       uniqInterferenceOperationalEquip
     ),
-    totalInterferenceByFront,
   };
 };
 
@@ -383,21 +361,23 @@ export const calcTotalInterferenceByFront = (
   totalInterferenceOprtlTimeFront: Record<string, number>
 ): Record<string, number> => {
   const totalInterferenceByFront: Record<string, number> = {};
+
   for (const workFrontCode in totalInterferenceTimeFront) {
-    if (totalInterferenceOprtlTimeFront[workFrontCode]) {
-      totalInterferenceByFront[workFrontCode] += normalizeCalc(
-        totalInterferenceTimeFront[workFrontCode] +
-          totalInterferenceOprtlTimeFront[workFrontCode],
-        2
-      );
-    } else {
-      totalInterferenceByFront[workFrontCode] = normalizeCalc(
-        totalInterferenceTimeFront[workFrontCode] +
-          totalInterferenceOprtlTimeFront[workFrontCode],
-        2
-      );
+    if (totalInterferenceTimeFront || totalInterferenceOprtlTimeFront) {
+      const timeFrontValue = totalInterferenceTimeFront[workFrontCode] || 0;
+      const oprtlTimeFrontValue =
+        totalInterferenceOprtlTimeFront[workFrontCode] || 0;
+
+      if (totalInterferenceByFront[workFrontCode]) {
+        totalInterferenceByFront[workFrontCode] +=
+          timeFrontValue + oprtlTimeFrontValue;
+      } else {
+        totalInterferenceByFront[workFrontCode] =
+          timeFrontValue + oprtlTimeFrontValue;
+      }
     }
   }
+
   return totalInterferenceByFront;
 };
 
@@ -486,5 +466,173 @@ export const createValueWithGoal = (
     goal: null,
     hasTotalField,
     hasAverageField,
+  };
+};
+
+/**
+ * Convert seconds to HH:MM:SS
+ */
+export const convertSecondstoTimeString = (seconds: number): string => {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const sec = Math.floor(seconds % 60);
+  return `${hours.toString().padStart(2, "0")}:${minutes
+    .toString()
+    .padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
+};
+
+export const calcJourneyByFront = async (
+  events: CttEvent[],
+  interferences: CttInterferences[]
+): Promise<JourneyFront> => {
+  if (events.length == 0) {
+    return {
+      totalOperationalTime: {},
+      operationalEvents: [],
+      equipmentOperational: [],
+      totalMaintenanceTime: {},
+      maintenanceEvents: [],
+      equipmentsMaintenance: [],
+      totalInterferenceTime: {},
+      interferenceEvents: [],
+      equipmentInterference: [],
+      totalInterferenceOperationalTime: {},
+      interferenceOperationalEvents: [],
+      equipmentsInterferenceOperational: [],
+    };
+  }
+
+  let totalOperationalTime: Record<string, number> = {};
+  const uniqEquip: Set<number> = new Set();
+  const operationalEvents: CttEvent[] = [];
+
+  let totalInterferenceTime: Record<string, number> = {};
+  const uniqInterferenceEquip: Set<number> = new Set();
+  const maintenanceEvents: CttEvent[] = [];
+
+  let totalMaintenanceTime: Record<string, number> = {};
+  const uniqMaintenanceEquip: Set<number> = new Set();
+  const interferenceEvents: CttEvent[] = [];
+
+  let totalInterferenceOperationalTime: Record<string, number> = {};
+  const uniqInterferenceOperationalEquip: Set<number> = new Set();
+  const interferenceOperationalEvents: CttEvent[] = [];
+
+  //Interferências de manutenção
+  const interferenceMaintenceIds = interferences
+    .filter((e) => e.interferenceType.name === "Manutenção")
+    .map((e) => e.id);
+  //Interferências operacionais
+  const interferenceOperationalStops = interferences
+    .filter((e) => e.interferenceType.name === "Operação")
+    .map((e) => e.id);
+
+  //Interferências de clima
+  const interferenceWeatherStops = [600, 601];
+
+  for (const event of events) {
+    const startTime = dayjs(event.time.start);
+    const endTime = dayjs(event.time.end);
+    const diffS = endTime.diff(startTime, "seconds");
+    const diff = diffS / 3600;
+    if (diff > 0) {
+      const workFrontCode = event.workFront.code;
+
+      // Eventos produtivos
+      if (!event.interference && event.name !== "Motor Desligado") {
+        if (totalOperationalTime[workFrontCode]) {
+          totalOperationalTime[workFrontCode] += diff;
+        } else {
+          totalOperationalTime[workFrontCode] = diff;
+        }
+
+        const code = event.equipment.code;
+        uniqEquip.add(code);
+        operationalEvents.push(event);
+      }
+
+      // Eventos de manutenção
+      if (
+        event.interference &&
+        interferenceMaintenceIds.includes(event.interference.id)
+      ) {
+        if (totalMaintenanceTime[workFrontCode]) {
+          totalMaintenanceTime[workFrontCode] += diff;
+        } else {
+          totalMaintenanceTime[workFrontCode] = diff;
+        }
+
+        const code = event.equipment.code;
+        uniqMaintenanceEquip.add(code);
+        maintenanceEvents.push(event);
+      }
+
+      // Eventos de interferência operacional
+      if (
+        event.interference &&
+        interferenceOperationalStops.includes(event.interference.id) &&
+        !interferenceWeatherStops.includes(event.interference.id)
+      ) {
+        if (totalInterferenceOperationalTime[workFrontCode]) {
+          totalInterferenceOperationalTime[workFrontCode] += diff;
+        } else {
+          totalInterferenceOperationalTime[workFrontCode] = diff;
+        }
+
+        const code = event.equipment.code;
+        uniqInterferenceOperationalEquip.add(code);
+        interferenceOperationalEvents.push(event);
+      }
+
+      // Eventos de interferência
+      if (
+        event.interference &&
+        !interferenceMaintenceIds.includes(event.interference.id) &&
+        !interferenceOperationalStops.includes(event.interference.id) &&
+        !interferenceWeatherStops.includes(event.interference.id)
+      ) {
+        if (totalInterferenceTime[workFrontCode]) {
+          totalInterferenceTime[workFrontCode] += diff;
+        } else {
+          totalInterferenceTime[workFrontCode] = diff;
+        }
+
+        const code = event.equipment.code;
+        uniqInterferenceEquip.add(code);
+        interferenceEvents.push(event);
+      }
+    }
+  }
+
+  const uniqOperationalEquip: Set<number> = new Set([
+    ...uniqEquip,
+    ...uniqMaintenanceEquip,
+    ...uniqInterferenceEquip,
+  ]);
+
+  let totalInterference: Record<string, number> = {};
+
+  for (const [workFrontCode, value] of Object.entries(totalInterferenceTime)) {
+    totalInterference[workFrontCode] =
+      (value ?? 0) +
+      (totalInterferenceOperationalTime[workFrontCode] ?? 0) +
+      (totalMaintenanceTime[workFrontCode] ?? 0);
+  }
+
+  return {
+    totalOperationalTime,
+    operationalEvents,
+    equipmentOperational: Array.from(uniqOperationalEquip),
+    totalMaintenanceTime,
+    maintenanceEvents,
+    equipmentsMaintenance: Array.from(uniqMaintenanceEquip),
+    totalInterferenceTime: totalInterference,
+    interferenceEvents,
+    equipmentInterference: Array.from(uniqInterferenceEquip),
+    totalInterferenceOperationalTime: totalInterference,
+    interferenceOperationalEvents,
+    equipmentsInterferenceOperational: Array.from(
+      uniqInterferenceOperationalEquip
+    ),
   };
 };

@@ -1,7 +1,6 @@
 import {
-  calcJourney,
+  calcJourneyByFront,
   calcTelemetryByFront,
-  createValueWithGoal,
   getEventTime,
   getTotalHourmeter,
   groupEquipmentsProductivityByFront,
@@ -95,17 +94,16 @@ const createPerformanceIndicators = async (
     );
     const maneuvers = calcManuvers(events);
 
-    const unproductiveTime = await calcJourney(events, interferences);
-    console.log(unproductiveTime);
+    const unproductiveTime = (await calcJourneyByFront(events, interferences))
+      .totalInterferenceTime;
 
     const ctOffenders = await calcCtOffenders(
-      unproductiveTime.totalInterferenceByFront,
+      unproductiveTime,
       equipments,
       tonPerHour
     );
-    const unproductiveTimeFormatted = formatUnproductiveTime(
-      unproductiveTime.totalInterferenceByFront
-    );
+    const unproductiveTimeFormatted = formatUnproductiveTime(unproductiveTime);
+
     const averageRadius = await calcAverageRadius(
       events,
       telemetry.filter((hourMeter) => hourMeter.sensor_name === "odometer")
@@ -200,16 +198,19 @@ const getAwaitingTransshipment = (
       event.interference.name === "Aguardando Transbordo"
     ) {
       const { workFront } = event;
-      if (awaitingTransshipment[workFront.code]) {
-        awaitingTransshipment[workFront.code] += getEventTime(event);
-      } else {
-        awaitingTransshipment[workFront.code] = getEventTime(event);
+      if (event.time.end > 0) {
+        const diffS = (event.time.end - event.time.start) / 1000;
+        if (awaitingTransshipment[workFront.code]) {
+          awaitingTransshipment[workFront.code] += diffS;
+        } else {
+          awaitingTransshipment[workFront.code] = diffS;
+        }
       }
     }
   });
   const formattedTransshipment: Record<string, string> = {};
   for (const [code, timeInHours] of Object.entries(awaitingTransshipment)) {
-    const timeInMs = timeInHours * 3600 * 1000;
+    const timeInMs = timeInHours * 1000;
     formattedTransshipment[code] = msToTime(timeInMs);
   }
 
@@ -351,16 +352,19 @@ const calcManuvers = (events: CttEvent[]): Record<string, string> => {
       continue;
     }
 
-    if (manuvers[workFront.code]) {
-      manuvers[workFront.code] += getEventTime(event);
-    } else {
-      manuvers[workFront.code] = getEventTime(event);
+    if (event.time.end > 0) {
+      const diffS = (event.time.end - event.time.start) / 1000;
+      if (manuvers[workFront.code]) {
+        manuvers[workFront.code] += diffS;
+      } else {
+        manuvers[workFront.code] = diffS;
+      }
     }
   }
 
   const formattedManuvers: Record<string, string> = {};
   for (const [code, timeInHours] of Object.entries(manuvers)) {
-    const timeInMs = timeInHours * 3600 * 1000;
+    const timeInMs = timeInHours * 1000;
     formattedManuvers[code] = msToTime(timeInMs);
   }
 
@@ -450,10 +454,12 @@ const formatUnproductiveTime = (
 ): Record<string, string> => {
   const formatUnproductiveTime: Record<string, string> = {};
   for (const [code, timeInHours] of Object.entries(unproductiveTime)) {
-    const timeInMs = timeInHours * 3600 * 1000;
-    formatUnproductiveTime[code] = msToTime(timeInMs)
-      ? msToTime(timeInMs)
-      : "00:00:00";
+    if (!timeInHours) {
+      formatUnproductiveTime[code] = "00:00:00";
+    } else {
+      const timeInMs = timeInHours * 3600 * 1000;
+      formatUnproductiveTime[code] = msToTime(timeInMs);
+    }
   }
 
   return formatUnproductiveTime;
@@ -518,8 +524,9 @@ const formatPerformanceIndicatorReturn = (
         trips: tripQtd[workfrontCode] || 0,
         averageWeight: averageWeight[workfrontCode] || 0,
         trucksLack: trucksLack[workfrontCode] || "",
-        awaitingTransshipment: awaitingTransshipment[workfrontCode] || "",
-        engineIdle: idleTime[workfrontCode] || "",
+        awaitingTransshipment:
+          awaitingTransshipment[workfrontCode] || "00:00:00",
+        engineIdle: idleTime[workfrontCode] || "00:00:00",
         autopilotUse: {
           value: autoPilotUse[workfrontCode]?.value || 0,
           goal: autoPilotUse[workfrontCode]?.goal || 0,
@@ -532,7 +539,7 @@ const formatPerformanceIndicatorReturn = (
           value: agriculturalEfficiency[workfrontCode]?.value || 0,
           goal: agriculturalEfficiency[workfrontCode]?.goal || 0,
         },
-        maneuvers: maneuvers[workfrontCode] || "",
+        maneuvers: maneuvers[workfrontCode] || "00:00:00",
         zone: 0,
         averageRadius: averageRadius[workfrontCode] || 0,
       };
