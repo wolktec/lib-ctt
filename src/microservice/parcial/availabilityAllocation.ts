@@ -6,16 +6,16 @@ import {
   getEventTime,
   normalizeCalc,
   translations,
-} from "../helper/helper";
+} from "../../helper/helper";
 import {
   CttAvailabilityAndAllocationResult,
   CttEquipment,
   CttEquipmentsGroupsType,
   CttEvent,
-} from "../interfaces/availabilityAllocation.interface";
+} from "../../interfaces/availabilityAllocation.interface";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
-import { CttInterferences } from "../interfaces/performanceIndicators.interface";
+import { CttInterferences } from "../../interfaces/performanceIndicators.interface";
 dayjs.extend(utc);
 dayjs.extend(timezone);
 // dayjs.tz.setDefault('America/Sao_Paulo');

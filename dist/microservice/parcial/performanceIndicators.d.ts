@@ -1,6 +1,6 @@
-import { CttEquipment, CttEvent } from "../interfaces/availabilityAllocation.interface";
-import { CttDeliveredReturn, CttWorkFronts } from "../interfaces/partialDelivered.interface";
-import { CttEquipmentProductivity, CttIdleEvents, CttInterferences, CttPerformanceIndicators, CttTelemetry } from "../interfaces/performanceIndicators.interface";
+import { CttEquipment, CttEvent } from "../../interfaces/availabilityAllocation.interface";
+import { CttDeliveredReturn, CttWorkFronts } from "../../interfaces/partialDelivered.interface";
+import { CttEquipmentProductivity, CttIdleEvents, CttInterferences, CttPerformanceIndicators, CttTelemetry } from "../../interfaces/performanceIndicators.interface";
 /**
  * GET the performance indicators by Front
  * @param equipmentProductivity equipment coming from the productivity API

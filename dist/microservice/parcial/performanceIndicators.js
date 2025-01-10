@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const helper_1 = require("../helper/helper");
+const helper_1 = require("../../helper/helper");
 /**
  * GET the performance indicators by Front
  * @param equipmentProductivity equipment coming from the productivity API
