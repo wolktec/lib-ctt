@@ -144,7 +144,7 @@ const getMechanicalAvailability = async (
         }
       }
     }
-    //console.log(mechanicalAvailability);
+
     return mechanicalAvailability;
   } catch (error) {
     console.error("Ocorreu um erro:", error);
@@ -201,7 +201,6 @@ const formatAvailabilityReturn = async (
 
 /**
  * Agrupa os eventos por tipo de equipamento
- * //TODO: Passar apenas as interferencias de manutenção e abastecimento
  */
 const groupEventsByTypeAndFront = (
   events: CttEvent[],
@@ -213,9 +212,8 @@ const groupEventsByTypeAndFront = (
     equipmentTypeMap.set(equipment.code, equipment.description);
   });
 
-  const allowedTypes = ["Manutenção", "Abastecimento"];
   const interferenceIds = interference
-    .filter((e) => allowedTypes.includes(e.interferenceType.name))
+    .filter((e) => e.interferenceType.name === "Manutenção")
     .map((e) => e.id);
 
   const eventsByType = events.reduce((accumulator, event) => {
