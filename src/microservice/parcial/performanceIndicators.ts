@@ -1,6 +1,7 @@
 import {
   calcJourney,
   calcTelemetryByFront,
+  convertSecondstoTimeString,
   createValueWithGoal,
   getEventTime,
   getTotalHourmeter,
@@ -8,6 +9,7 @@ import {
   groupEquipmentTelemetryByFront,
   msToTime,
   normalizeCalc,
+  secToTime,
 } from "../../helper/helper";
 import {
   CttEquipment,
@@ -96,7 +98,6 @@ const createPerformanceIndicators = async (
     const maneuvers = calcManuvers(events);
 
     const unproductiveTime = await calcJourney(events, interferences);
-    console.log(unproductiveTime);
 
     const ctOffenders = await calcCtOffenders(
       unproductiveTime.totalInterferenceByFront,
@@ -351,16 +352,19 @@ const calcManuvers = (events: CttEvent[]): Record<string, string> => {
       continue;
     }
 
-    if (manuvers[workFront.code]) {
-      manuvers[workFront.code] += getEventTime(event);
-    } else {
-      manuvers[workFront.code] = getEventTime(event);
+    if (event.time.end > 0) {
+      const diffS = (event.time.end - event.time.start) / 1000;
+      if (manuvers[workFront.code]) {
+        manuvers[workFront.code] += diffS;
+      } else {
+        manuvers[workFront.code] = diffS;
+      }
     }
   }
-
+  console.log("manuvers", manuvers);
   const formattedManuvers: Record<string, string> = {};
   for (const [code, timeInHours] of Object.entries(manuvers)) {
-    const timeInMs = timeInHours * 3600 * 1000;
+    const timeInMs = timeInHours * 1000;
     formattedManuvers[code] = msToTime(timeInMs);
   }
 

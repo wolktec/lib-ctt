@@ -31,7 +31,6 @@ const createPerformanceIndicators = async (equipmentProductivity, events, equipm
         const agriculturalEfficiency = calcAgriculturalEfficiency(elevatorHours, engineHours);
         const maneuvers = calcManuvers(events);
         const unproductiveTime = await (0, helper_1.calcJourney)(events, interferences);
-        console.log(unproductiveTime);
         const ctOffenders = await calcCtOffenders(unproductiveTime.totalInterferenceByFront, equipments, tonPerHour);
         const unproductiveTimeFormatted = formatUnproductiveTime(unproductiveTime.totalInterferenceByFront);
         const averageRadius = await calcAverageRadius(events, telemetry.filter((hourMeter) => hourMeter.sensor_name === "odometer"));
@@ -199,16 +198,20 @@ const calcManuvers = (events) => {
         if (event.name !== "Manobra") {
             continue;
         }
-        if (manuvers[workFront.code]) {
-            manuvers[workFront.code] += (0, helper_1.getEventTime)(event);
-        }
-        else {
-            manuvers[workFront.code] = (0, helper_1.getEventTime)(event);
+        if (event.time.end > 0) {
+            const diffS = (event.time.end - event.time.start) / 1000;
+            if (manuvers[workFront.code]) {
+                manuvers[workFront.code] += diffS;
+            }
+            else {
+                manuvers[workFront.code] = diffS;
+            }
         }
     }
+    console.log("manuvers", manuvers);
     const formattedManuvers = {};
     for (const [code, timeInHours] of Object.entries(manuvers)) {
-        const timeInMs = timeInHours * 3600 * 1000;
+        const timeInMs = timeInHours * 1000;
         formattedManuvers[code] = (0, helper_1.msToTime)(timeInMs);
     }
     return formattedManuvers;

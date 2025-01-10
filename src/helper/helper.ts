@@ -136,11 +136,9 @@ export const groupEquipmentsProductivityByFront = (
 };
 
 export const getEventTime = (event: CttEvent) => {
-  let diffS: number = 0;
-  const startTime = dayjs(event.time.start);
-  const endTime = dayjs(event.time.end);
-  diffS = endTime.diff(startTime, "seconds");
-  return diffS / 3600;
+  const startTime = dayjs(event.time.start / 1000);
+  const endTime = dayjs(event.time.end / 1000);
+  return endTime.diff(startTime, "seconds");
 };
 
 export const msToTime = (ms: number): string => {
@@ -149,8 +147,8 @@ export const msToTime = (ms: number): string => {
 
 export const secToTime = (sec: number): string => {
   let hours = Math.floor(sec / 3600);
-  let minutes = Math.floor((sec - hours * 3600) / 60);
-  let seconds = Math.round(sec - hours * 3600 - minutes * 60);
+  let minutes = Math.floor((sec % 3600) / 60);
+  let seconds = Math.round(sec % 60);
 
   if (seconds >= 60) {
     minutes += 1;
@@ -168,7 +166,7 @@ export const secToTime = (sec: number): string => {
 };
 
 const twoCaracters = (num: number): string => {
-  return num < 10 ? `0${num}` : num.toString();
+  return num < 10 ? `0${num}` : num.toString().padStart(2, "0");
 };
 
 export const groupEquipmentTelemetryByFront = (
@@ -487,4 +485,16 @@ export const createValueWithGoal = (
     hasTotalField,
     hasAverageField,
   };
+};
+
+/**
+ * Convert seconds to HH:MM:SS
+ */
+export const convertSecondstoTimeString = (seconds: number): string => {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const sec = Math.floor(seconds % 60);
+  return `${hours.toString().padStart(2, "0")}:${minutes
+    .toString()
+    .padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
 };

@@ -25,3 +25,7 @@ export declare const calcTotalInterferenceByFront: (totalInterferenceTimeFront: 
 export declare const getTotalHourmeter: (hourmeters: CttTelemetry[], firstHourmeterValue?: number) => number;
 export declare function removeOutliers(values: number[], totalDays?: number): number[];
 export declare const createValueWithGoal: (value: number, hasTotalField?: boolean, hasAverageField?: boolean) => any;
+/**
+ * Convert seconds to HH:MM:SS
+ */
+export declare const convertSecondstoTimeString: (seconds: number) => string;

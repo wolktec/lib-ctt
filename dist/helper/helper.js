@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createValueWithGoal = exports.removeOutliers = exports.getTotalHourmeter = exports.calcTotalInterferenceByFront = exports.calcJourney = exports.calcTelemetryByFront = exports.groupEquipmentTelemetryByFront = exports.secToTime = exports.msToTime = exports.getEventTime = exports.groupEquipmentsProductivityByFront = exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = exports.normalizeCalc = exports.calcMechanicalAvailability = exports.convertHourToDecimal = void 0;
+exports.convertSecondstoTimeString = exports.createValueWithGoal = exports.removeOutliers = exports.getTotalHourmeter = exports.calcTotalInterferenceByFront = exports.calcJourney = exports.calcTelemetryByFront = exports.groupEquipmentTelemetryByFront = exports.secToTime = exports.msToTime = exports.getEventTime = exports.groupEquipmentsProductivityByFront = exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = exports.normalizeCalc = exports.calcMechanicalAvailability = exports.convertHourToDecimal = void 0;
 const dayjs_1 = __importDefault(require("dayjs"));
 function convertHourToDecimal(hour) {
     const [hours, minutes] = hour.split(":").map(Number);
@@ -101,11 +101,9 @@ const groupEquipmentsProductivityByFront = (equipmentsProductivity, equipments) 
 };
 exports.groupEquipmentsProductivityByFront = groupEquipmentsProductivityByFront;
 const getEventTime = (event) => {
-    let diffS = 0;
-    const startTime = (0, dayjs_1.default)(event.time.start);
-    const endTime = (0, dayjs_1.default)(event.time.end);
-    diffS = endTime.diff(startTime, "seconds");
-    return diffS / 3600;
+    const startTime = (0, dayjs_1.default)(event.time.start / 1000);
+    const endTime = (0, dayjs_1.default)(event.time.end / 1000);
+    return endTime.diff(startTime, "seconds");
 };
 exports.getEventTime = getEventTime;
 const msToTime = (ms) => {
@@ -114,8 +112,8 @@ const msToTime = (ms) => {
 exports.msToTime = msToTime;
 const secToTime = (sec) => {
     let hours = Math.floor(sec / 3600);
-    let minutes = Math.floor((sec - hours * 3600) / 60);
-    let seconds = Math.round(sec - hours * 3600 - minutes * 60);
+    let minutes = Math.floor((sec % 3600) / 60);
+    let seconds = Math.round(sec % 60);
     if (seconds >= 60) {
         minutes += 1;
         seconds = 0;
@@ -128,7 +126,7 @@ const secToTime = (sec) => {
 };
 exports.secToTime = secToTime;
 const twoCaracters = (num) => {
-    return num < 10 ? `0${num}` : num.toString();
+    return num < 10 ? `0${num}` : num.toString().padStart(2, "0");
 };
 const groupEquipmentTelemetryByFront = (equipments, telemetry) => {
     const telemetryByFront = [];
@@ -372,4 +370,16 @@ const createValueWithGoal = (value, hasTotalField = false, hasAverageField = fal
     };
 };
 exports.createValueWithGoal = createValueWithGoal;
+/**
+ * Convert seconds to HH:MM:SS
+ */
+const convertSecondstoTimeString = (seconds) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const sec = Math.floor(seconds % 60);
+    return `${hours.toString().padStart(2, "0")}:${minutes
+        .toString()
+        .padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
+};
+exports.convertSecondstoTimeString = convertSecondstoTimeString;
 //# sourceMappingURL=helper.js.map
