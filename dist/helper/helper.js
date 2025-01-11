@@ -197,11 +197,11 @@ const calcJourney = async (events, interferences) => {
     const interferenceOperationalEvents = [];
     //Interferências de manutenção
     const interferenceMaintenceIds = interferences
-        .filter((e) => e.interferenceType.name === "Manutenção")
+        .filter((e) => e.interference_type?.name === "Manutenção")
         .map((e) => e.id);
     //Interferências operacionais
     const interferenceOperationalStops = interferences
-        .filter((e) => e.interferenceType.name === "Operação")
+        .filter((e) => e.interference_type?.name === "Operação")
         .map((e) => e.id);
     //Interferências de clima
     const interferenceWeatherStops = [600, 601];
@@ -399,11 +399,11 @@ const calcJourneyByFront = async (events, interferences) => {
     const interferenceOperationalEvents = [];
     //Interferências de manutenção
     const interferenceMaintenceIds = interferences
-        .filter((e) => e.interferenceType.name === "Manutenção")
+        .filter((e) => e.interference_type?.name === "Manutenção")
         .map((e) => e.id);
     //Interferências operacionais
     const interferenceOperationalStops = interferences
-        .filter((e) => e.interferenceType.name === "Operação")
+        .filter((e) => e.interference_type?.name === "Operação")
         .map((e) => e.id);
     //Interferências de clima
     const interferenceWeatherStops = [600, 601];

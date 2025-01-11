@@ -222,24 +222,26 @@ const calcManuvers = (events) => {
 const calcCtOffenders = async (unproductiveTime, equipments, delivered) => {
     const harvesterEquipments = {};
     let ctOffenders = {};
-    for (const [workFrontCode, time] of Object.entries(unproductiveTime)) {
-        for (const equipment of equipments) {
-            if (equipment.work_front_code !== +workFrontCode ||
-                equipment.description !== "Colhedoras") {
-                continue;
+    if (unproductiveTime) {
+        for (const [workFrontCode, time] of Object.entries(unproductiveTime)) {
+            for (const equipment of equipments) {
+                if (equipment.work_front_code !== +workFrontCode ||
+                    equipment.description !== "Colhedoras") {
+                    continue;
+                }
+                harvesterEquipments[workFrontCode] =
+                    (harvesterEquipments[workFrontCode] || 0) + 1;
             }
-            harvesterEquipments[workFrontCode] =
-                (harvesterEquipments[workFrontCode] || 0) + 1;
-        }
-        const tonPerHourEntry = delivered.find((entry) => entry.workFrontCode === +workFrontCode);
-        if (tonPerHourEntry) {
-            if (ctOffenders[workFrontCode]) {
-                ctOffenders[workFrontCode] += (0, helper_1.normalizeCalc)((time * tonPerHourEntry.tonPerHour) /
-                    harvesterEquipments[workFrontCode], 2);
-            }
-            else {
-                ctOffenders[workFrontCode] = (0, helper_1.normalizeCalc)((time * tonPerHourEntry.tonPerHour) /
-                    harvesterEquipments[workFrontCode], 2);
+            const tonPerHourEntry = delivered.find((entry) => entry.workFrontCode === +workFrontCode);
+            if (tonPerHourEntry) {
+                if (ctOffenders[workFrontCode]) {
+                    ctOffenders[workFrontCode] += (0, helper_1.normalizeCalc)((time * tonPerHourEntry.tonPerHour) /
+                        harvesterEquipments[workFrontCode], 2);
+                }
+                else {
+                    ctOffenders[workFrontCode] = (0, helper_1.normalizeCalc)((time * tonPerHourEntry.tonPerHour) /
+                        harvesterEquipments[workFrontCode], 2);
+                }
             }
         }
     }

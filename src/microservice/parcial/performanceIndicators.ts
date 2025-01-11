@@ -378,34 +378,36 @@ const calcCtOffenders = async (
 ): Promise<Record<string, number>> => {
   const harvesterEquipments: Record<string, number> = {};
   let ctOffenders: Record<string, number> = {};
-  for (const [workFrontCode, time] of Object.entries(unproductiveTime)) {
-    for (const equipment of equipments) {
-      if (
-        equipment.work_front_code !== +workFrontCode ||
-        equipment.description !== "Colhedoras"
-      ) {
-        continue;
+  if (unproductiveTime) {
+    for (const [workFrontCode, time] of Object.entries(unproductiveTime)) {
+      for (const equipment of equipments) {
+        if (
+          equipment.work_front_code !== +workFrontCode ||
+          equipment.description !== "Colhedoras"
+        ) {
+          continue;
+        }
+        harvesterEquipments[workFrontCode] =
+          (harvesterEquipments[workFrontCode] || 0) + 1;
       }
-      harvesterEquipments[workFrontCode] =
-        (harvesterEquipments[workFrontCode] || 0) + 1;
-    }
-    const tonPerHourEntry = delivered.find(
-      (entry) => entry.workFrontCode === +workFrontCode
-    );
+      const tonPerHourEntry = delivered.find(
+        (entry) => entry.workFrontCode === +workFrontCode
+      );
 
-    if (tonPerHourEntry) {
-      if (ctOffenders[workFrontCode]) {
-        ctOffenders[workFrontCode] += normalizeCalc(
-          (time * tonPerHourEntry.tonPerHour) /
-            harvesterEquipments[workFrontCode],
-          2
-        );
-      } else {
-        ctOffenders[workFrontCode] = normalizeCalc(
-          (time * tonPerHourEntry.tonPerHour) /
-            harvesterEquipments[workFrontCode],
-          2
-        );
+      if (tonPerHourEntry) {
+        if (ctOffenders[workFrontCode]) {
+          ctOffenders[workFrontCode] += normalizeCalc(
+            (time * tonPerHourEntry.tonPerHour) /
+              harvesterEquipments[workFrontCode],
+            2
+          );
+        } else {
+          ctOffenders[workFrontCode] = normalizeCalc(
+            (time * tonPerHourEntry.tonPerHour) /
+              harvesterEquipments[workFrontCode],
+            2
+          );
+        }
       }
     }
   }
