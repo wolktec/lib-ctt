@@ -44,7 +44,7 @@ export declare type CttAgriculturalEfficiency = Record<string, {
 }>;
 export interface CttInterferences {
     id: number;
-    interferenceType: {
+    interference_type?: {
         name: string;
     };
 }

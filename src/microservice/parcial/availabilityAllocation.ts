@@ -213,7 +213,9 @@ const groupEventsByTypeAndFront = (
   });
 
   const interferenceIds = interference
-    .filter((e) => e.interferenceType.name === "Manutenção")
+    .filter(
+      (e) => e.interference_type && e.interference_type.name === "Manutenção"
+    )
     .map((e) => e.id);
 
   const eventsByType = events.reduce((accumulator, event) => {
