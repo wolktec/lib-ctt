@@ -1,5 +1,16 @@
-import { CttEquipment, CttEquipmentsGroupsType, CttEvent, CttAvailabilityAndAllocationResult } from "./interfaces/availabilityAllocation.interface";
-import { CttTon, CttDeliveredReturn, CttEstimatedTons, CttPartialDeliveredResult, CttWorkFronts } from "./interfaces/partialDelivered.interface";
+import {
+  CttEquipment,
+  CttEquipmentsGroupsType,
+  CttEvent,
+  CttAvailabilityAndAllocationResult,
+} from "./interfaces/availabilityAllocation.interface";
+import {
+  CttTon,
+  CttDeliveredReturn,
+  CttEstimatedTons,
+  CttPartialDeliveredResult,
+  CttWorkFronts,
+} from "./interfaces/partialDelivered.interface";
 import {
   CttEquipmentProductivity,
   CttEquipmentProductivityFront,
@@ -10,13 +21,12 @@ import {
   CttTelemetry,
   CttTelemetryByFront,
   CttTrucksLack,
-  Journey
+  Journey,
 } from "./interfaces/performanceIndicators.interface";
 
-
-export { default as createAvailabilityAllocation } from "./microservice/availabilityAllocation";
-export { default as createPartialDelivered } from "./microservice/partialDelivered";
-export { default as performanceIndicators } from "./microservice/performanceIndicators";
+export { default as createAvailabilityAllocation } from "./microservice/parcial/availabilityAllocation";
+export { default as createPartialDelivered } from "./microservice/parcial/partialDelivered";
+export { default as performanceIndicators } from "./microservice/parcial/performanceIndicators";
 
 export {
   CttEquipment,
@@ -38,4 +48,4 @@ export {
   CttPerformanceIndicators,
   Journey,
   CttSummaryReturn,
-}
+};

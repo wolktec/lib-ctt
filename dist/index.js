@@ -4,10 +4,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.performanceIndicators = exports.createPartialDelivered = exports.createAvailabilityAllocation = void 0;
-var availabilityAllocation_1 = require("./microservice/availabilityAllocation");
+var availabilityAllocation_1 = require("./microservice/parcial/availabilityAllocation");
 Object.defineProperty(exports, "createAvailabilityAllocation", { enumerable: true, get: function () { return __importDefault(availabilityAllocation_1).default; } });
-var partialDelivered_1 = require("./microservice/partialDelivered");
+var partialDelivered_1 = require("./microservice/parcial/partialDelivered");
 Object.defineProperty(exports, "createPartialDelivered", { enumerable: true, get: function () { return __importDefault(partialDelivered_1).default; } });
-var performanceIndicators_1 = require("./microservice/performanceIndicators");
+var performanceIndicators_1 = require("./microservice/parcial/performanceIndicators");
 Object.defineProperty(exports, "performanceIndicators", { enumerable: true, get: function () { return __importDefault(performanceIndicators_1).default; } });
 //# sourceMappingURL=index.js.map
