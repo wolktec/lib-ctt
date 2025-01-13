@@ -285,7 +285,7 @@ const calcTrucksLack = (events: CttEvent[]): CttTrucksLack => {
 
   const formattedTrucksLack: Record<string, string> = {};
   for (const [code, timeInHours] of Object.entries(trucksLack)) {
-    const timeInMs = timeInHours * 3600 * 1000;
+    const timeInMs = timeInHours * 1000;
     formattedTrucksLack[code] = msToTime(timeInMs);
   }
 
@@ -462,7 +462,7 @@ const formatUnproductiveTime = (
     if (!timeInHours) {
       formatUnproductiveTime[code] = "00:00:00";
     } else {
-      const timeInMs = timeInHours * 3600 * 1000;
+      const timeInMs = timeInHours * 1000;
       formatUnproductiveTime[code] = msToTime(timeInMs);
     }
   }
@@ -528,7 +528,7 @@ const formatPerformanceIndicatorReturn = (
         workFrontCode: workfrontCode,
         trips: tripQtd[workfrontCode] || 0,
         averageWeight: averageWeight[workfrontCode] || 0,
-        trucksLack: trucksLack[workfrontCode] || "",
+        trucksLack: trucksLack[workfrontCode] || "00:00:00",
         awaitingTransshipment:
           awaitingTransshipment[workfrontCode] || "00:00:00",
         engineIdle: idleTime[workfrontCode] || "00:00:00",
