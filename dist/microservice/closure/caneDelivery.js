@@ -70,11 +70,11 @@ const calcUnitDayTotal = (frontsDayProductivity, workFronts) => {
     Object.entries(frontsDayProductivity).forEach(([workFront, ton]) => {
         const unit = workFronts.find((wkf) => wkf.code === +workFront);
         if (unit) {
-            if (unitTotalDay[workFront]) {
-                unitTotalDay[unit.unitId] += (0, helper_1.normalizeCalc)(ton, 2);
+            if (unitTotalDay[unit.unitId]) {
+                unitTotalDay[unit.unitId] += ton;
             }
             else {
-                unitTotalDay[unit.unitId] = (0, helper_1.normalizeCalc)(ton, 2);
+                unitTotalDay[unit.unitId] = ton;
             }
         }
     });
@@ -85,17 +85,33 @@ const calcUnitMonthTotal = (frontsMonthProductivity, workFronts) => {
     Object.entries(frontsMonthProductivity).forEach(([workFront, ton]) => {
         const unit = workFronts.find((wkf) => wkf.code === +workFront);
         if (unit) {
-            if (unitTotalMonth[workFront]) {
-                unitTotalMonth[unit.unitId] += (0, helper_1.normalizeCalc)(ton, 2);
+            if (unitTotalMonth[unit.unitId]) {
+                unitTotalMonth[unit.unitId] += ton;
             }
             else {
-                unitTotalMonth[unit.unitId] = (0, helper_1.normalizeCalc)(ton, 2);
+                unitTotalMonth[unit.unitId] = ton;
             }
         }
     });
     return unitTotalMonth;
 };
 const formatCaneDeliveryReturn = (workFronts, frontsDayProductivity, dayGoalPercentage, frontsMonthProductivity, tonPerHour, frontsHarvestProductivity, harvestGoalPercentage, unitTotalHarvest, unitTotalDay, unitTotalMonth) => {
+    const seenUnitIds = new Set();
+    const unitsReturn = workFronts.reduce((acc, unit) => {
+        const unitId = unit.unitId;
+        if (!seenUnitIds.has(unitId)) {
+            acc.push({
+                name: unit.unitName || "",
+                total: unitTotalHarvest[unitId] || 0,
+                day: unitTotalDay[unitId] || 0,
+                month: unitTotalMonth[unitId] || 0,
+                percentage: 0,
+                goal: 0,
+            });
+            seenUnitIds.add(unitId);
+        }
+        return acc;
+    }, []);
     const caneDeliveryReturn = {
         workFronts: workFronts.map((workFront) => {
             const workFrontCode = workFront.code;
@@ -109,16 +125,7 @@ const formatCaneDeliveryReturn = (workFronts, frontsDayProductivity, dayGoalPerc
                 harvestGoalPercentage: harvestGoalPercentage[workFrontCode.toString()] || 0,
             };
         }),
-        units: Object.entries(workFronts).map(([unitId, unitName]) => {
-            return {
-                name: unitName || "",
-                total: unitTotalHarvest[unitId] || 0,
-                day: unitTotalDay[unitId] || 0,
-                month: unitTotalMonth[unitId] || 0,
-                percentage: 0,
-                goal: 0,
-            };
-        }),
+        units: unitsReturn,
         periods: {
             key: "",
             label: "",

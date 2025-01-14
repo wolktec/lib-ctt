@@ -38,4 +38,12 @@ export interface CttWorkFrontUnit extends CttWorkFronts {
     unitId: number;
     unitName: string;
 }
+export interface Unit {
+    name: string;
+    total: number;
+    day: number;
+    month: number;
+    percentage: number;
+    goal: number;
+}
 export {};

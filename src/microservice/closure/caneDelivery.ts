@@ -2,6 +2,7 @@ import { normalizeCalc } from "../../helper/helper";
 import {
   CttCaneDelivery,
   CttWorkFrontUnit,
+  Unit,
 } from "../../interfaces/caneDelivery.interface";
 import {
   CttTon,
@@ -136,10 +137,10 @@ const calcUnitDayTotal = (
     const unit = workFronts.find((wkf) => wkf.code === +workFront);
 
     if (unit) {
-      if (unitTotalDay[workFront]) {
-        unitTotalDay[unit.unitId] += normalizeCalc(ton, 2);
+      if (unitTotalDay[unit.unitId]) {
+        unitTotalDay[unit.unitId] += ton;
       } else {
-        unitTotalDay[unit.unitId] = normalizeCalc(ton, 2);
+        unitTotalDay[unit.unitId] = ton;
       }
     }
   });
@@ -156,10 +157,10 @@ const calcUnitMonthTotal = (
     const unit = workFronts.find((wkf) => wkf.code === +workFront);
 
     if (unit) {
-      if (unitTotalMonth[workFront]) {
-        unitTotalMonth[unit.unitId] += normalizeCalc(ton, 2);
+      if (unitTotalMonth[unit.unitId]) {
+        unitTotalMonth[unit.unitId] += ton;
       } else {
-        unitTotalMonth[unit.unitId] = normalizeCalc(ton, 2);
+        unitTotalMonth[unit.unitId] = ton;
       }
     }
   });
@@ -178,6 +179,26 @@ const formatCaneDeliveryReturn = (
   unitTotalDay: Record<string, number>,
   unitTotalMonth: Record<string, number>
 ) => {
+  const seenUnitIds = new Set();
+  const unitsReturn: Unit[] = workFronts.reduce((acc: Unit[], unit) => {
+    const unitId = unit.unitId;
+
+    if (!seenUnitIds.has(unitId)) {
+      acc.push({
+        name: unit.unitName || "",
+        total: unitTotalHarvest[unitId] || 0,
+        day: unitTotalDay[unitId] || 0,
+        month: unitTotalMonth[unitId] || 0,
+        percentage: 0,
+        goal: 0,
+      });
+
+      seenUnitIds.add(unitId);
+    }
+
+    return acc;
+  }, []);
+
   const caneDeliveryReturn = {
     workFronts: workFronts.map((workFront) => {
       const workFrontCode = workFront.code;
@@ -193,16 +214,7 @@ const formatCaneDeliveryReturn = (
           harvestGoalPercentage[workFrontCode.toString()] || 0,
       };
     }),
-    units: Object.entries(workFronts).map(([unitId, unitName]) => {
-      return {
-        name: unitName || "",
-        total: unitTotalHarvest[unitId] || 0,
-        day: unitTotalDay[unitId] || 0,
-        month: unitTotalMonth[unitId] || 0,
-        percentage: 0,
-        goal: 0,
-      };
-    }),
+    units: unitsReturn,
     periods: {
       key: "",
       label: "",
