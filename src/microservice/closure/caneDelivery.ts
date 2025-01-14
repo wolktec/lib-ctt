@@ -137,9 +137,9 @@ const calcUnitDayTotal = (
 
     if (unit) {
       if (unitTotalDay[workFront]) {
-        unitTotalDay[unit.unitId] += ton;
+        unitTotalDay[unit.unitId] += normalizeCalc(ton, 2);
       } else {
-        unitTotalDay[unit.unitId] = ton;
+        unitTotalDay[unit.unitId] = normalizeCalc(ton, 2);
       }
     }
   });
@@ -157,9 +157,9 @@ const calcUnitMonthTotal = (
 
     if (unit) {
       if (unitTotalMonth[workFront]) {
-        unitTotalMonth[unit.unitId] += ton;
+        unitTotalMonth[unit.unitId] += normalizeCalc(ton, 2);
       } else {
-        unitTotalMonth[unit.unitId] = ton;
+        unitTotalMonth[unit.unitId] = normalizeCalc(ton, 2);
       }
     }
   });

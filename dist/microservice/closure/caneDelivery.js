@@ -71,10 +71,10 @@ const calcUnitDayTotal = (frontsDayProductivity, workFronts) => {
         const unit = workFronts.find((wkf) => wkf.code === +workFront);
         if (unit) {
             if (unitTotalDay[workFront]) {
-                unitTotalDay[unit.unitId] += ton;
+                unitTotalDay[unit.unitId] += (0, helper_1.normalizeCalc)(ton, 2);
             }
             else {
-                unitTotalDay[unit.unitId] = ton;
+                unitTotalDay[unit.unitId] = (0, helper_1.normalizeCalc)(ton, 2);
             }
         }
     });
@@ -86,10 +86,10 @@ const calcUnitMonthTotal = (frontsMonthProductivity, workFronts) => {
         const unit = workFronts.find((wkf) => wkf.code === +workFront);
         if (unit) {
             if (unitTotalMonth[workFront]) {
-                unitTotalMonth[unit.unitId] += ton;
+                unitTotalMonth[unit.unitId] += (0, helper_1.normalizeCalc)(ton, 2);
             }
             else {
-                unitTotalMonth[unit.unitId] = ton;
+                unitTotalMonth[unit.unitId] = (0, helper_1.normalizeCalc)(ton, 2);
             }
         }
     });
