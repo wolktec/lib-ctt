@@ -28,11 +28,12 @@ export function calcMechanicalAvailability(
     return 100.0;
   }
   const calc = normalizeCalc(
-    ((currentHour - totalMaintenance / countMaintenance) / currentHour) * 100,
+    ((( currentHour * 3600) - totalMaintenance / countMaintenance) / (currentHour * 3600)) * 100,
     2
   );
   return calc;
 }
+
 export function normalizeCalc(value: number, fixed = 1) {
   if (Number.isNaN(value) || !Number.isFinite(value)) {
     return 0;
@@ -137,8 +138,8 @@ export const groupEquipmentsProductivityByFront = (
 };
 
 export const getEventTime = (event: CttEvent) => {
-  const startTime = dayjs(event.time.start / 1000);
-  const endTime = dayjs(event.time.end / 1000);
+  const startTime = dayjs(event.time.start);
+  const endTime = dayjs(event.time.end);
   return endTime.diff(startTime, "seconds");
 };
 
