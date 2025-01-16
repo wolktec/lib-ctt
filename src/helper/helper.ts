@@ -644,3 +644,23 @@ export const getDaysInMonth = (dateString: string): number => {
 
   return lastDay.getDate();
 };
+
+export const getDaysBetweenDates = (
+  startDate: string,
+  endDate: string
+): number => {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  const diffInMs = end.getTime() - start.getTime();
+  return Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
+};
+
+export const getHarvestDateRange = (date: string) => {
+  const [year] = date.split("-");
+
+  const startDate = `${year}-04-01`;
+  const endDate = `${year}-12-31`;
+
+  return { startDate, endDate };
+};

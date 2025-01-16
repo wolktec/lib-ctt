@@ -1,5 +1,10 @@
 import dayjs from "dayjs";
-import { getDaysInMonth, normalizeCalc } from "../../helper/helper";
+import {
+  getDaysBetweenDates,
+  getDaysInMonth,
+  getHarvestDateRange,
+  normalizeCalc,
+} from "../../helper/helper";
 import {
   CttCaneDelivery,
   CttWorkFrontUnit,
@@ -20,6 +25,7 @@ import Decimal from "decimal.js";
  * @param workFronts Workfronts with units
  * @param otherUnitDayProductivity Productivity from the other UNIT available grouped by front and day
  * @param otherMonthProductivity Productivity from the other UNIT available by front and month
+ * @param otherHarvestProductivity Productivity from the other UNIT available by front and harvest
  * @param date Filtered date
  */
 const createCaneDelivery = async (
@@ -29,6 +35,7 @@ const createCaneDelivery = async (
   workFronts: CttWorkFrontUnit[],
   otherUnitDayProductivity: CttTon,
   otherMonthProductivity: CttTon,
+  otherHarvestProductivity: CttTon,
   date: string
 ): Promise<any> => {
   const workFrontsUnits = workFronts;
@@ -53,6 +60,12 @@ const createCaneDelivery = async (
       .toNumber();
   });
 
+  Object.entries(frontsHarvestProductivity).forEach(([workFront, ton]) => {
+    frontsHarvestProductivity[workFront] = new Decimal(ton)
+      .toDecimalPlaces(2)
+      .toNumber();
+  });
+
   Object.entries(otherUnitDayProductivity).forEach(([workFront, ton]) => {
     otherUnitDayProductivity[workFront] = new Decimal(ton)
       .toDecimalPlaces(2)
@@ -69,7 +82,8 @@ const createCaneDelivery = async (
 
   const harvestGoalPercentage = calcHarvestGoal(
     frontsHarvestProductivity,
-    workFronts
+    workFronts,
+    date
   );
 
   const unitTotalHarvest = calcUnitHarvest(
@@ -152,15 +166,22 @@ const calcTonPerHour = (
 
 const calcHarvestGoal = (
   frontsHarvestProductivity: CttTon,
-  workFronts: CttWorkFronts[]
+  workFronts: CttWorkFronts[],
+  date: string
 ): Record<string, number> => {
   let harvestGoal: Record<string, number> = {};
+  const dateHarvest = getHarvestDateRange(date);
+
+  const daysHarvest = getDaysBetweenDates(
+    dateHarvest.startDate,
+    dateHarvest.endDate
+  );
 
   Object.entries(frontsHarvestProductivity).forEach(([workFront, ton]) => {
     const workFrontGoal = workFronts.find((wkf) => wkf.code === +workFront);
-
     if (workFrontGoal) {
-      harvestGoal[workFront] = normalizeCalc(ton / workFrontGoal.goal, 2);
+      const goalHarvest = workFrontGoal?.goal * daysHarvest;
+      harvestGoal[workFront] = normalizeCalc((ton / goalHarvest) * 100, 2);
     } else {
       harvestGoal[workFront] = 0;
     }

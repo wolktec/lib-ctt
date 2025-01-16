@@ -13,9 +13,10 @@ const decimal_js_1 = __importDefault(require("decimal.js"));
  * @param workFronts Workfronts with units
  * @param otherUnitDayProductivity Productivity from the other UNIT available grouped by front and day
  * @param otherMonthProductivity Productivity from the other UNIT available by front and month
+ * @param otherHarvestProductivity Productivity from the other UNIT available by front and harvest
  * @param date Filtered date
  */
-const createCaneDelivery = async (frontsDayProductivity, frontsMonthProductivity, frontsHarvestProductivity, workFronts, otherUnitDayProductivity, otherMonthProductivity, date) => {
+const createCaneDelivery = async (frontsDayProductivity, frontsMonthProductivity, frontsHarvestProductivity, workFronts, otherUnitDayProductivity, otherMonthProductivity, otherHarvestProductivity, date) => {
     const workFrontsUnits = workFronts;
     workFronts = workFronts.filter((workFront) => workFront.code in frontsDayProductivity);
     const dayGoalPercentage = calcDailyGoalDelivery(frontsDayProductivity, workFronts);
@@ -26,6 +27,11 @@ const createCaneDelivery = async (frontsDayProductivity, frontsMonthProductivity
     });
     Object.entries(frontsMonthProductivity).forEach(([workFront, ton]) => {
         frontsMonthProductivity[workFront] = new decimal_js_1.default(ton)
+            .toDecimalPlaces(2)
+            .toNumber();
+    });
+    Object.entries(frontsHarvestProductivity).forEach(([workFront, ton]) => {
+        frontsHarvestProductivity[workFront] = new decimal_js_1.default(ton)
             .toDecimalPlaces(2)
             .toNumber();
     });
@@ -40,7 +46,7 @@ const createCaneDelivery = async (frontsDayProductivity, frontsMonthProductivity
             .toNumber();
     });
     const tonPerHour = calcTonPerHour(frontsDayProductivity);
-    const harvestGoalPercentage = calcHarvestGoal(frontsHarvestProductivity, workFronts);
+    const harvestGoalPercentage = calcHarvestGoal(frontsHarvestProductivity, workFronts, date);
     const unitTotalHarvest = calcUnitHarvest(frontsHarvestProductivity, workFronts);
     const unitTotalDay = calcUnitDayTotal(frontsDayProductivity, workFrontsUnits, otherUnitDayProductivity);
     const unitTotalMonth = calcUnitMonthTotal(frontsMonthProductivity, workFrontsUnits, otherMonthProductivity);
@@ -69,12 +75,15 @@ const calcTonPerHour = (frontsDayProductivity) => {
     });
     return tonPerHour;
 };
-const calcHarvestGoal = (frontsHarvestProductivity, workFronts) => {
+const calcHarvestGoal = (frontsHarvestProductivity, workFronts, date) => {
     let harvestGoal = {};
+    const dateHarvest = (0, helper_1.getHarvestDateRange)(date);
+    const daysHarvest = (0, helper_1.getDaysBetweenDates)(dateHarvest.startDate, dateHarvest.endDate);
     Object.entries(frontsHarvestProductivity).forEach(([workFront, ton]) => {
         const workFrontGoal = workFronts.find((wkf) => wkf.code === +workFront);
         if (workFrontGoal) {
-            harvestGoal[workFront] = (0, helper_1.normalizeCalc)(ton / workFrontGoal.goal, 2);
+            const goalHarvest = workFrontGoal?.goal * daysHarvest;
+            harvestGoal[workFront] = (0, helper_1.normalizeCalc)((ton / goalHarvest) * 100, 2);
         }
         else {
             harvestGoal[workFront] = 0;
