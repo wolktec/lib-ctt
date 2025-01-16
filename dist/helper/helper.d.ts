@@ -30,3 +30,4 @@ export declare const createValueWithGoal: (value: number, hasTotalField?: boolea
  */
 export declare const convertSecondstoTimeString: (seconds: number) => string;
 export declare const calcJourneyByFront: (events: CttEvent[], interferences: CttInterferences[]) => Promise<JourneyFront>;
+export declare const getDaysInMonth: (dateString: string) => number;

@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { normalizeCalc } from "../../helper/helper";
+import { getDaysInMonth, normalizeCalc } from "../../helper/helper";
 import {
   CttCaneDelivery,
   CttWorkFrontUnit,
@@ -20,6 +20,7 @@ import Decimal from "decimal.js";
  * @param workFronts Workfronts with units
  * @param otherUnitDayProductivity Productivity from the other UNIT available grouped by front and day
  * @param otherMonthProductivity Productivity from the other UNIT available by front and month
+ * @param date Filtered date
  */
 const createCaneDelivery = async (
   frontsDayProductivity: CttTon,
@@ -27,7 +28,8 @@ const createCaneDelivery = async (
   frontsHarvestProductivity: CttTon,
   workFronts: CttWorkFrontUnit[],
   otherUnitDayProductivity: CttTon,
-  otherMonthProductivity: CttTon
+  otherMonthProductivity: CttTon,
+  date: string
 ): Promise<any> => {
   const workFrontsUnits = workFronts;
   workFronts = workFronts.filter(
@@ -89,8 +91,15 @@ const createCaneDelivery = async (
 
   const dayPeriodCaneDelivery = getDayPeriodCaneDelivery(
     unitTotalDay,
-    workFrontsUnits
+    workFronts
   );
+
+  const monthPeriodCaneDelivery = getMonthPeriodCaneDelivery(
+    unitTotalMonth,
+    workFronts,
+    date
+  );
+  const periodDelivery = [...dayPeriodCaneDelivery, ...monthPeriodCaneDelivery];
 
   return formatCaneDeliveryReturn(
     workFronts,
@@ -103,7 +112,8 @@ const createCaneDelivery = async (
     unitTotalHarvest,
     unitTotalDay,
     unitTotalMonth,
-    workFrontsUnits
+    workFrontsUnits,
+    periodDelivery
   );
 };
 
@@ -247,7 +257,7 @@ const calcUnitMonthTotal = (
 const getDayPeriodCaneDelivery = (
   unitTotalDay: Record<string, number>,
   workFronts: CttWorkFrontUnit[]
-): CttPeriodsCaneDelivery => {
+): CttPeriodsCaneDelivery[] => {
   let goalUnit = 0;
   let unitTotal = 0;
 
@@ -261,21 +271,70 @@ const getDayPeriodCaneDelivery = (
 
   const unitTotalDayPercentage = normalizeCalc((unitTotal / goalUnit) * 100);
 
-  const dayPeriod = {
-    key: "day",
-    label: "Dia",
-    goal: goalUnit,
-    effectiveDays: null,
-    data: [
-      {
-        label: "Realizado",
-        progress: unitTotalDayPercentage,
-        value: unitTotal,
-      },
-    ],
-  };
+  const dayPeriod = [
+    {
+      key: "day",
+      label: "Dia",
+      goal: goalUnit,
+      effectiveDays: null,
+      data: [
+        {
+          label: "Realizado",
+          progress: unitTotalDayPercentage,
+          value: unitTotal,
+        },
+      ],
+    },
+  ];
 
   return dayPeriod;
+};
+
+const getMonthPeriodCaneDelivery = (
+  unitTotalMonth: Record<string, number>,
+  workFronts: CttWorkFrontUnit[],
+  date: string
+): CttPeriodsCaneDelivery[] => {
+  let goalUnit = 0;
+  let unitTotal = 0;
+  const daysMonth = getDaysInMonth(date);
+
+  workFronts.forEach((workFront) => {
+    goalUnit += workFront.goal;
+
+    if (unitTotalMonth[workFront.unitId]) {
+      unitTotal = unitTotalMonth[workFront.unitId];
+    }
+  });
+
+  goalUnit = goalUnit * daysMonth;
+  const unitTotalMonthPercentage = normalizeCalc((unitTotal / goalUnit) * 100);
+
+  const toDo = goalUnit - unitTotal;
+  const toDoPercentage = normalizeCalc((toDo / goalUnit) * 100, 2);
+
+  const monthPeriod = [
+    {
+      key: "month",
+      label: "Mês",
+      goal: goalUnit,
+      effectiveDays: null,
+      data: [
+        {
+          label: "Realizado",
+          progress: unitTotalMonthPercentage,
+          value: unitTotal,
+        },
+        {
+          label: "A realizar",
+          progress: toDoPercentage,
+          value: toDo,
+        },
+      ],
+    },
+  ];
+
+  return monthPeriod;
 };
 
 const formatCaneDeliveryReturn = (
@@ -289,7 +348,8 @@ const formatCaneDeliveryReturn = (
   unitTotalHarvest: Record<string, number>,
   unitTotalDay: Record<string, number>,
   unitTotalMonth: Record<string, number>,
-  workFrontsUnits: CttWorkFrontUnit[]
+  workFrontsUnits: CttWorkFrontUnit[],
+  dayPeriodCaneDelivery: CttPeriodsCaneDelivery[]
 ) => {
   const seenUnitIds = new Set();
   const unitsReturn: CttUnitsCaneDelivery[] = workFrontsUnits.reduce(
@@ -330,19 +390,7 @@ const formatCaneDeliveryReturn = (
       };
     }),
     units: unitsReturn,
-    periods: {
-      key: "",
-      label: "",
-      goal: 0,
-      effectiveDays: "",
-      data: [
-        {
-          label: "",
-          progress: 0,
-          value: 0,
-        },
-      ],
-    },
+    periods: dayPeriodCaneDelivery,
   };
 
   return caneDeliveryReturn;

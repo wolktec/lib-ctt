@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.calcJourneyByFront = exports.convertSecondstoTimeString = exports.createValueWithGoal = exports.removeOutliers = exports.getTotalHourmeter = exports.calcTotalInterferenceByFront = exports.calcJourney = exports.calcTelemetryByFront = exports.groupEquipmentTelemetryByFront = exports.secToTime = exports.msToTime = exports.getEventTime = exports.groupEquipmentsProductivityByFront = exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = exports.normalizeCalc = exports.calcMechanicalAvailability = exports.convertHourToDecimal = void 0;
+exports.getDaysInMonth = exports.calcJourneyByFront = exports.convertSecondstoTimeString = exports.createValueWithGoal = exports.removeOutliers = exports.getTotalHourmeter = exports.calcTotalInterferenceByFront = exports.calcJourney = exports.calcTelemetryByFront = exports.groupEquipmentTelemetryByFront = exports.secToTime = exports.msToTime = exports.getEventTime = exports.groupEquipmentsProductivityByFront = exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = exports.normalizeCalc = exports.calcMechanicalAvailability = exports.convertHourToDecimal = void 0;
 const dayjs_1 = __importDefault(require("dayjs"));
 function convertHourToDecimal(hour) {
     const [hours, minutes] = hour.split(":").map(Number);
@@ -498,4 +498,10 @@ const calcJourneyByFront = async (events, interferences) => {
     };
 };
 exports.calcJourneyByFront = calcJourneyByFront;
+const getDaysInMonth = (dateString) => {
+    const [year, month] = dateString.split("-").map(Number);
+    const lastDay = new Date(year, month, 0);
+    return lastDay.getDate();
+};
+exports.getDaysInMonth = getDaysInMonth;
 //# sourceMappingURL=helper.js.map

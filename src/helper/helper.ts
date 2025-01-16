@@ -636,3 +636,11 @@ export const calcJourneyByFront = async (
     ),
   };
 };
+
+export const getDaysInMonth = (dateString: string): number => {
+  const [year, month] = dateString.split("-").map(Number);
+
+  const lastDay = new Date(year, month, 0);
+
+  return lastDay.getDate();
+};

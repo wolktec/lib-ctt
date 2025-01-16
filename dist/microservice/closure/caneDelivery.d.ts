@@ -8,6 +8,7 @@ import { CttTon } from "../../interfaces/partialDelivered.interface";
  * @param workFronts Workfronts with units
  * @param otherUnitDayProductivity Productivity from the other UNIT available grouped by front and day
  * @param otherMonthProductivity Productivity from the other UNIT available by front and month
+ * @param date Filtered date
  */
-declare const createCaneDelivery: (frontsDayProductivity: CttTon, frontsMonthProductivity: CttTon, frontsHarvestProductivity: CttTon, workFronts: CttWorkFrontUnit[], otherUnitDayProductivity: CttTon, otherMonthProductivity: CttTon) => Promise<any>;
+declare const createCaneDelivery: (frontsDayProductivity: CttTon, frontsMonthProductivity: CttTon, frontsHarvestProductivity: CttTon, workFronts: CttWorkFrontUnit[], otherUnitDayProductivity: CttTon, otherMonthProductivity: CttTon, date: string) => Promise<any>;
 export default createCaneDelivery;
