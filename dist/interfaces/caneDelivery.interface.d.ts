@@ -13,7 +13,7 @@ interface CttWorkFrontsCaneDelivery {
     harvest: number;
     harvestGoalPercentage: number;
 }
-interface CttUnitsCaneDelivery {
+export interface CttUnitsCaneDelivery {
     name: string;
     total: number;
     day: number;
@@ -21,29 +21,19 @@ interface CttUnitsCaneDelivery {
     percentage: number;
     goal: number;
 }
-interface CttPeriodsCaneDelivery {
+export interface CttPeriodsCaneDelivery {
     key: string;
     label: string;
     goal: number;
     effectiveDays: string | null;
-    data: [
-        {
-            label: string;
-            progress: number;
-            value: number;
-        }
-    ];
+    data: {
+        label: string;
+        progress: number;
+        value: number;
+    }[];
 }
 export interface CttWorkFrontUnit extends CttWorkFronts {
     unitId: number;
     unitName: string;
-}
-export interface Unit {
-    name: string;
-    total: number;
-    day: number;
-    month: number;
-    percentage: number;
-    goal: number;
 }
 export {};

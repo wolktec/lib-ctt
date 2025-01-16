@@ -1,13 +1,16 @@
+import dayjs from "dayjs";
 import { normalizeCalc } from "../../helper/helper";
 import {
   CttCaneDelivery,
   CttWorkFrontUnit,
-  Unit,
+  CttUnitsCaneDelivery,
+  CttPeriodsCaneDelivery,
 } from "../../interfaces/caneDelivery.interface";
 import {
   CttTon,
   CttWorkFronts,
 } from "../../interfaces/partialDelivered.interface";
+import Decimal from "decimal.js";
 
 /**
  * GET the cane delivered based on the productivity API registered by FRONT
@@ -15,17 +18,50 @@ import {
  * @param frontsMonthProductivity Productivity grouped by front and month
  * @param frontsHarvestProductivity Productivity grouped by front and harvest
  * @param workFronts Workfronts with units
+ * @param otherUnitDayProductivity Productivity from the other UNIT available grouped by front and day
+ * @param otherMonthProductivity Productivity from the other UNIT available by front and month
  */
 const createCaneDelivery = async (
   frontsDayProductivity: CttTon,
   frontsMonthProductivity: CttTon,
   frontsHarvestProductivity: CttTon,
-  workFronts: CttWorkFrontUnit[]
+  workFronts: CttWorkFrontUnit[],
+  otherUnitDayProductivity: CttTon,
+  otherMonthProductivity: CttTon
 ): Promise<any> => {
+  const workFrontsUnits = workFronts;
+  workFronts = workFronts.filter(
+    (workFront) => workFront.code in frontsDayProductivity
+  );
+
   const dayGoalPercentage = calcDailyGoalDelivery(
     frontsDayProductivity,
     workFronts
   );
+
+  Object.entries(frontsDayProductivity).forEach(([workFront, ton]) => {
+    frontsDayProductivity[workFront] = new Decimal(ton)
+      .toDecimalPlaces(2)
+      .toNumber();
+  });
+
+  Object.entries(frontsMonthProductivity).forEach(([workFront, ton]) => {
+    frontsMonthProductivity[workFront] = new Decimal(ton)
+      .toDecimalPlaces(2)
+      .toNumber();
+  });
+
+  Object.entries(otherUnitDayProductivity).forEach(([workFront, ton]) => {
+    otherUnitDayProductivity[workFront] = new Decimal(ton)
+      .toDecimalPlaces(2)
+      .toNumber();
+  });
+
+  Object.entries(otherMonthProductivity).forEach(([workFront, ton]) => {
+    otherMonthProductivity[workFront] = new Decimal(ton)
+      .toDecimalPlaces(2)
+      .toNumber();
+  });
 
   const tonPerHour = calcTonPerHour(frontsDayProductivity);
 
@@ -39,11 +75,21 @@ const createCaneDelivery = async (
     workFronts
   );
 
-  const unitTotalDay = calcUnitDayTotal(frontsHarvestProductivity, workFronts);
+  const unitTotalDay = calcUnitDayTotal(
+    frontsDayProductivity,
+    workFrontsUnits,
+    otherUnitDayProductivity
+  );
 
   const unitTotalMonth = calcUnitMonthTotal(
-    frontsHarvestProductivity,
-    workFronts
+    frontsMonthProductivity,
+    workFrontsUnits,
+    otherMonthProductivity
+  );
+
+  const dayPeriodCaneDelivery = getDayPeriodCaneDelivery(
+    unitTotalDay,
+    workFrontsUnits
   );
 
   return formatCaneDeliveryReturn(
@@ -56,7 +102,8 @@ const createCaneDelivery = async (
     harvestGoalPercentage,
     unitTotalHarvest,
     unitTotalDay,
-    unitTotalMonth
+    unitTotalMonth,
+    workFrontsUnits
   );
 };
 
@@ -82,8 +129,12 @@ const calcTonPerHour = (
   frontsDayProductivity: CttTon
 ): Record<string, number> => {
   let tonPerHour: Record<string, number> = {};
+
   Object.entries(frontsDayProductivity).forEach(([workFront, ton]) => {
-    tonPerHour[workFront] = normalizeCalc(ton / 24.0, 2);
+    tonPerHour[workFront] = normalizeCalc(
+      ton / new Decimal(24).toDecimalPlaces(2).toNumber(),
+      2
+    );
   });
 
   return tonPerHour;
@@ -129,13 +180,13 @@ const calcUnitHarvest = (
 
 const calcUnitDayTotal = (
   frontsDayProductivity: Record<string, number>,
-  workFronts: CttWorkFrontUnit[]
+  workFronts: CttWorkFrontUnit[],
+  otherUnitDayProductivity: Record<string, number>
 ): Record<string, number> => {
   let unitTotalDay: Record<string, number> = {};
 
   Object.entries(frontsDayProductivity).forEach(([workFront, ton]) => {
     const unit = workFronts.find((wkf) => wkf.code === +workFront);
-
     if (unit) {
       if (unitTotalDay[unit.unitId]) {
         unitTotalDay[unit.unitId] += ton;
@@ -144,12 +195,25 @@ const calcUnitDayTotal = (
       }
     }
   });
+
+  Object.entries(otherUnitDayProductivity).forEach(([workFront, ton]) => {
+    const unit = workFronts.find((wkf) => wkf.code === +workFront);
+    if (unit) {
+      if (unitTotalDay[unit.unitId]) {
+        unitTotalDay[unit.unitId] += ton;
+      } else {
+        unitTotalDay[unit.unitId] = ton;
+      }
+    }
+  });
+
   return unitTotalDay;
 };
 
 const calcUnitMonthTotal = (
   frontsMonthProductivity: Record<string, number>,
-  workFronts: CttWorkFrontUnit[]
+  workFronts: CttWorkFrontUnit[],
+  otherMonthProductivity: Record<string, number>
 ): Record<string, number> => {
   let unitTotalMonth: Record<string, number> = {};
 
@@ -164,7 +228,54 @@ const calcUnitMonthTotal = (
       }
     }
   });
+
+  Object.entries(otherMonthProductivity).forEach(([workFront, ton]) => {
+    const unit = workFronts.find((wkf) => wkf.code === +workFront);
+
+    if (unit) {
+      if (unitTotalMonth[unit.unitId]) {
+        unitTotalMonth[unit.unitId] += ton;
+      } else {
+        unitTotalMonth[unit.unitId] = ton;
+      }
+    }
+  });
+
   return unitTotalMonth;
+};
+
+const getDayPeriodCaneDelivery = (
+  unitTotalDay: Record<string, number>,
+  workFronts: CttWorkFrontUnit[]
+): CttPeriodsCaneDelivery => {
+  let goalUnit = 0;
+  let unitTotal = 0;
+
+  workFronts.forEach((workFront) => {
+    goalUnit += workFront.goal;
+
+    if (unitTotalDay[workFront.unitId]) {
+      unitTotal = unitTotalDay[workFront.unitId];
+    }
+  });
+
+  const unitTotalDayPercentage = normalizeCalc((unitTotal / goalUnit) * 100);
+
+  const dayPeriod = {
+    key: "day",
+    label: "Dia",
+    goal: goalUnit,
+    effectiveDays: null,
+    data: [
+      {
+        label: "Realizado",
+        progress: unitTotalDayPercentage,
+        value: unitTotal,
+      },
+    ],
+  };
+
+  return dayPeriod;
 };
 
 const formatCaneDeliveryReturn = (
@@ -177,27 +288,31 @@ const formatCaneDeliveryReturn = (
   harvestGoalPercentage: Record<string, number>,
   unitTotalHarvest: Record<string, number>,
   unitTotalDay: Record<string, number>,
-  unitTotalMonth: Record<string, number>
+  unitTotalMonth: Record<string, number>,
+  workFrontsUnits: CttWorkFrontUnit[]
 ) => {
   const seenUnitIds = new Set();
-  const unitsReturn: Unit[] = workFronts.reduce((acc: Unit[], unit) => {
-    const unitId = unit.unitId;
+  const unitsReturn: CttUnitsCaneDelivery[] = workFrontsUnits.reduce(
+    (acc: CttUnitsCaneDelivery[], unit) => {
+      const unitId = unit.unitId;
 
-    if (!seenUnitIds.has(unitId)) {
-      acc.push({
-        name: unit.unitName || "",
-        total: unitTotalHarvest[unitId] || 0,
-        day: unitTotalDay[unitId] || 0,
-        month: unitTotalMonth[unitId] || 0,
-        percentage: 0,
-        goal: 0,
-      });
+      if (!seenUnitIds.has(unitId)) {
+        acc.push({
+          name: unit.unitName || "",
+          total: unitTotalHarvest[unitId] || 0,
+          day: unitTotalDay[unitId] || 0,
+          month: unitTotalMonth[unitId] || 0,
+          percentage: 0,
+          goal: 0,
+        });
 
-      seenUnitIds.add(unitId);
-    }
+        seenUnitIds.add(unitId);
+      }
 
-    return acc;
-  }, []);
+      return acc;
+    },
+    []
+  );
 
   const caneDeliveryReturn = {
     workFronts: workFronts.map((workFront) => {
