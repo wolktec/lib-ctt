@@ -1,4 +1,4 @@
-import { CttWorkFrontUnit } from "../../interfaces/caneDelivery.interface";
+import { CttCaneDelivery, CttWorkFrontUnit } from "../../interfaces/caneDelivery.interface";
 import { CttTon } from "../../interfaces/partialDelivered.interface";
 /**
  * GET the cane delivered based on the productivity API registered by FRONT
@@ -11,5 +11,5 @@ import { CttTon } from "../../interfaces/partialDelivered.interface";
  * @param otherHarvestProductivity Productivity from the other UNIT available by front and harvest
  * @param date Filtered date
  */
-declare const createCaneDelivery: (frontsDayProductivity: CttTon, frontsMonthProductivity: CttTon, frontsHarvestProductivity: CttTon, workFronts: CttWorkFrontUnit[], otherUnitDayProductivity: CttTon, otherMonthProductivity: CttTon, otherHarvestProductivity: CttTon, date: string) => Promise<any>;
+declare const createCaneDelivery: (frontsDayProductivity: CttTon, frontsMonthProductivity: CttTon, frontsHarvestProductivity: CttTon, workFronts: CttWorkFrontUnit[], otherUnitDayProductivity: CttTon, otherMonthProductivity: CttTon, otherHarvestProductivity: CttTon, date: string) => Promise<CttCaneDelivery>;
 export default createCaneDelivery;

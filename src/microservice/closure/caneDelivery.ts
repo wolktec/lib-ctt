@@ -37,7 +37,7 @@ const createCaneDelivery = async (
   otherMonthProductivity: CttTon,
   otherHarvestProductivity: CttTon,
   date: string
-): Promise<any> => {
+): Promise<CttCaneDelivery> => {
   const workFrontsUnits = workFronts;
   workFronts = workFronts.filter(
     (workFront) => workFront.code in frontsDayProductivity
@@ -500,7 +500,7 @@ const formatCaneDeliveryReturn = (
   workFrontsUnits: CttWorkFrontUnit[],
   dayPeriodCaneDelivery: CttPeriodsCaneDelivery[],
   unitHarvestGoal: any
-) => {
+): CttCaneDelivery => {
   const seenUnitIds = new Set();
   const unitsReturn: CttUnitsCaneDelivery[] = workFrontsUnits.reduce(
     (acc: CttUnitsCaneDelivery[], unit) => {
