@@ -28,10 +28,14 @@ import {
   Journey,
 } from "./interfaces/performanceIndicators.interface";
 
+import { CttAvailability } from "./interfaces/availabilityByHour.interface";
+
 export { default as createAvailabilityAllocation } from "./microservice/parcial/availabilityAllocation";
 export { default as createPartialDelivered } from "./microservice/parcial/partialDelivered";
 export { default as performanceIndicators } from "./microservice/parcial/performanceIndicators";
 export { default as createCaneDelivery } from "./microservice/closure/caneDelivery";
+
+export { default as createAvailabilityByHour } from "./microservice/availability/availabilityByHour";
 
 export {
   CttEquipment,
@@ -55,4 +59,5 @@ export {
   CttSummaryReturn,
   CttCaneDelivery,
   CttWorkFrontUnit,
+  CttAvailability,
 };

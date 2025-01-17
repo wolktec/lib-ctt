@@ -16,7 +16,7 @@ function calcMechanicalAvailability(totalMaintenance, countMaintenance, currentH
     if (totalMaintenance === 0) {
         return 100.0;
     }
-    const calc = normalizeCalc(((currentHour - totalMaintenance / countMaintenance) / currentHour) * 100, 2);
+    const calc = normalizeCalc((((currentHour * 3600) - totalMaintenance / countMaintenance) / (currentHour * 3600)) * 100, 2);
     return calc;
 }
 exports.calcMechanicalAvailability = calcMechanicalAvailability;
@@ -90,8 +90,8 @@ exports.translations = {
     Pulverizadores: "pulverizer",
 };
 const getEventTime = (event) => {
-    const startTime = (0, dayjs_1.default)(event.time.start / 1000);
-    const endTime = (0, dayjs_1.default)(event.time.end / 1000);
+    const startTime = (0, dayjs_1.default)(event.time.start);
+    const endTime = (0, dayjs_1.default)(event.time.end);
     return endTime.diff(startTime, "seconds");
 };
 exports.getEventTime = getEventTime;
