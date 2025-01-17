@@ -52,9 +52,13 @@ const createCaneDelivery = async (frontsDayProductivity, frontsMonthProductivity
     const unitTotalMonth = calcUnitMonthTotal(frontsMonthProductivity, workFrontsUnits, otherMonthProductivity);
     const dayPeriodCaneDelivery = getDayPeriodCaneDelivery(unitTotalDay, workFronts);
     const monthPeriodCaneDelivery = getMonthPeriodCaneDelivery(unitTotalMonth, workFronts, date);
+    const harvestPeriodCaneDelivery = getHarvestPeriodCaneDelivery(unitTotalHarvest, workFronts, date);
     const unitHarvestGoal = calcUnitHarvestGoal(unitTotalHarvest, workFrontsUnits, date);
-    console.log(unitHarvestGoal);
-    const periodDelivery = [...dayPeriodCaneDelivery, ...monthPeriodCaneDelivery];
+    const periodDelivery = [
+        ...dayPeriodCaneDelivery,
+        ...monthPeriodCaneDelivery,
+        ...harvestPeriodCaneDelivery,
+    ];
     return formatCaneDeliveryReturn(workFronts, frontsDayProductivity, dayGoalPercentage, frontsMonthProductivity, tonPerHour, frontsHarvestProductivity, harvestGoalPercentage, unitTotalHarvest, unitTotalDay, unitTotalMonth, workFrontsUnits, periodDelivery, unitHarvestGoal);
 };
 const calcDailyGoalDelivery = (frontsDayProductivity, workFronts) => {
@@ -254,6 +258,7 @@ const getMonthPeriodCaneDelivery = (unitTotalMonth, workFronts, date) => {
     ];
     return monthPeriod;
 };
+//TODO: calcular a reestimativa do 3 grafico
 const getHarvestPeriodCaneDelivery = (unitTotalHarvest, workFronts, date) => {
     let goalUnit = 0;
     let unitTotal = 0;
@@ -269,7 +274,7 @@ const getHarvestPeriodCaneDelivery = (unitTotalHarvest, workFronts, date) => {
     const unitTotalHarvestPercentage = (0, helper_1.normalizeCalc)((unitTotal / goalUnit) * 100);
     const toDo = goalUnit - unitTotal;
     const toDoPercentage = (0, helper_1.normalizeCalc)((toDo / goalUnit) * 100, 2);
-    const monthPeriod = [
+    const harvestPeriod = [
         {
             key: "harvest",
             label: "Safra",
@@ -282,14 +287,19 @@ const getHarvestPeriodCaneDelivery = (unitTotalHarvest, workFronts, date) => {
                     value: unitTotal,
                 },
                 {
-                    label: "A realizar",
+                    label: "A realizar/Estimativa",
                     progress: toDoPercentage,
                     value: toDo,
+                },
+                {
+                    label: "A realizar/Reestimativa",
+                    progress: 0,
+                    value: 0,
                 },
             ],
         },
     ];
-    return monthPeriod;
+    return harvestPeriod;
 };
 const formatCaneDeliveryReturn = (workFronts, frontsDayProductivity, dayGoalPercentage, frontsMonthProductivity, tonPerHour, frontsHarvestProductivity, harvestGoalPercentage, unitTotalHarvest, unitTotalDay, unitTotalMonth, workFrontsUnits, dayPeriodCaneDelivery, unitHarvestGoal) => {
     const seenUnitIds = new Set();

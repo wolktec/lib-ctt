@@ -115,13 +115,23 @@ const createCaneDelivery = async (
     date
   );
 
+  const harvestPeriodCaneDelivery = getHarvestPeriodCaneDelivery(
+    unitTotalHarvest,
+    workFronts,
+    date
+  );
+
   const unitHarvestGoal = calcUnitHarvestGoal(
     unitTotalHarvest,
     workFrontsUnits,
     date
   );
 
-  const periodDelivery = [...dayPeriodCaneDelivery, ...monthPeriodCaneDelivery];
+  const periodDelivery = [
+    ...dayPeriodCaneDelivery,
+    ...monthPeriodCaneDelivery,
+    ...harvestPeriodCaneDelivery,
+  ];
 
   return formatCaneDeliveryReturn(
     workFronts,
@@ -417,6 +427,7 @@ const getMonthPeriodCaneDelivery = (
   return monthPeriod;
 };
 
+//TODO: calcular a reestimativa do 3 grafico
 const getHarvestPeriodCaneDelivery = (
   unitTotalHarvest: Record<string, number>,
   workFronts: CttWorkFrontUnit[],
@@ -446,7 +457,7 @@ const getHarvestPeriodCaneDelivery = (
   const toDo = goalUnit - unitTotal;
   const toDoPercentage = normalizeCalc((toDo / goalUnit) * 100, 2);
 
-  const monthPeriod = [
+  const harvestPeriod = [
     {
       key: "harvest",
       label: "Safra",
@@ -459,15 +470,20 @@ const getHarvestPeriodCaneDelivery = (
           value: unitTotal,
         },
         {
-          label: "A realizar",
+          label: "A realizar/Estimativa",
           progress: toDoPercentage,
           value: toDo,
+        },
+        {
+          label: "A realizar/Reestimativa",
+          progress: 0,
+          value: 0,
         },
       ],
     },
   ];
 
-  return monthPeriod;
+  return harvestPeriod;
 };
 
 const formatCaneDeliveryReturn = (
