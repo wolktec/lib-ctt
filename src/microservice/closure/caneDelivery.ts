@@ -88,7 +88,8 @@ const createCaneDelivery = async (
 
   const unitTotalHarvest = calcUnitHarvest(
     frontsHarvestProductivity,
-    workFronts
+    workFrontsUnits,
+    otherHarvestProductivity
   );
 
   const unitTotalDay = calcUnitDayTotal(
@@ -113,6 +114,13 @@ const createCaneDelivery = async (
     workFronts,
     date
   );
+
+  const unitHarvestGoal = calcUnitHarvestGoal(
+    unitTotalHarvest,
+    workFrontsUnits,
+    date
+  );
+
   const periodDelivery = [...dayPeriodCaneDelivery, ...monthPeriodCaneDelivery];
 
   return formatCaneDeliveryReturn(
@@ -127,7 +135,8 @@ const createCaneDelivery = async (
     unitTotalDay,
     unitTotalMonth,
     workFrontsUnits,
-    periodDelivery
+    periodDelivery,
+    unitHarvestGoal
   );
 };
 
@@ -191,7 +200,8 @@ const calcHarvestGoal = (
 
 const calcUnitHarvest = (
   frontsHarvestProductivity: CttTon,
-  workFronts: CttWorkFrontUnit[]
+  workFronts: CttWorkFrontUnit[],
+  otherHarvestProductivity: CttTon
 ): Record<string, number> => {
   let unitTotalHarvest: Record<string, number> = {};
 
@@ -199,7 +209,19 @@ const calcUnitHarvest = (
     const unit = workFronts.find((wkf) => wkf.code === +workFront);
 
     if (unit) {
-      if (unitTotalHarvest[workFront]) {
+      if (unitTotalHarvest[unit.unitId]) {
+        unitTotalHarvest[unit.unitId] += ton;
+      } else {
+        unitTotalHarvest[unit.unitId] = ton;
+      }
+    }
+  });
+
+  Object.entries(otherHarvestProductivity).forEach(([workFront, ton]) => {
+    const unit = workFronts.find((wkf) => wkf.code === +workFront);
+
+    if (unit) {
+      if (unitTotalHarvest[unit.unitId]) {
         unitTotalHarvest[unit.unitId] += ton;
       } else {
         unitTotalHarvest[unit.unitId] = ton;
@@ -207,6 +229,43 @@ const calcUnitHarvest = (
     }
   });
   return unitTotalHarvest;
+};
+
+/* Goal and percentage */
+const calcUnitHarvestGoal = (
+  unitTotalHarvest: Record<string, number>,
+  workFronts: CttWorkFrontUnit[],
+  date: string
+) => {
+  let harvestUnitGoalPercentage: Record<string, number> = {};
+  let harvestUnitGoal: Record<string, number> = {};
+
+  const dateHarvest = getHarvestDateRange(date);
+  const daysHarvest = getDaysBetweenDates(
+    dateHarvest.startDate,
+    dateHarvest.endDate
+  );
+
+  workFronts.forEach((workFront) => {
+    if (!harvestUnitGoal[workFront.unitId]) {
+      harvestUnitGoal[workFront.unitId] = 0;
+    }
+
+    harvestUnitGoal[workFront.unitId] += workFront.goal;
+  });
+
+  Object.keys(harvestUnitGoal).forEach((unitId) => {
+    harvestUnitGoal[unitId] *= daysHarvest;
+
+    harvestUnitGoalPercentage[unitId] = harvestUnitGoal[unitId]
+      ? normalizeCalc(
+          (unitTotalHarvest[unitId] / harvestUnitGoal[unitId]) * 100,
+          2
+        )
+      : 0;
+  });
+
+  return { harvestUnitGoal, harvestUnitGoalPercentage };
 };
 
 const calcUnitDayTotal = (
@@ -358,6 +417,59 @@ const getMonthPeriodCaneDelivery = (
   return monthPeriod;
 };
 
+const getHarvestPeriodCaneDelivery = (
+  unitTotalHarvest: Record<string, number>,
+  workFronts: CttWorkFrontUnit[],
+  date: string
+): CttPeriodsCaneDelivery[] => {
+  let goalUnit = 0;
+  let unitTotal = 0;
+  const dateHarvest = getHarvestDateRange(date);
+  const daysHarvest = getDaysBetweenDates(
+    dateHarvest.startDate,
+    dateHarvest.endDate
+  );
+
+  workFronts.forEach((workFront) => {
+    goalUnit += workFront.goal;
+
+    if (unitTotalHarvest[workFront.unitId]) {
+      unitTotal = unitTotalHarvest[workFront.unitId];
+    }
+  });
+
+  goalUnit = goalUnit * daysHarvest;
+  const unitTotalHarvestPercentage = normalizeCalc(
+    (unitTotal / goalUnit) * 100
+  );
+
+  const toDo = goalUnit - unitTotal;
+  const toDoPercentage = normalizeCalc((toDo / goalUnit) * 100, 2);
+
+  const monthPeriod = [
+    {
+      key: "harvest",
+      label: "Safra",
+      goal: goalUnit,
+      effectiveDays: null,
+      data: [
+        {
+          label: "Realizado",
+          progress: unitTotalHarvestPercentage,
+          value: unitTotal,
+        },
+        {
+          label: "A realizar",
+          progress: toDoPercentage,
+          value: toDo,
+        },
+      ],
+    },
+  ];
+
+  return monthPeriod;
+};
+
 const formatCaneDeliveryReturn = (
   workFronts: CttWorkFrontUnit[],
   frontsDayProductivity: Record<string, number>,
@@ -370,7 +482,8 @@ const formatCaneDeliveryReturn = (
   unitTotalDay: Record<string, number>,
   unitTotalMonth: Record<string, number>,
   workFrontsUnits: CttWorkFrontUnit[],
-  dayPeriodCaneDelivery: CttPeriodsCaneDelivery[]
+  dayPeriodCaneDelivery: CttPeriodsCaneDelivery[],
+  unitHarvestGoal: any
 ) => {
   const seenUnitIds = new Set();
   const unitsReturn: CttUnitsCaneDelivery[] = workFrontsUnits.reduce(
@@ -383,8 +496,8 @@ const formatCaneDeliveryReturn = (
           total: unitTotalHarvest[unitId] || 0,
           day: unitTotalDay[unitId] || 0,
           month: unitTotalMonth[unitId] || 0,
-          percentage: 0,
-          goal: 0,
+          percentage: +unitHarvestGoal.harvestUnitGoalPercentage[unitId],
+          goal: unitHarvestGoal.harvestUnitGoal[unitId],
         });
 
         seenUnitIds.add(unitId);
