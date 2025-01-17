@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getHarvestDateRange = exports.getDaysBetweenDates = exports.getDaysInMonth = exports.calcJourneyByFront = exports.convertSecondstoTimeString = exports.createValueWithGoal = exports.removeOutliers = exports.getTotalHourmeter = exports.calcTotalInterferenceByFront = exports.calcJourney = exports.calcTelemetryByFront = exports.groupEquipmentTelemetryByFront = exports.secToTime = exports.msToTime = exports.getEventTime = exports.groupEquipmentsProductivityByFront = exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = exports.normalizeCalc = exports.calcMechanicalAvailability = exports.convertHourToDecimal = void 0;
+exports.getHarvestDateRange = exports.getDaysBetweenDates = exports.getDaysInMonth = exports.calcJourneyByFront = exports.convertSecondstoTimeString = exports.createValueWithGoal = exports.removeOutliers = exports.getTotalHourmeter = exports.calcTotalInterferenceByFront = exports.calcJourney = exports.calcTelemetryByFront = exports.groupEquipmentTelemetryByFront = exports.secToTime = exports.msToTime = exports.getEventTime = exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = exports.normalizeCalc = exports.calcMechanicalAvailability = exports.convertHourToDecimal = void 0;
 const dayjs_1 = __importDefault(require("dayjs"));
 function convertHourToDecimal(hour) {
     const [hours, minutes] = hour.split(":").map(Number);
@@ -89,17 +89,6 @@ exports.translations = {
     Empilhadeiras: "forklift",
     Pulverizadores: "pulverizer",
 };
-const groupEquipmentsProductivityByFront = (equipmentsProductivity, equipments) => {
-    const equipmentsProductivityByFront = equipmentsProductivity.map((equipmentProductivity) => {
-        const matchingItem = equipments.find((equipment) => equipment.code === equipmentProductivity.equipmentCode);
-        return {
-            ...equipmentProductivity,
-            workFrontCode: matchingItem ? matchingItem.work_front_code : 0,
-        };
-    });
-    return equipmentsProductivityByFront;
-};
-exports.groupEquipmentsProductivityByFront = groupEquipmentsProductivityByFront;
 const getEventTime = (event) => {
     const startTime = (0, dayjs_1.default)(event.time.start / 1000);
     const endTime = (0, dayjs_1.default)(event.time.end / 1000);

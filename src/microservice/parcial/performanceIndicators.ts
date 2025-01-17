@@ -3,7 +3,6 @@ import {
   calcTelemetryByFront,
   getEventTime,
   getTotalHourmeter,
-  groupEquipmentsProductivityByFront,
   groupEquipmentTelemetryByFront,
   msToTime,
   normalizeCalc,
@@ -52,12 +51,8 @@ const createPerformanceIndicators = async (
   interferences: CttInterferences[]
 ): Promise<CttPerformanceIndicators> => {
   try {
-    let equipmentsProductivityByFront = groupEquipmentsProductivityByFront(
-      equipmentProductivity,
-      equipments
-    );
-    const tripQtd = getTripQtdByFront(equipmentsProductivityByFront);
-    const averageWeight = getAverageWeight(equipmentsProductivityByFront);
+    const tripQtd = getTripQtdByFront(equipmentProductivity, workFronts);
+    const averageWeight = getAverageWeight(equipmentProductivity, workFronts);
     const awaitingTransshipment = getAwaitingTransshipment(events);
     const idleTime = getIdleTime(events, idleEvents);
 
@@ -140,33 +135,43 @@ const createPerformanceIndicators = async (
  * @param equipmentsProductivity equipment coming from the productivity API with the workFrontCode
  */
 const getTripQtdByFront = (
-  equipmentProductivity: CttEquipmentProductivityFront[]
+  equipmentProductivity: CttEquipmentProductivityFront[],
+  workFronts: CttWorkFronts[]
 ): Record<string, number> => {
-  const tripQtd = equipmentProductivity.reduce((account, equipment) => {
-    const { workFrontCode, trips } = equipment;
-    if (account[workFrontCode]) {
-      account[workFrontCode] += trips;
+  let tripQtd: Record<string, number> = {};
+  workFronts.forEach((workFront) => {
+    let totalTrips = 0;
+
+    equipmentProductivity.forEach((equipment) => {
+      if (equipment.workFrontCode === workFront.code) {
+        totalTrips += equipment.trips;
+      }
+    });
+    if (tripQtd[workFront.code]) {
+      tripQtd[workFront.code] += totalTrips;
     } else {
-      account[workFrontCode] = trips;
+      tripQtd[workFront.code] = totalTrips;
     }
-    return account;
-  }, {} as Record<string, number>);
+  });
 
   return tripQtd;
 };
-
 /**
  * GET the average weight by Front
  * @param equipmentsProductivity equipment coming from the productivity API with the workFrontCode
  */
 const getAverageWeight = (
-  equipmentsProductivity: CttEquipmentProductivityFront[]
+  equipmentsProductivity: CttEquipmentProductivityFront[],
+  workFronts: CttWorkFronts[]
 ): Record<string, number> => {
   const groupedAverageData = equipmentsProductivity.reduce(
     (account, equipment) => {
       const { workFrontCode, averageWeight } = equipment;
 
-      account[workFrontCode] = account[workFrontCode] || { sum: 0, count: 0 };
+      if (!account[workFrontCode]) {
+        account[workFrontCode] = { sum: 0, count: 0 };
+      }
+
       account[workFrontCode].sum += averageWeight;
       account[workFrontCode].count++;
       return account;
@@ -174,15 +179,12 @@ const getAverageWeight = (
     {} as Record<string, { sum: number; count: number }>
   );
 
-  const averages = Object.entries(groupedAverageData).reduce(
-    (averages, [workFront, averageData]) => {
-      averages[workFront] = normalizeCalc(
-        averageData.sum / averageData.count,
-        2
-      );
-      return averages;
-    },
-    {} as Record<string, number>
+  const averages = Object.fromEntries(
+    workFronts.map(({ code }) => {
+      const data = groupedAverageData[code] || { sum: 0, count: 0 };
+      const average = data.count > 0 ? data.sum / data.count : 0;
+      return [code, normalizeCalc(average, 2)];
+    })
   );
 
   return averages;

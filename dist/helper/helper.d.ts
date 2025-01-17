@@ -1,4 +1,4 @@
-import { CttEquipmentProductivity, CttEquipmentProductivityFront, CttInterferences, CttTelemetry, CttTelemetryByFront, Journey, JourneyFront } from "../interfaces/performanceIndicators.interface";
+import { CttInterferences, CttTelemetry, CttTelemetryByFront, Journey, JourneyFront } from "../interfaces/performanceIndicators.interface";
 import { CttEquipment, CttEvent } from "../interfaces/availabilityAllocation.interface";
 export declare function convertHourToDecimal(hour: string): number;
 export declare function calcMechanicalAvailability(totalMaintenance: number, countMaintenance: number, currentHour: number): number;
@@ -14,7 +14,6 @@ export declare const dateParts: (date: string, splitSeparator?: string) => {
 export declare const translations: {
     [key: string]: string;
 };
-export declare const groupEquipmentsProductivityByFront: (equipmentsProductivity: CttEquipmentProductivity[], equipments: CttEquipment[]) => CttEquipmentProductivityFront[];
 export declare const getEventTime: (event: CttEvent) => number;
 export declare const msToTime: (ms: number) => string;
 export declare const secToTime: (sec: number) => string;

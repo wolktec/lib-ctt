@@ -118,24 +118,6 @@ export const translations: { [key: string]: string } = {
   Pulverizadores: "pulverizer",
 };
 
-export const groupEquipmentsProductivityByFront = (
-  equipmentsProductivity: CttEquipmentProductivity[],
-  equipments: CttEquipment[]
-): CttEquipmentProductivityFront[] => {
-  const equipmentsProductivityByFront: CttEquipmentProductivityFront[] =
-    equipmentsProductivity.map((equipmentProductivity) => {
-      const matchingItem = equipments.find(
-        (equipment) => equipment.code === equipmentProductivity.equipmentCode
-      );
-      return {
-        ...equipmentProductivity,
-        workFrontCode: matchingItem ? matchingItem.work_front_code : 0,
-      };
-    });
-
-  return equipmentsProductivityByFront;
-};
-
 export const getEventTime = (event: CttEvent) => {
   const startTime = dayjs(event.time.start / 1000);
   const endTime = dayjs(event.time.end / 1000);
