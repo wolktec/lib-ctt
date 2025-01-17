@@ -175,32 +175,35 @@ export const groupEquipmentTelemetryByFront = (
   telemetry: CttTelemetry[]
 ): CttTelemetryByFront[] => {
   const telemetryByFront: CttTelemetryByFront[] = [];
-  for (const hourMeter of telemetry) {
-    const equipment = equipments.find(
-      (equip) => +hourMeter.equipment_code === equip.code
-    );
+
+  const equipmentMap = new Map(equipments.map((equip) => [equip.code, equip]));
+
+  const telemetryGrouped = new Map<number, typeof telemetry>([]);
+  for (const record of telemetry) {
+    const equipmentCode = +record.equipment_code;
+    if (!telemetryGrouped.has(equipmentCode)) {
+      telemetryGrouped.set(equipmentCode, []);
+    }
+    telemetryGrouped.get(equipmentCode)!.push(record);
+  }
+
+  for (const [equipmentCode, records] of telemetryGrouped.entries()) {
+    const equipment = equipmentMap.get(equipmentCode);
 
     if (!equipment || equipment.description !== "Colhedoras") {
       continue;
     }
 
-    const relatedRecords = telemetry.filter(
-      (t) => +t.equipment_code === equipment.code
-    );
-    const sortedRecords = relatedRecords.sort(
-      (a, b) => a.occurrence - b.occurrence
-    );
-    const firstRecord = sortedRecords[0];
-    const lastRecord = sortedRecords[sortedRecords.length - 1];
+    records.sort((a, b) => a.occurrence - b.occurrence);
+    const firstRecord = records[0];
+    const lastRecord = records[records.length - 1];
 
-    if (!telemetryByFront.some((t) => t.equipmentCode === equipment.code)) {
-      telemetryByFront.push({
-        equipmentCode: equipment.code,
-        workFrontCode: equipment.work_front_code,
-        firstRecord: firstRecord,
-        lastRecord: lastRecord,
-      });
-    }
+    telemetryByFront.push({
+      equipmentCode: equipment.code,
+      workFrontCode: equipment.work_front_code,
+      firstRecord: firstRecord,
+      lastRecord: lastRecord,
+    });
   }
 
   return telemetryByFront;
