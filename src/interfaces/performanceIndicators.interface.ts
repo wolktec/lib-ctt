@@ -25,9 +25,6 @@ export interface CttTelemetry {
   occurrence: number;
   sensor_name: string;
   current_value: string;
-  max_value: string;
-  min_value: string;
-  mean_value: string;
   equipment_code: string;
 }
 
