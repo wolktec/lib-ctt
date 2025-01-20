@@ -206,9 +206,9 @@ const getAwaitingTransshipment = (
       const { workFront } = event;
       if (event.time.end > 0) {
         if (awaitingTransshipment[workFront.code]) {
-          awaitingTransshipment[workFront.code] += getEventTime(event);
+          awaitingTransshipment[workFront.code] += getEventTime(event) / 3600;
         } else {
-          awaitingTransshipment[workFront.code] = getEventTime(event);
+          awaitingTransshipment[workFront.code] = getEventTime(event) / 3600;
         }
       }
     }
@@ -217,8 +217,12 @@ const getAwaitingTransshipment = (
 
   if (awaitingTransshipment) {
     for (const [code, timeInHours] of Object.entries(awaitingTransshipment)) {
-      const timeInMs = timeInHours * 3600 * 1000;
-      formattedTransshipment[code] = msToTime(timeInMs);
+      if (!timeInHours) {
+        formattedTransshipment[code] = "00:00:00";
+      } else {
+        const timeInMs = timeInHours * 3600 * 1000;
+        formattedTransshipment[code] = msToTime(timeInMs);
+      }
     }
   }
 
@@ -353,27 +357,24 @@ const calcAgriculturalEfficiency = (
 
 const calcManuvers = (events: CttEvent[]): Record<string, string> => {
   let manuvers: Record<string, number> = {};
-  for (const event of events) {
-    const { workFront } = event;
-
-    if (event.name !== "Manobra") {
-      continue;
-    }
-
-    if (event.time.end > 0) {
-      const diffS = (event.time.end - event.time.start) / 1000;
-      if (manuvers[workFront.code]) {
-        manuvers[workFront.code] += diffS;
+  events.forEach((event) => {
+    if (event.time.end > 0 && event.name === "Manobra") {
+      if (manuvers[event.workFront.code]) {
+        manuvers[event.workFront.code] += getEventTime(event) / 3600;
       } else {
-        manuvers[workFront.code] = diffS;
+        manuvers[event.workFront.code] = getEventTime(event) / 3600;
       }
     }
-  }
+  });
 
   const formattedManuvers: Record<string, string> = {};
   for (const [code, timeInHours] of Object.entries(manuvers)) {
-    const timeInMs = timeInHours * 1000;
-    formattedManuvers[code] = msToTime(timeInMs);
+    if (!timeInHours) {
+      formattedManuvers[code] = "00:00:00";
+    } else {
+      const timeInMs = timeInHours * 3600 * 1000;
+      formattedManuvers[code] = msToTime(timeInMs);
+    }
   }
 
   return formattedManuvers;
