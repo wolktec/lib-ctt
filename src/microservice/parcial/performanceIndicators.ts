@@ -2,6 +2,7 @@ import {
   calcJourneyByFront,
   calcTelemetryByFront,
   getEventTime,
+  getHarvesterEvents,
   getTotalHourmeter,
   groupEquipmentTelemetryByFront,
   msToTime,
@@ -89,8 +90,11 @@ const createPerformanceIndicators = async (
     );
     const maneuvers = calcManuvers(events);
 
-    const unproductiveTime = (await calcJourneyByFront(events, interferences))
-      .totalInterferenceTime;
+    const filteredEvents = getHarvesterEvents(equipments, events);
+
+    const unproductiveTime = (
+      await calcJourneyByFront(filteredEvents, interferences)
+    ).totalInterferenceTime;
 
     const ctOffenders = await calcCtOffenders(
       unproductiveTime,

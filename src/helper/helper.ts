@@ -659,3 +659,18 @@ export const getHarvestDateRange = (date: string) => {
 
   return { startDate, endDate };
 };
+
+export const getHarvesterEvents = (
+  equipments: CttEquipment[],
+  events: CttEvent[]
+): CttEvent[] => {
+  const harvestEvents = events.filter((e) =>
+    equipments.some(
+      (equipment) =>
+        e.equipment.code === equipment.code &&
+        equipment.description === "Colhedoras"
+    )
+  );
+
+  return harvestEvents;
+};
