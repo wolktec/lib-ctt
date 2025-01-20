@@ -464,7 +464,7 @@ const formatUnproductiveTime = (
     if (!timeInHours) {
       formatUnproductiveTime[code] = "00:00:00";
     } else {
-      const timeInMs = timeInHours * 1000;
+      const timeInMs = timeInHours * 3600 * 1000;
       formatUnproductiveTime[code] = msToTime(timeInMs);
     }
   }

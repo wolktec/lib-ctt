@@ -600,9 +600,16 @@ export const calcJourneyByFront = async (
 
   let totalInterference: Record<string, number> = {};
 
-  for (const [workFrontCode, value] of Object.entries(totalInterferenceTime)) {
+  const baseObject =
+    Object.keys(totalInterferenceTime).length > 0
+      ? totalInterferenceTime
+      : Object.keys(totalInterferenceOperationalTime).length > 0
+      ? totalInterferenceOperationalTime
+      : totalMaintenanceTime;
+
+  for (const [workFrontCode, value] of Object.entries(baseObject)) {
     totalInterference[workFrontCode] =
-      (value ?? 0) +
+      (totalInterferenceTime[workFrontCode] ?? 0) +
       (totalInterferenceOperationalTime[workFrontCode] ?? 0) +
       (totalMaintenanceTime[workFrontCode] ?? 0);
   }
