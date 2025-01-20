@@ -138,6 +138,9 @@ export const groupEquipmentsProductivityByFront = (
 };
 
 export const getEventTime = (event: CttEvent) => {
+  if (!event.time.end) {
+    return 0;
+  }
   const startTime = dayjs(event.time.start);
   const endTime = dayjs(event.time.end);
   return endTime.diff(startTime, "seconds");
