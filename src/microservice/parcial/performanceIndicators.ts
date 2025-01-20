@@ -205,19 +205,21 @@ const getAwaitingTransshipment = (
     ) {
       const { workFront } = event;
       if (event.time.end > 0) {
-        const diffS = (event.time.end - event.time.start) / 1000;
         if (awaitingTransshipment[workFront.code]) {
-          awaitingTransshipment[workFront.code] += diffS;
+          awaitingTransshipment[workFront.code] += getEventTime(event);
         } else {
-          awaitingTransshipment[workFront.code] = diffS;
+          awaitingTransshipment[workFront.code] = getEventTime(event);
         }
       }
     }
   });
   const formattedTransshipment: Record<string, string> = {};
-  for (const [code, timeInHours] of Object.entries(awaitingTransshipment)) {
-    const timeInMs = timeInHours * 1000;
-    formattedTransshipment[code] = msToTime(timeInMs);
+
+  if (awaitingTransshipment) {
+    for (const [code, timeInHours] of Object.entries(awaitingTransshipment)) {
+      const timeInMs = timeInHours * 3600 * 1000;
+      formattedTransshipment[code] = msToTime(timeInMs);
+    }
   }
 
   return formattedTransshipment;
