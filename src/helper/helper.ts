@@ -28,7 +28,9 @@ export function calcMechanicalAvailability(
     return 100.0;
   }
   const calc = normalizeCalc(
-    ((( currentHour * 3600) - totalMaintenance / countMaintenance) / (currentHour * 3600)) * 100,
+    ((currentHour * 3600 - totalMaintenance / countMaintenance) /
+      (currentHour * 3600)) *
+      100,
     2
   );
   return calc;
@@ -253,11 +255,11 @@ export const calcJourney = async (
 
   //Interferências de manutenção
   const interferenceMaintenceIds = interferences
-    .filter((e) => e.interference_type?.name === "Manutenção")
+    .filter((e) => e.interferenceType?.name === "Manutenção")
     .map((e) => e.id);
   //Interferências operacionais
   const interferenceOperationalStops = interferences
-    .filter((e) => e.interference_type?.name === "Operação")
+    .filter((e) => e.interferenceType?.name === "Operação")
     .map((e) => e.id);
 
   //Interferências de clima
@@ -506,11 +508,11 @@ export const calcJourneyByFront = async (
 
   //Interferências de manutenção
   const interferenceMaintenceIds = interferences
-    .filter((e) => e.interference_type?.name === "Manutenção")
+    .filter((e) => e.interferenceType?.name === "Manutenção")
     .map((e) => e.id);
   //Interferências operacionais
   const interferenceOperationalStops = interferences
-    .filter((e) => e.interference_type?.name === "Operação")
+    .filter((e) => e.interferenceType?.name === "Operação")
     .map((e) => e.id);
 
   //Interferências de clima

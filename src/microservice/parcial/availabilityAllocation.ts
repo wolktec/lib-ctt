@@ -42,14 +42,15 @@ const createAvailabilityAllocation = async (
     equipments,
     interferences
   );
+
   let equipmentsGroups = await sumEquipmentsByGroup(equipments, events);
 
-  let mechanicalAvailability = await getMechanicalAvailability(
+  let mechanicalAvailability = getMechanicalAvailability(
     groupedEvents,
     currentHour
   );
   let averageAvailability = calcAverageAvailability(mechanicalAvailability);
-  const formattedValues = await formatAvailabilityReturn(
+  const formattedValues = formatAvailabilityReturn(
     equipmentsGroups,
     mechanicalAvailability,
     averageAvailability
@@ -100,27 +101,24 @@ const sumEquipmentsByGroup = async (
  * GET the mechanical availability by front
  * @param events
  */
-const getMechanicalAvailability = async (
+const getMechanicalAvailability = (
   events: Record<string, CttEvent[]>,
   currentHour: number
-): Promise<Map<string, Map<string, number>>> => {
+): Map<string, Map<string, number>> => {
   try {
     let mechanicalAvailability = new Map<string, Map<string, number>>();
     let workFrontCode: number = 0;
     let totalMaintenanceTime: number = 0;
     let eventCode: string = "";
     let uniqMaintenanceEquip: number = 0;
-    let diffS = 0;
-    let diff = 0;
 
     for (const [type, eventsOfType] of Object.entries(events)) {
       for (const [total, event] of Object.entries(eventsOfType)) {
-        diff += getEventTime(event);
         totalMaintenanceTime = 0;
-        if (diff > 0) {
-          if (event.interference) {
-            workFrontCode = event.workFront.code;
-            totalMaintenanceTime = diff;
+        if (event.interference) {
+          workFrontCode = event.workFront.code;
+          totalMaintenanceTime += getEventTime(event);
+          if (totalMaintenanceTime > 0) {
             eventCode = event.code;
             uniqMaintenanceEquip = new Set(
               eventsOfType.map((event) => event.equipment.code)
@@ -130,16 +128,15 @@ const getMechanicalAvailability = async (
               mechanicalAvailability.set(type, new Map<string, number>());
             }
 
+            const availability = calcMechanicalAvailability(
+              totalMaintenanceTime,
+              uniqMaintenanceEquip,
+              currentHour
+            );
+
             mechanicalAvailability
               .get(type)
-              ?.set(
-                workFrontCode.toString(),
-                calcMechanicalAvailability(
-                  totalMaintenanceTime,
-                  uniqMaintenanceEquip,
-                  currentHour
-                )
-              );
+              ?.set(workFrontCode.toString(), availability);
           }
         }
       }
@@ -173,12 +170,11 @@ const calcAverageAvailability = (
   return averageAvailabilityByType;
 };
 
-const formatAvailabilityReturn = async (
+const formatAvailabilityReturn = (
   groupedEquipments: CttEquipmentsGroupsType,
   mechanicalAvailability: Map<string, Map<string, number>>,
   averageAvailability: Map<string, number>
 ) => {
-  //console.log(averageAvailability);
   let availabilityAllocation = {
     goal: 88,
     groups: Object.entries(groupedEquipments).map(([group, workFronts]) => ({
@@ -213,23 +209,23 @@ const groupEventsByTypeAndFront = (
   });
 
   const interferenceIds = interference
-    .filter(
-      (e) => e.interference_type && e.interference_type.name === "Manutenção"
-    )
+    .filter((e) => e.interferenceType?.name === "Manutenção")
     .map((e) => e.id);
 
-  const eventsByType = events.reduce((accumulator, event) => {
+  const eventsByType: Record<string, CttEvent[]> = {};
+
+  events.forEach((event) => {
     if (event.interference && interferenceIds.includes(event.interference.id)) {
       const equipmentType = equipmentTypeMap.get(event.equipment.code);
       if (equipmentType) {
-        if (!accumulator[equipmentType]) {
-          accumulator[equipmentType] = [];
+        if (!eventsByType[equipmentType]) {
+          eventsByType[equipmentType] = [];
         }
-        accumulator[equipmentType].push(event);
+        eventsByType[equipmentType].push(event);
       }
     }
-    return accumulator;
-  }, {} as Record<string, CttEvent[]>);
+  });
+
   return eventsByType;
 };
 export default createAvailabilityAllocation;
