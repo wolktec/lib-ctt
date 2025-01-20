@@ -1,4 +1,3 @@
-import dayjs from "dayjs";
 import {
   getDaysBetweenDates,
   getDaysInMonth,
@@ -15,7 +14,6 @@ import {
   CttTon,
   CttWorkFronts,
 } from "../../interfaces/partialDelivered.interface";
-import Decimal from "decimal.js";
 
 /**
  * GET the cane delivered based on the productivity API registered by FRONT
@@ -49,33 +47,23 @@ const createCaneDelivery = async (
   );
 
   Object.entries(frontsDayProductivity).forEach(([workFront, ton]) => {
-    frontsDayProductivity[workFront] = new Decimal(ton)
-      .toDecimalPlaces(2)
-      .toNumber();
+    frontsDayProductivity[workFront] = normalizeCalc(ton, 2);
   });
 
   Object.entries(frontsMonthProductivity).forEach(([workFront, ton]) => {
-    frontsMonthProductivity[workFront] = new Decimal(ton)
-      .toDecimalPlaces(2)
-      .toNumber();
+    frontsMonthProductivity[workFront] = normalizeCalc(ton, 2);
   });
 
   Object.entries(frontsHarvestProductivity).forEach(([workFront, ton]) => {
-    frontsHarvestProductivity[workFront] = new Decimal(ton)
-      .toDecimalPlaces(2)
-      .toNumber();
+    frontsHarvestProductivity[workFront] = normalizeCalc(ton, 2);
   });
 
   Object.entries(otherUnitDayProductivity).forEach(([workFront, ton]) => {
-    otherUnitDayProductivity[workFront] = new Decimal(ton)
-      .toDecimalPlaces(2)
-      .toNumber();
+    otherUnitDayProductivity[workFront] = normalizeCalc(ton, 2);
   });
 
   Object.entries(otherMonthProductivity).forEach(([workFront, ton]) => {
-    otherMonthProductivity[workFront] = new Decimal(ton)
-      .toDecimalPlaces(2)
-      .toNumber();
+    otherMonthProductivity[workFront] = normalizeCalc(ton, 2);
   });
 
   const tonPerHour = calcTonPerHour(frontsDayProductivity);
@@ -174,10 +162,7 @@ const calcTonPerHour = (
   let tonPerHour: Record<string, number> = {};
 
   Object.entries(frontsDayProductivity).forEach(([workFront, ton]) => {
-    tonPerHour[workFront] = normalizeCalc(
-      ton / new Decimal(24).toDecimalPlaces(2).toNumber(),
-      2
-    );
+    tonPerHour[workFront] = normalizeCalc(ton / 24, 2);
   });
 
   return tonPerHour;
