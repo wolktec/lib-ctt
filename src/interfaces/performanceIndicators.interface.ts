@@ -7,6 +7,7 @@ export interface CttEquipmentProductivity {
   averageTripWeight: number;
   trips: number;
   loads: number;
+  workFrontCode: number;
 }
 
 export interface CttEquipmentProductivityFront
@@ -24,9 +25,6 @@ export interface CttTelemetry {
   occurrence: number;
   sensor_name: string;
   current_value: string;
-  max_value: string;
-  min_value: string;
-  mean_value: string;
   equipment_code: string;
 }
 
@@ -60,7 +58,7 @@ export type CttAgriculturalEfficiency = Record<
 
 export interface CttInterferences {
   id: number;
-  interference_type?: {
+  interferenceType?: {
     name: string;
   };
 }

@@ -3,7 +3,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+
 exports.createAvailabilityAwaitingTransshipment = exports.createAvailabilityByHour = exports.performanceIndicators = exports.createPartialDelivered = exports.createAvailabilityAllocation = void 0;
+
 var availabilityAllocation_1 = require("./microservice/parcial/availabilityAllocation");
 Object.defineProperty(exports, "createAvailabilityAllocation", { enumerable: true, get: function () { return __importDefault(availabilityAllocation_1).default; } });
 var partialDelivered_1 = require("./microservice/parcial/partialDelivered");

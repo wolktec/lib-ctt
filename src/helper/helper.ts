@@ -119,28 +119,11 @@ export const translations: { [key: string]: string } = {
   Pulverizadores: "pulverizer",
 };
 
-export const groupEquipmentsProductivityByFront = (
-  equipmentsProductivity: CttEquipmentProductivity[],
-  equipments: CttEquipment[]
-): CttEquipmentProductivityFront[] => {
-  const equipmentsProductivityByFront: CttEquipmentProductivityFront[] =
-    equipmentsProductivity.map((equipmentProductivity) => {
-      const matchingItem = equipments.find(
-        (equipment) => equipment.code === equipmentProductivity.equipmentCode
-      );
-      return {
-        ...equipmentProductivity,
-        workFrontCode: matchingItem ? matchingItem.work_front_code : 0,
-      };
-    });
-
-  return equipmentsProductivityByFront;
-};
-
 export const getEventTime = (event: CttEvent) => {
   if (!event.time.end) {
     return 0;
   }
+
   const startTime = dayjs(event.time.start);
   const endTime = dayjs(event.time.end);
   return endTime.diff(startTime, "seconds");
@@ -179,32 +162,35 @@ export const groupEquipmentTelemetryByFront = (
   telemetry: CttTelemetry[]
 ): CttTelemetryByFront[] => {
   const telemetryByFront: CttTelemetryByFront[] = [];
-  for (const hourMeter of telemetry) {
-    const equipment = equipments.find(
-      (equip) => +hourMeter.equipment_code === equip.code
-    );
+
+  const equipmentMap = new Map(equipments.map((equip) => [equip.code, equip]));
+
+  const telemetryGrouped = new Map<number, typeof telemetry>([]);
+  for (const record of telemetry) {
+    const equipmentCode = +record.equipment_code;
+    if (!telemetryGrouped.has(equipmentCode)) {
+      telemetryGrouped.set(equipmentCode, []);
+    }
+    telemetryGrouped.get(equipmentCode)!.push(record);
+  }
+
+  for (const [equipmentCode, records] of telemetryGrouped.entries()) {
+    const equipment = equipmentMap.get(equipmentCode);
 
     if (!equipment || equipment.description !== "Colhedoras") {
       continue;
     }
 
-    const relatedRecords = telemetry.filter(
-      (t) => +t.equipment_code === equipment.code
-    );
-    const sortedRecords = relatedRecords.sort(
-      (a, b) => a.occurrence - b.occurrence
-    );
-    const firstRecord = sortedRecords[0];
-    const lastRecord = sortedRecords[sortedRecords.length - 1];
+    records.sort((a, b) => a.occurrence - b.occurrence);
+    const firstRecord = records[0];
+    const lastRecord = records[records.length - 1];
 
-    if (!telemetryByFront.some((t) => t.equipmentCode === equipment.code)) {
-      telemetryByFront.push({
-        equipmentCode: equipment.code,
-        workFrontCode: equipment.work_front_code,
-        firstRecord: firstRecord,
-        lastRecord: lastRecord,
-      });
-    }
+    telemetryByFront.push({
+      equipmentCode: equipment.code,
+      workFrontCode: equipment.work_front_code,
+      firstRecord: firstRecord,
+      lastRecord: lastRecord,
+    });
   }
 
   return telemetryByFront;
@@ -271,11 +257,11 @@ export const calcJourney = async (
 
   //Interferências de manutenção
   const interferenceMaintenceIds = interferences
-    .filter((e) => e.interference_type?.name === "Manutenção")
+    .filter((e) => e.interferenceType?.name === "Manutenção")
     .map((e) => e.id);
   //Interferências operacionais
   const interferenceOperationalStops = interferences
-    .filter((e) => e.interference_type?.name === "Operação")
+    .filter((e) => e.interferenceType?.name === "Operação")
     .map((e) => e.id);
 
   //Interferências de clima
@@ -524,11 +510,11 @@ export const calcJourneyByFront = async (
 
   //Interferências de manutenção
   const interferenceMaintenceIds = interferences
-    .filter((e) => e.interference_type?.name === "Manutenção")
+    .filter((e) => e.interferenceType?.name === "Manutenção")
     .map((e) => e.id);
   //Interferências operacionais
   const interferenceOperationalStops = interferences
-    .filter((e) => e.interference_type?.name === "Operação")
+    .filter((e) => e.interferenceType?.name === "Operação")
     .map((e) => e.id);
 
   //Interferências de clima
@@ -616,9 +602,16 @@ export const calcJourneyByFront = async (
 
   let totalInterference: Record<string, number> = {};
 
-  for (const [workFrontCode, value] of Object.entries(totalInterferenceTime)) {
+  const baseObject =
+    Object.keys(totalInterferenceTime).length > 0
+      ? totalInterferenceTime
+      : Object.keys(totalInterferenceOperationalTime).length > 0
+      ? totalInterferenceOperationalTime
+      : totalMaintenanceTime;
+
+  for (const [workFrontCode, value] of Object.entries(baseObject)) {
     totalInterference[workFrontCode] =
-      (value ?? 0) +
+      (totalInterferenceTime[workFrontCode] ?? 0) +
       (totalInterferenceOperationalTime[workFrontCode] ?? 0) +
       (totalMaintenanceTime[workFrontCode] ?? 0);
   }
@@ -639,4 +632,47 @@ export const calcJourneyByFront = async (
       uniqInterferenceOperationalEquip
     ),
   };
+};
+
+export const getDaysInMonth = (dateString: string): number => {
+  const [year, month] = dateString.split("-").map(Number);
+
+  const lastDay = new Date(year, month, 0);
+
+  return lastDay.getDate();
+};
+
+export const getDaysBetweenDates = (
+  startDate: string,
+  endDate: string
+): number => {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  const diffInMs = end.getTime() - start.getTime();
+  return Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
+};
+
+export const getHarvestDateRange = (date: string) => {
+  const [year] = date.split("-");
+
+  const startDate = `${year}-04-01`;
+  const endDate = `${year}-12-31`;
+
+  return { startDate, endDate };
+};
+
+export const getHarvesterEvents = (
+  equipments: CttEquipment[],
+  events: CttEvent[]
+): CttEvent[] => {
+  const harvestEvents = events.filter((e) =>
+    equipments.some(
+      (equipment) =>
+        e.equipment.code === equipment.code &&
+        equipment.description === "Colhedoras"
+    )
+  );
+
+  return harvestEvents;
 };

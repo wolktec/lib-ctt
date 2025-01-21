@@ -2,8 +2,8 @@ import {
   calcJourneyByFront,
   calcTelemetryByFront,
   getEventTime,
+  getHarvesterEvents,
   getTotalHourmeter,
-  groupEquipmentsProductivityByFront,
   groupEquipmentTelemetryByFront,
   msToTime,
   normalizeCalc,
@@ -52,12 +52,8 @@ const createPerformanceIndicators = async (
   interferences: CttInterferences[]
 ): Promise<CttPerformanceIndicators> => {
   try {
-    let equipmentsProductivityByFront = groupEquipmentsProductivityByFront(
-      equipmentProductivity,
-      equipments
-    );
-    const tripQtd = getTripQtdByFront(equipmentsProductivityByFront);
-    const averageWeight = getAverageWeight(equipmentsProductivityByFront);
+    const tripQtd = getTripQtdByFront(equipmentProductivity, workFronts);
+    const averageWeight = getAverageWeight(equipmentProductivity, workFronts);
     const awaitingTransshipment = getAwaitingTransshipment(events);
     const idleTime = getIdleTime(events, idleEvents);
 
@@ -94,8 +90,11 @@ const createPerformanceIndicators = async (
     );
     const maneuvers = calcManuvers(events);
 
-    const unproductiveTime = (await calcJourneyByFront(events, interferences))
-      .totalInterferenceTime;
+    const filteredEvents = getHarvesterEvents(equipments, events);
+
+    const unproductiveTime = (
+      await calcJourneyByFront(filteredEvents, interferences)
+    ).totalInterferenceTime;
 
     const ctOffenders = await calcCtOffenders(
       unproductiveTime,
@@ -140,33 +139,43 @@ const createPerformanceIndicators = async (
  * @param equipmentsProductivity equipment coming from the productivity API with the workFrontCode
  */
 const getTripQtdByFront = (
-  equipmentProductivity: CttEquipmentProductivityFront[]
+  equipmentProductivity: CttEquipmentProductivityFront[],
+  workFronts: CttWorkFronts[]
 ): Record<string, number> => {
-  const tripQtd = equipmentProductivity.reduce((account, equipment) => {
-    const { workFrontCode, trips } = equipment;
-    if (account[workFrontCode]) {
-      account[workFrontCode] += trips;
+  let tripQtd: Record<string, number> = {};
+  workFronts.forEach((workFront) => {
+    let totalTrips = 0;
+
+    equipmentProductivity.forEach((equipment) => {
+      if (equipment.workFrontCode === workFront.code) {
+        totalTrips += equipment.trips;
+      }
+    });
+    if (tripQtd[workFront.code]) {
+      tripQtd[workFront.code] += totalTrips;
     } else {
-      account[workFrontCode] = trips;
+      tripQtd[workFront.code] = totalTrips;
     }
-    return account;
-  }, {} as Record<string, number>);
+  });
 
   return tripQtd;
 };
-
 /**
  * GET the average weight by Front
  * @param equipmentsProductivity equipment coming from the productivity API with the workFrontCode
  */
 const getAverageWeight = (
-  equipmentsProductivity: CttEquipmentProductivityFront[]
+  equipmentsProductivity: CttEquipmentProductivityFront[],
+  workFronts: CttWorkFronts[]
 ): Record<string, number> => {
   const groupedAverageData = equipmentsProductivity.reduce(
     (account, equipment) => {
       const { workFrontCode, averageWeight } = equipment;
 
-      account[workFrontCode] = account[workFrontCode] || { sum: 0, count: 0 };
+      if (!account[workFrontCode]) {
+        account[workFrontCode] = { sum: 0, count: 0 };
+      }
+
       account[workFrontCode].sum += averageWeight;
       account[workFrontCode].count++;
       return account;
@@ -174,15 +183,12 @@ const getAverageWeight = (
     {} as Record<string, { sum: number; count: number }>
   );
 
-  const averages = Object.entries(groupedAverageData).reduce(
-    (averages, [workFront, averageData]) => {
-      averages[workFront] = normalizeCalc(
-        averageData.sum / averageData.count,
-        2
-      );
-      return averages;
-    },
-    {} as Record<string, number>
+  const averages = Object.fromEntries(
+    workFronts.map(({ code }) => {
+      const data = groupedAverageData[code] || { sum: 0, count: 0 };
+      const average = data.count > 0 ? data.sum / data.count : 0;
+      return [code, normalizeCalc(average, 2)];
+    })
   );
 
   return averages;
@@ -199,19 +205,25 @@ const getAwaitingTransshipment = (
     ) {
       const { workFront } = event;
       if (event.time.end > 0) {
-        const diffS = (event.time.end - event.time.start) / 1000;
         if (awaitingTransshipment[workFront.code]) {
-          awaitingTransshipment[workFront.code] += diffS;
+          awaitingTransshipment[workFront.code] += getEventTime(event) / 3600;
         } else {
-          awaitingTransshipment[workFront.code] = diffS;
+          awaitingTransshipment[workFront.code] = getEventTime(event) / 3600;
         }
       }
     }
   });
   const formattedTransshipment: Record<string, string> = {};
-  for (const [code, timeInHours] of Object.entries(awaitingTransshipment)) {
-    const timeInMs = timeInHours * 1000;
-    formattedTransshipment[code] = msToTime(timeInMs);
+
+  if (awaitingTransshipment) {
+    for (const [code, timeInHours] of Object.entries(awaitingTransshipment)) {
+      if (!timeInHours) {
+        formattedTransshipment[code] = "00:00:00";
+      } else {
+        const timeInMs = timeInHours * 3600 * 1000;
+        formattedTransshipment[code] = msToTime(timeInMs);
+      }
+    }
   }
 
   return formattedTransshipment;
@@ -345,27 +357,24 @@ const calcAgriculturalEfficiency = (
 
 const calcManuvers = (events: CttEvent[]): Record<string, string> => {
   let manuvers: Record<string, number> = {};
-  for (const event of events) {
-    const { workFront } = event;
-
-    if (event.name !== "Manobra") {
-      continue;
-    }
-
-    if (event.time.end > 0) {
-      const diffS = (event.time.end - event.time.start) / 1000;
-      if (manuvers[workFront.code]) {
-        manuvers[workFront.code] += diffS;
+  events.forEach((event) => {
+    if (event.time.end > 0 && event.name === "Manobra") {
+      if (manuvers[event.workFront.code]) {
+        manuvers[event.workFront.code] += getEventTime(event) / 3600;
       } else {
-        manuvers[workFront.code] = diffS;
+        manuvers[event.workFront.code] = getEventTime(event) / 3600;
       }
     }
-  }
+  });
 
   const formattedManuvers: Record<string, string> = {};
   for (const [code, timeInHours] of Object.entries(manuvers)) {
-    const timeInMs = timeInHours * 1000;
-    formattedManuvers[code] = msToTime(timeInMs);
+    if (!timeInHours) {
+      formattedManuvers[code] = "00:00:00";
+    } else {
+      const timeInMs = timeInHours * 3600 * 1000;
+      formattedManuvers[code] = msToTime(timeInMs);
+    }
   }
 
   return formattedManuvers;

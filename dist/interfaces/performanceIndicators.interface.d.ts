@@ -6,6 +6,7 @@ export interface CttEquipmentProductivity {
     averageTripWeight: number;
     trips: number;
     loads: number;
+    workFrontCode: number;
 }
 export interface CttEquipmentProductivityFront extends CttEquipmentProductivity {
     workFrontCode: number;

@@ -3,11 +3,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getHarvestDateRange = exports.getDaysBetweenDates = exports.getDaysInMonth = exports.calcJourneyByFront = exports.convertSecondstoTimeString = exports.createValueWithGoal = exports.removeOutliers = exports.getTotalHourmeter = exports.calcTotalInterferenceByFront = exports.calcJourney = exports.calcTelemetryByFront = exports.groupEquipmentTelemetryByFront = exports.secToTime = exports.msToTime = exports.getEventTime = exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = exports.normalizeCalc = exports.calcMechanicalAvailability = exports.convertHourToDecimal = void 0;
 exports.calcJourneyByFront = exports.convertSecondstoTimeString = exports.createValueWithGoal = exports.getTotalHourmeter = exports.calcTotalInterferenceByFront = exports.calcJourney = exports.calcTelemetryByFront = exports.groupEquipmentTelemetryByFront = exports.secToTime = exports.msToTime = exports.getEventTime = exports.groupEquipmentsProductivityByFront = exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = void 0;
 exports.convertHourToDecimal = convertHourToDecimal;
 exports.calcMechanicalAvailability = calcMechanicalAvailability;
 exports.normalizeCalc = normalizeCalc;
 exports.removeOutliers = removeOutliers;
+
 const dayjs_1 = __importDefault(require("dayjs"));
 function convertHourToDecimal(hour) {
     const [hours, minutes] = hour.split(":").map(Number);
@@ -90,17 +92,6 @@ exports.translations = {
     Empilhadeiras: "forklift",
     Pulverizadores: "pulverizer",
 };
-const groupEquipmentsProductivityByFront = (equipmentsProductivity, equipments) => {
-    const equipmentsProductivityByFront = equipmentsProductivity.map((equipmentProductivity) => {
-        const matchingItem = equipments.find((equipment) => equipment.code === equipmentProductivity.equipmentCode);
-        return {
-            ...equipmentProductivity,
-            workFrontCode: matchingItem ? matchingItem.work_front_code : 0,
-        };
-    });
-    return equipmentsProductivityByFront;
-};
-exports.groupEquipmentsProductivityByFront = groupEquipmentsProductivityByFront;
 const getEventTime = (event) => {
     if (!event.time.end) {
         return 0;
@@ -134,23 +125,29 @@ const twoCaracters = (num) => {
 };
 const groupEquipmentTelemetryByFront = (equipments, telemetry) => {
     const telemetryByFront = [];
-    for (const hourMeter of telemetry) {
-        const equipment = equipments.find((equip) => +hourMeter.equipment_code === equip.code);
+    const equipmentMap = new Map(equipments.map((equip) => [equip.code, equip]));
+    const telemetryGrouped = new Map([]);
+    for (const record of telemetry) {
+        const equipmentCode = +record.equipment_code;
+        if (!telemetryGrouped.has(equipmentCode)) {
+            telemetryGrouped.set(equipmentCode, []);
+        }
+        telemetryGrouped.get(equipmentCode).push(record);
+    }
+    for (const [equipmentCode, records] of telemetryGrouped.entries()) {
+        const equipment = equipmentMap.get(equipmentCode);
         if (!equipment || equipment.description !== "Colhedoras") {
             continue;
         }
-        const relatedRecords = telemetry.filter((t) => +t.equipment_code === equipment.code);
-        const sortedRecords = relatedRecords.sort((a, b) => a.occurrence - b.occurrence);
-        const firstRecord = sortedRecords[0];
-        const lastRecord = sortedRecords[sortedRecords.length - 1];
-        if (!telemetryByFront.some((t) => t.equipmentCode === equipment.code)) {
-            telemetryByFront.push({
-                equipmentCode: equipment.code,
-                workFrontCode: equipment.work_front_code,
-                firstRecord: firstRecord,
-                lastRecord: lastRecord,
-            });
-        }
+        records.sort((a, b) => a.occurrence - b.occurrence);
+        const firstRecord = records[0];
+        const lastRecord = records[records.length - 1];
+        telemetryByFront.push({
+            equipmentCode: equipment.code,
+            workFrontCode: equipment.work_front_code,
+            firstRecord: firstRecord,
+            lastRecord: lastRecord,
+        });
     }
     return telemetryByFront;
 };
@@ -501,4 +498,24 @@ const calcJourneyByFront = async (events, interferences) => {
     };
 };
 exports.calcJourneyByFront = calcJourneyByFront;
+const getDaysInMonth = (dateString) => {
+    const [year, month] = dateString.split("-").map(Number);
+    const lastDay = new Date(year, month, 0);
+    return lastDay.getDate();
+};
+exports.getDaysInMonth = getDaysInMonth;
+const getDaysBetweenDates = (startDate, endDate) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffInMs = end.getTime() - start.getTime();
+    return Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
+};
+exports.getDaysBetweenDates = getDaysBetweenDates;
+const getHarvestDateRange = (date) => {
+    const [year] = date.split("-");
+    const startDate = `${year}-04-01`;
+    const endDate = `${year}-12-31`;
+    return { startDate, endDate };
+};
+exports.getHarvestDateRange = getHarvestDateRange;
 //# sourceMappingURL=helper.js.map

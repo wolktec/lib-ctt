@@ -1,4 +1,5 @@
 import { CttEquipment, CttEquipmentsGroupsType, CttEvent, CttAvailabilityAndAllocationResult } from "./interfaces/availabilityAllocation.interface";
+import { CttCaneDelivery, CttWorkFrontUnit } from "./interfaces/caneDelivery.interface";
 import { CttTon, CttDeliveredReturn, CttEstimatedTons, CttPartialDeliveredResult, CttWorkFronts } from "./interfaces/partialDelivered.interface";
 import { CttEquipmentProductivity, CttEquipmentProductivityFront, CttIdleEvents, CttInterferences, CttPerformanceIndicators, CttSummaryReturn, CttTelemetry, CttTelemetryByFront, CttTrucksLack, Journey } from "./interfaces/performanceIndicators.interface";
 import { CttAvailability } from "./interfaces/availabilityByHour.interface";
