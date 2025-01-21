@@ -24,9 +24,9 @@ const createAvailabilityAllocation = async (equipments, events, date, interferen
     let currentHour = (0, helper_1.getCurrentHour)(startDate);
     const groupedEvents = groupEventsByTypeAndFront(events, equipments, interferences);
     let equipmentsGroups = await sumEquipmentsByGroup(equipments, events);
-    let mechanicalAvailability = await getMechanicalAvailability(groupedEvents, currentHour);
+    let mechanicalAvailability = getMechanicalAvailability(groupedEvents, currentHour);
     let averageAvailability = calcAverageAvailability(mechanicalAvailability);
-    const formattedValues = await formatAvailabilityReturn(equipmentsGroups, mechanicalAvailability, averageAvailability);
+    const formattedValues = formatAvailabilityReturn(equipmentsGroups, mechanicalAvailability, averageAvailability);
     return formattedValues;
 };
 const sumEquipmentsByGroup = async (equipments, events) => {
@@ -58,31 +58,29 @@ const sumEquipmentsByGroup = async (equipments, events) => {
  * GET the mechanical availability by front
  * @param events
  */
-const getMechanicalAvailability = async (events, currentHour) => {
+const getMechanicalAvailability = (events, currentHour) => {
     try {
         let mechanicalAvailability = new Map();
         let workFrontCode = 0;
         let totalMaintenanceTime = 0;
         let eventCode = "";
         let uniqMaintenanceEquip = 0;
-        let diffS = 0;
-        let diff = 0;
         for (const [type, eventsOfType] of Object.entries(events)) {
             for (const [total, event] of Object.entries(eventsOfType)) {
-                diff += (0, helper_1.getEventTime)(event);
                 totalMaintenanceTime = 0;
-                if (diff > 0) {
-                    if (event.interference) {
-                        workFrontCode = event.workFront.code;
-                        totalMaintenanceTime = diff;
+                if (event.interference) {
+                    workFrontCode = event.workFront.code;
+                    totalMaintenanceTime += (0, helper_1.getEventTime)(event);
+                    if (totalMaintenanceTime > 0) {
                         eventCode = event.code;
                         uniqMaintenanceEquip = new Set(eventsOfType.map((event) => event.equipment.code)).size;
                         if (!mechanicalAvailability.has(type)) {
                             mechanicalAvailability.set(type, new Map());
                         }
+                        const availability = (0, helper_1.calcMechanicalAvailability)(totalMaintenanceTime, uniqMaintenanceEquip, currentHour);
                         mechanicalAvailability
                             .get(type)
-                            ?.set(workFrontCode.toString(), (0, helper_1.calcMechanicalAvailability)(totalMaintenanceTime, uniqMaintenanceEquip, currentHour));
+                            ?.set(workFrontCode.toString(), availability);
                     }
                 }
             }
@@ -108,8 +106,7 @@ const calcAverageAvailability = (mechanicalAvailability) => {
     }
     return averageAvailabilityByType;
 };
-const formatAvailabilityReturn = async (groupedEquipments, mechanicalAvailability, averageAvailability) => {
-    //console.log(averageAvailability);
+const formatAvailabilityReturn = (groupedEquipments, mechanicalAvailability, averageAvailability) => {
     let availabilityAllocation = {
         goal: 88,
         groups: Object.entries(groupedEquipments).map(([group, workFronts]) => ({
@@ -134,20 +131,20 @@ const groupEventsByTypeAndFront = (events, equipments, interference) => {
         equipmentTypeMap.set(equipment.code, equipment.description);
     });
     const interferenceIds = interference
-        .filter((e) => e.interference_type && e.interference_type.name === "Manutenção")
+        .filter((e) => e.interferenceType?.name === "Manutenção")
         .map((e) => e.id);
-    const eventsByType = events.reduce((accumulator, event) => {
+    const eventsByType = {};
+    events.forEach((event) => {
         if (event.interference && interferenceIds.includes(event.interference.id)) {
             const equipmentType = equipmentTypeMap.get(event.equipment.code);
             if (equipmentType) {
-                if (!accumulator[equipmentType]) {
-                    accumulator[equipmentType] = [];
+                if (!eventsByType[equipmentType]) {
+                    eventsByType[equipmentType] = [];
                 }
-                accumulator[equipmentType].push(event);
+                eventsByType[equipmentType].push(event);
             }
         }
-        return accumulator;
-    }, {});
+    });
     return eventsByType;
 };
 exports.default = createAvailabilityAllocation;

@@ -29,8 +29,8 @@ const createPerformanceIndicators = async (equipmentProductivity, events, equipm
         const elevatorHours = (0, helper_1.calcTelemetryByFront)(elevatorHoursByFront);
         const agriculturalEfficiency = calcAgriculturalEfficiency(elevatorHours, engineHours);
         const maneuvers = calcManuvers(events);
-        const unproductiveTime = (await (0, helper_1.calcJourneyByFront)(events, interferences))
-            .totalInterferenceTime;
+        const filteredEvents = (0, helper_1.getHarvesterEvents)(equipments, events);
+        const unproductiveTime = (await (0, helper_1.calcJourneyByFront)(filteredEvents, interferences)).totalInterferenceTime;
         const ctOffenders = await calcCtOffenders(unproductiveTime, equipments, tonPerHour);
         const unproductiveTimeFormatted = formatUnproductiveTime(unproductiveTime);
         const averageRadius = await calcAverageRadius(events, telemetry.filter((hourMeter) => hourMeter.sensor_name === "odometer"));
@@ -93,20 +93,26 @@ const getAwaitingTransshipment = (events) => {
             event.interference.name === "Aguardando Transbordo") {
             const { workFront } = event;
             if (event.time.end > 0) {
-                const diffS = (event.time.end - event.time.start) / 1000;
                 if (awaitingTransshipment[workFront.code]) {
-                    awaitingTransshipment[workFront.code] += diffS;
+                    awaitingTransshipment[workFront.code] += (0, helper_1.getEventTime)(event) / 3600;
                 }
                 else {
-                    awaitingTransshipment[workFront.code] = diffS;
+                    awaitingTransshipment[workFront.code] = (0, helper_1.getEventTime)(event) / 3600;
                 }
             }
         }
     });
     const formattedTransshipment = {};
-    for (const [code, timeInHours] of Object.entries(awaitingTransshipment)) {
-        const timeInMs = timeInHours * 1000;
-        formattedTransshipment[code] = (0, helper_1.msToTime)(timeInMs);
+    if (awaitingTransshipment) {
+        for (const [code, timeInHours] of Object.entries(awaitingTransshipment)) {
+            if (!timeInHours) {
+                formattedTransshipment[code] = "00:00:00";
+            }
+            else {
+                const timeInMs = timeInHours * 3600 * 1000;
+                formattedTransshipment[code] = (0, helper_1.msToTime)(timeInMs);
+            }
+        }
     }
     return formattedTransshipment;
 };
@@ -204,25 +210,25 @@ const calcAgriculturalEfficiency = (elevatorHours, engineHours) => {
 };
 const calcManuvers = (events) => {
     let manuvers = {};
-    for (const event of events) {
-        const { workFront } = event;
-        if (event.name !== "Manobra") {
-            continue;
-        }
-        if (event.time.end > 0) {
-            const diffS = (event.time.end - event.time.start) / 1000;
-            if (manuvers[workFront.code]) {
-                manuvers[workFront.code] += diffS;
+    events.forEach((event) => {
+        if (event.time.end > 0 && event.name === "Manobra") {
+            if (manuvers[event.workFront.code]) {
+                manuvers[event.workFront.code] += (0, helper_1.getEventTime)(event) / 3600;
             }
             else {
-                manuvers[workFront.code] = diffS;
+                manuvers[event.workFront.code] = (0, helper_1.getEventTime)(event) / 3600;
             }
         }
-    }
+    });
     const formattedManuvers = {};
     for (const [code, timeInHours] of Object.entries(manuvers)) {
-        const timeInMs = timeInHours * 1000;
-        formattedManuvers[code] = (0, helper_1.msToTime)(timeInMs);
+        if (!timeInHours) {
+            formattedManuvers[code] = "00:00:00";
+        }
+        else {
+            const timeInMs = timeInHours * 3600 * 1000;
+            formattedManuvers[code] = (0, helper_1.msToTime)(timeInMs);
+        }
     }
     return formattedManuvers;
 };

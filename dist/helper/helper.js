@@ -3,13 +3,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getHarvestDateRange = exports.getDaysBetweenDates = exports.getDaysInMonth = exports.calcJourneyByFront = exports.convertSecondstoTimeString = exports.createValueWithGoal = exports.removeOutliers = exports.getTotalHourmeter = exports.calcTotalInterferenceByFront = exports.calcJourney = exports.calcTelemetryByFront = exports.groupEquipmentTelemetryByFront = exports.secToTime = exports.msToTime = exports.getEventTime = exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = exports.normalizeCalc = exports.calcMechanicalAvailability = exports.convertHourToDecimal = void 0;
-exports.calcJourneyByFront = exports.convertSecondstoTimeString = exports.createValueWithGoal = exports.getTotalHourmeter = exports.calcTotalInterferenceByFront = exports.calcJourney = exports.calcTelemetryByFront = exports.groupEquipmentTelemetryByFront = exports.secToTime = exports.msToTime = exports.getEventTime = exports.groupEquipmentsProductivityByFront = exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = void 0;
+exports.getHarvesterEvents = exports.getHarvestDateRange = exports.getDaysBetweenDates = exports.getDaysInMonth = exports.calcJourneyByFront = exports.convertSecondstoTimeString = exports.createValueWithGoal = exports.getTotalHourmeter = exports.calcTotalInterferenceByFront = exports.calcJourney = exports.calcTelemetryByFront = exports.groupEquipmentTelemetryByFront = exports.secToTime = exports.msToTime = exports.getEventTime = exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = void 0;
 exports.convertHourToDecimal = convertHourToDecimal;
 exports.calcMechanicalAvailability = calcMechanicalAvailability;
 exports.normalizeCalc = normalizeCalc;
 exports.removeOutliers = removeOutliers;
-
 const dayjs_1 = __importDefault(require("dayjs"));
 function convertHourToDecimal(hour) {
     const [hours, minutes] = hour.split(":").map(Number);
@@ -198,11 +196,11 @@ const calcJourney = async (events, interferences) => {
     const interferenceOperationalEvents = [];
     //Interferências de manutenção
     const interferenceMaintenceIds = interferences
-        .filter((e) => e.interference_type?.name === "Manutenção")
+        .filter((e) => e.interferenceType?.name === "Manutenção")
         .map((e) => e.id);
     //Interferências operacionais
     const interferenceOperationalStops = interferences
-        .filter((e) => e.interference_type?.name === "Operação")
+        .filter((e) => e.interferenceType?.name === "Operação")
         .map((e) => e.id);
     //Interferências de clima
     const interferenceWeatherStops = [600, 601];
@@ -399,11 +397,11 @@ const calcJourneyByFront = async (events, interferences) => {
     const interferenceOperationalEvents = [];
     //Interferências de manutenção
     const interferenceMaintenceIds = interferences
-        .filter((e) => e.interference_type?.name === "Manutenção")
+        .filter((e) => e.interferenceType?.name === "Manutenção")
         .map((e) => e.id);
     //Interferências operacionais
     const interferenceOperationalStops = interferences
-        .filter((e) => e.interference_type?.name === "Operação")
+        .filter((e) => e.interferenceType?.name === "Operação")
         .map((e) => e.id);
     //Interferências de clima
     const interferenceWeatherStops = [600, 601];
@@ -476,9 +474,14 @@ const calcJourneyByFront = async (events, interferences) => {
         ...uniqInterferenceEquip,
     ]);
     let totalInterference = {};
-    for (const [workFrontCode, value] of Object.entries(totalInterferenceTime)) {
+    const baseObject = Object.keys(totalInterferenceTime).length > 0
+        ? totalInterferenceTime
+        : Object.keys(totalInterferenceOperationalTime).length > 0
+            ? totalInterferenceOperationalTime
+            : totalMaintenanceTime;
+    for (const [workFrontCode, value] of Object.entries(baseObject)) {
         totalInterference[workFrontCode] =
-            (value ?? 0) +
+            (totalInterferenceTime[workFrontCode] ?? 0) +
                 (totalInterferenceOperationalTime[workFrontCode] ?? 0) +
                 (totalMaintenanceTime[workFrontCode] ?? 0);
     }
@@ -518,4 +521,10 @@ const getHarvestDateRange = (date) => {
     return { startDate, endDate };
 };
 exports.getHarvestDateRange = getHarvestDateRange;
+const getHarvesterEvents = (equipments, events) => {
+    const harvestEvents = events.filter((e) => equipments.some((equipment) => e.equipment.code === equipment.code &&
+        equipment.description === "Colhedoras"));
+    return harvestEvents;
+};
+exports.getHarvesterEvents = getHarvesterEvents;
 //# sourceMappingURL=helper.js.map
