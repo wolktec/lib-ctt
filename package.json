@@ -4,9 +4,15 @@
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*"
+  ],
+  "exports": {
+    ".": "./dist/index.js"
+  },
   "scripts": {
     "start": "node dist/index.js",
-    "build": "tsc",
+    "build": "rm -rf dist && tsc",
     "dev": "ts-node src/index.ts",
     "dev:auto": "concurrently \"pnpm run build --watch\" \"pnpm run start\""
   },
@@ -20,6 +26,10 @@
     "typescript": "^5.7.2"
   },
   "dependencies": {
+    "dayjs": "^1.11.13",
+    "express": "^4.21.2"
+  },
+  "peerDependencies": {
     "dayjs": "^1.11.13",
     "express": "^4.21.2"
   }
