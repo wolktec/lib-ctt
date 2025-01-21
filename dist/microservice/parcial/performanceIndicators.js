@@ -28,7 +28,6 @@ const createPerformanceIndicators = async (equipmentProductivity, events, equipm
         const elevatorHoursByFront = (0, helper_1.groupEquipmentTelemetryByFront)(equipments, telemetry.filter((hourMeter) => hourMeter.sensor_name === "elevator_conveyor_belt_hour_meter"));
         const elevatorHours = (0, helper_1.calcTelemetryByFront)(elevatorHoursByFront);
         const elevatorUse = calcElevatorUse(elevatorHours, engineHours);
-        console.log(elevatorUse);
         const agriculturalEfficiency = calcAgriculturalEfficiency(elevatorHours, engineHours);
         const maneuvers = calcManuvers(events);
         const filteredEvents = (0, helper_1.getHarvesterEvents)(equipments, events);

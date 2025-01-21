@@ -85,7 +85,7 @@ const createPerformanceIndicators = async (
     const elevatorHours = calcTelemetryByFront(elevatorHoursByFront);
 
     const elevatorUse = calcElevatorUse(elevatorHours, engineHours);
-    console.log(elevatorUse);
+
     const agriculturalEfficiency = calcAgriculturalEfficiency(
       elevatorHours,
       engineHours
