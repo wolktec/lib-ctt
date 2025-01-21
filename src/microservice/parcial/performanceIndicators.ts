@@ -496,18 +496,20 @@ const calcSummary = (
   }
 
   let summary: CttSummaryReturn[] = [];
+  let totalPercentage: number = 0;
   for (const [workFrontCode, ctOffender] of Object.entries(formatCtOffender)) {
+    totalPercentage += (ctOffender / total) * 100;
     summary.push({
       label: `Frente ${workFrontCode}`,
-      lostTons: normalizeCalc(ctOffender),
-      progress: normalizeCalc(ctOffender * 100, 2),
+      lostTons: ctOffender,
+      progress: +((ctOffender / total) * 100).toFixed(2),
     });
   }
 
   summary.push({
     label: `Geral`,
-    lostTons: normalizeCalc(total),
-    progress: normalizeCalc(total * 100, 2),
+    lostTons: total,
+    progress: normalizeCalc(totalPercentage, 2),
   });
 
   return summary;

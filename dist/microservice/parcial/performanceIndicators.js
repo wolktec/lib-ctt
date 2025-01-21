@@ -311,17 +311,19 @@ const calcSummary = (ctOffenders) => {
         }
     }
     let summary = [];
+    let totalPercentage = 0;
     for (const [workFrontCode, ctOffender] of Object.entries(formatCtOffender)) {
+        totalPercentage += (ctOffender / total) * 100;
         summary.push({
             label: `Frente ${workFrontCode}`,
-            lostTons: (0, helper_1.normalizeCalc)(ctOffender),
-            progress: (0, helper_1.normalizeCalc)(ctOffender * 100, 2),
+            lostTons: ctOffender,
+            progress: +((ctOffender / total) * 100).toFixed(2),
         });
     }
     summary.push({
         label: `Geral`,
-        lostTons: (0, helper_1.normalizeCalc)(total),
-        progress: (0, helper_1.normalizeCalc)(total * 100, 2),
+        lostTons: total,
+        progress: (0, helper_1.normalizeCalc)(totalPercentage, 2),
     });
     return summary;
 };
