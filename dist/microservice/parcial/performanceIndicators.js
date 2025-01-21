@@ -167,9 +167,11 @@ const calcTrucksLack = (events) => {
         }
     });
     const formattedTrucksLack = {};
-    for (const [code, timeInHours] of Object.entries(trucksLack)) {
-        const timeInMs = timeInHours * 1000;
-        formattedTrucksLack[code] = (0, helper_1.msToTime)(timeInMs);
+    if (trucksLack) {
+        for (const [code, timeInHours] of Object.entries(trucksLack)) {
+            const timeInMs = timeInHours * 1000;
+            formattedTrucksLack[code] = (0, helper_1.msToTime)(timeInMs);
+        }
     }
     return {
         formattedTrucksLack: formattedTrucksLack,
@@ -331,7 +333,7 @@ const formatPerformanceIndicatorReturn = (tripQtd, averageWeight, awaitingTranss
                 workFrontCode: workfrontCode,
                 trips: tripQtd[workfrontCode] || 0,
                 averageWeight: averageWeight[workfrontCode] || 0,
-                trucksLack: trucksLack[workfrontCode] || "",
+                trucksLack: trucksLack[workfrontCode] || "00:00:00",
                 awaitingTransshipment: awaitingTransshipment[workfrontCode] || "00:00:00",
                 engineIdle: idleTime[workfrontCode] || "00:00:00",
                 autopilotUse: {
