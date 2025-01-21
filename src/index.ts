@@ -37,8 +37,6 @@ export { default as performanceIndicators } from "./microservice/parcial/perform
 export { default as createCaneDelivery } from "./microservice/closure/caneDelivery";
 
 export { default as createAvailabilityByHour } from "./microservice/availability/availabilityByHour";
-
-export { default as createAvailabilityByHour } from "./microservice/availability/availabilityByHour";
 export { default as createAvailabilityAwaitingTransshipment } from "./microservice/availability/availabilityAwaitingTransshipment";
 
 export {

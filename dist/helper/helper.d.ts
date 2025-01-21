@@ -35,3 +35,4 @@ export declare const getHarvestDateRange: (date: string) => {
     startDate: string;
     endDate: string;
 };
+export declare const getHarvesterEvents: (equipments: CttEquipment[], events: CttEvent[]) => CttEvent[];

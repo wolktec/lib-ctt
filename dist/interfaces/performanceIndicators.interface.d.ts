@@ -20,9 +20,6 @@ export interface CttTelemetry {
     occurrence: number;
     sensor_name: string;
     current_value: string;
-    max_value: string;
-    min_value: string;
-    mean_value: string;
     equipment_code: string;
 }
 export interface CttTelemetryByFront {
@@ -45,7 +42,7 @@ export type CttAgriculturalEfficiency = Record<string, {
 }>;
 export interface CttInterferences {
     id: number;
-    interference_type?: {
+    interferenceType?: {
         name: string;
     };
 }
