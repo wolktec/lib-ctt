@@ -35,11 +35,11 @@ export interface CttTrucksLack {
     formattedTrucksLack: Record<string, string>;
     trucksLack: Record<string, number>;
 }
-export declare type CttAutoPilotUse = Record<string, {
+export type CttAutoPilotUse = Record<string, {
     value: number;
     goal: number;
 }>;
-export declare type CttAgriculturalEfficiency = Record<string, {
+export type CttAgriculturalEfficiency = Record<string, {
     value: number;
     goal: number;
 }>;

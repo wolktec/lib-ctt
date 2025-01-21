@@ -537,7 +537,7 @@ const formatPerformanceIndicatorReturn = (
         workFrontCode: workfrontCode,
         trips: tripQtd[workfrontCode] || 0,
         averageWeight: averageWeight[workfrontCode] || 0,
-        trucksLack: trucksLack[workfrontCode] || "00:00:00",
+        trucksLack: trucksLack[workfrontCode] || "",
         awaitingTransshipment:
           awaitingTransshipment[workfrontCode] || "00:00:00",
         engineIdle: idleTime[workfrontCode] || "00:00:00",

@@ -28,9 +28,7 @@ export function calcMechanicalAvailability(
     return 100.0;
   }
   const calc = normalizeCalc(
-    ((currentHour * 3600 - totalMaintenance / countMaintenance) /
-      (currentHour * 3600)) *
-      100,
+    ((( currentHour * 3600) - totalMaintenance / countMaintenance) / (currentHour * 3600)) * 100,
     2
   );
   return calc;
@@ -122,6 +120,10 @@ export const translations: { [key: string]: string } = {
 };
 
 export const getEventTime = (event: CttEvent) => {
+  if (!event.time.end) {
+    return 0;
+  }
+
   const startTime = dayjs(event.time.start);
   const endTime = dayjs(event.time.end);
   return endTime.diff(startTime, "seconds");

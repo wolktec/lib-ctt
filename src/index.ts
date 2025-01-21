@@ -29,6 +29,7 @@ import {
 } from "./interfaces/performanceIndicators.interface";
 
 import { CttAvailability } from "./interfaces/availabilityByHour.interface";
+import { CttAvailabilityAwaitingTransshipment } from "./interfaces/availabilityAwaitingTransshipment.interface";
 
 export { default as createAvailabilityAllocation } from "./microservice/parcial/availabilityAllocation";
 export { default as createPartialDelivered } from "./microservice/parcial/partialDelivered";
@@ -36,6 +37,9 @@ export { default as performanceIndicators } from "./microservice/parcial/perform
 export { default as createCaneDelivery } from "./microservice/closure/caneDelivery";
 
 export { default as createAvailabilityByHour } from "./microservice/availability/availabilityByHour";
+
+export { default as createAvailabilityByHour } from "./microservice/availability/availabilityByHour";
+export { default as createAvailabilityAwaitingTransshipment } from "./microservice/availability/availabilityAwaitingTransshipment";
 
 export {
   CttEquipment,
@@ -60,4 +64,5 @@ export {
   CttCaneDelivery,
   CttWorkFrontUnit,
   CttAvailability,
+  CttAvailabilityAwaitingTransshipment,
 };
