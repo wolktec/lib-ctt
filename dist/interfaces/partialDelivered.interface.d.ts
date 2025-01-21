@@ -1,4 +1,4 @@
-export declare type CttTon = Record<string, number>;
+export type CttTon = Record<string, number>;
 export interface CttWorkFronts {
     code: number;
     goal: number;
