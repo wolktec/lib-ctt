@@ -27,6 +27,8 @@ const createPerformanceIndicators = async (equipmentProductivity, events, equipm
         const tOffenders = calcTOffenders(trucksLack.trucksLack, tonPerHour);
         const elevatorHoursByFront = (0, helper_1.groupEquipmentTelemetryByFront)(equipments, telemetry.filter((hourMeter) => hourMeter.sensor_name === "elevator_conveyor_belt_hour_meter"));
         const elevatorHours = (0, helper_1.calcTelemetryByFront)(elevatorHoursByFront);
+        const elevatorUse = calcElevatorUse(elevatorHours, engineHours);
+        console.log(elevatorUse);
         const agriculturalEfficiency = calcAgriculturalEfficiency(elevatorHours, engineHours);
         const maneuvers = calcManuvers(events);
         const filteredEvents = (0, helper_1.getHarvesterEvents)(equipments, events);
@@ -35,7 +37,7 @@ const createPerformanceIndicators = async (equipmentProductivity, events, equipm
         const unproductiveTimeFormatted = formatUnproductiveTime(unproductiveTime);
         const averageRadius = await calcAverageRadius(events, telemetry.filter((hourMeter) => hourMeter.sensor_name === "odometer"));
         const summary = calcSummary(ctOffenders);
-        const formatPerformanceIndicator = formatPerformanceIndicatorReturn(tripQtd, averageWeight, awaitingTransshipment, idleTime, autoPilotUse, trucksLack.formattedTrucksLack, tOffenders, agriculturalEfficiency, maneuvers, workFronts, ctOffenders, unproductiveTimeFormatted, averageRadius, summary);
+        const formatPerformanceIndicator = formatPerformanceIndicatorReturn(tripQtd, averageWeight, awaitingTransshipment, idleTime, autoPilotUse, trucksLack.formattedTrucksLack, tOffenders, agriculturalEfficiency, maneuvers, workFronts, ctOffenders, unproductiveTimeFormatted, averageRadius, summary, elevatorUse);
         return formatPerformanceIndicator;
     }
     catch (error) {
@@ -298,6 +300,20 @@ const formatUnproductiveTime = (unproductiveTime) => {
     }
     return formatUnproductiveTime;
 };
+const calcElevatorUse = (elevatorHours, engineHours) => {
+    let elevatorUse = {};
+    for (const [workFront, value] of Object.entries(elevatorHours)) {
+        if (elevatorUse[workFront]) {
+            elevatorUse[workFront] += +((value / engineHours[workFront]) *
+                100).toFixed(2);
+        }
+        else {
+            elevatorUse[workFront] = +((value / engineHours[workFront]) *
+                100).toFixed(2);
+        }
+    }
+    return elevatorUse;
+};
 const calcSummary = (ctOffenders) => {
     let total = 0;
     const formatCtOffender = {};
@@ -327,7 +343,7 @@ const calcSummary = (ctOffenders) => {
     });
     return summary;
 };
-const formatPerformanceIndicatorReturn = (tripQtd, averageWeight, awaitingTransshipment, idleTime, autoPilotUse, trucksLack, tOffenders, agriculturalEfficiency, maneuvers, workFronts, ctOffenders, unproductiveTime, averageRadius, summary) => {
+const formatPerformanceIndicatorReturn = (tripQtd, averageWeight, awaitingTransshipment, idleTime, autoPilotUse, trucksLack, tOffenders, agriculturalEfficiency, maneuvers, workFronts, ctOffenders, unproductiveTime, averageRadius, summary, elevatorUse) => {
     const availabilityAllocation = {
         workFronts: workFronts.map((workfront) => {
             const workfrontCode = workfront.code;
@@ -342,8 +358,11 @@ const formatPerformanceIndicatorReturn = (tripQtd, averageWeight, awaitingTranss
                     value: autoPilotUse[workfrontCode]?.value || 0,
                     goal: autoPilotUse[workfrontCode]?.goal || 0,
                 },
-                elevatorUse: 0,
-                unproductiveTime: unproductiveTime[workfrontCode],
+                elevatorUse: {
+                    value: elevatorUse[workfrontCode] || 0,
+                    goal: 69,
+                },
+                unproductiveTime: unproductiveTime[workfrontCode] || "00:00:00",
                 ctOffenders: ctOffenders[workfrontCode] || 0,
                 tOffenders: tOffenders[workfrontCode] || 0,
                 agriculturalEfficiency: {

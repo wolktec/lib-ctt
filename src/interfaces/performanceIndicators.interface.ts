@@ -75,7 +75,10 @@ export interface CttPerformanceIndicators {
       value: number;
       goal: number;
     };
-    elevatorUse: number;
+    elevatorUse: {
+      value: number;
+      goal: number;
+    };
     unproductiveTime: string;
     ctOffenders: number;
     tOffenders: number;

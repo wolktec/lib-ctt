@@ -84,6 +84,8 @@ const createPerformanceIndicators = async (
     );
     const elevatorHours = calcTelemetryByFront(elevatorHoursByFront);
 
+    const elevatorUse = calcElevatorUse(elevatorHours, engineHours);
+    console.log(elevatorUse);
     const agriculturalEfficiency = calcAgriculturalEfficiency(
       elevatorHours,
       engineHours
@@ -124,7 +126,8 @@ const createPerformanceIndicators = async (
       ctOffenders,
       unproductiveTimeFormatted,
       averageRadius,
-      summary
+      summary,
+      elevatorUse
     );
 
     return formatPerformanceIndicator;
@@ -479,6 +482,27 @@ const formatUnproductiveTime = (
   return formatUnproductiveTime;
 };
 
+const calcElevatorUse = (
+  elevatorHours: Record<string, number>,
+  engineHours: Record<string, number>
+) => {
+  let elevatorUse: Record<string, number> = {};
+  for (const [workFront, value] of Object.entries(elevatorHours)) {
+    if (elevatorUse[workFront]) {
+      elevatorUse[workFront] += +(
+        (value / engineHours[workFront]) *
+        100
+      ).toFixed(2);
+    } else {
+      elevatorUse[workFront] = +(
+        (value / engineHours[workFront]) *
+        100
+      ).toFixed(2);
+    }
+  }
+  return elevatorUse;
+};
+
 const calcSummary = (
   ctOffenders: Record<string, number>
 ): CttSummaryReturn[] => {
@@ -529,7 +553,8 @@ const formatPerformanceIndicatorReturn = (
   ctOffenders: Record<string, number>,
   unproductiveTime: Record<string, string>,
   averageRadius: Record<string, number>,
-  summary: CttSummaryReturn[]
+  summary: CttSummaryReturn[],
+  elevatorUse: Record<string, number>
 ): CttPerformanceIndicators => {
   const availabilityAllocation: CttPerformanceIndicators = {
     workFronts: workFronts.map((workfront) => {
@@ -547,8 +572,11 @@ const formatPerformanceIndicatorReturn = (
           value: autoPilotUse[workfrontCode]?.value || 0,
           goal: autoPilotUse[workfrontCode]?.goal || 0,
         },
-        elevatorUse: 0,
-        unproductiveTime: unproductiveTime[workfrontCode],
+        elevatorUse: {
+          value: elevatorUse[workfrontCode] || 0,
+          goal: 69,
+        },
+        unproductiveTime: unproductiveTime[workfrontCode] || "00:00:00",
         ctOffenders: ctOffenders[workfrontCode] || 0,
         tOffenders: tOffenders[workfrontCode] || 0,
         agriculturalEfficiency: {
