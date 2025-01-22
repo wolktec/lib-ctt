@@ -84,6 +84,8 @@ const createPerformanceIndicators = async (
     );
     const elevatorHours = calcTelemetryByFront(elevatorHoursByFront);
 
+    const elevatorUse = calcElevatorUse(elevatorHours, engineHours);
+
     const agriculturalEfficiency = calcAgriculturalEfficiency(
       elevatorHours,
       engineHours
@@ -124,7 +126,8 @@ const createPerformanceIndicators = async (
       ctOffenders,
       unproductiveTimeFormatted,
       averageRadius,
-      summary
+      summary,
+      elevatorUse
     );
 
     return formatPerformanceIndicator;
@@ -294,13 +297,13 @@ const calcTrucksLack = (events: CttEvent[]): CttTrucksLack => {
       }
     }
   });
-
   const formattedTrucksLack: Record<string, string> = {};
-  for (const [code, timeInHours] of Object.entries(trucksLack)) {
-    const timeInMs = timeInHours * 1000;
-    formattedTrucksLack[code] = msToTime(timeInMs);
+  if (trucksLack) {
+    for (const [code, timeInHours] of Object.entries(trucksLack)) {
+      const timeInMs = timeInHours * 1000;
+      formattedTrucksLack[code] = msToTime(timeInMs);
+    }
   }
-
   return {
     formattedTrucksLack: formattedTrucksLack,
     trucksLack: trucksLack,
@@ -479,6 +482,27 @@ const formatUnproductiveTime = (
   return formatUnproductiveTime;
 };
 
+const calcElevatorUse = (
+  elevatorHours: Record<string, number>,
+  engineHours: Record<string, number>
+) => {
+  let elevatorUse: Record<string, number> = {};
+  for (const [workFront, value] of Object.entries(elevatorHours)) {
+    if (elevatorUse[workFront]) {
+      elevatorUse[workFront] += +(
+        (value / engineHours[workFront]) *
+        100
+      ).toFixed(2);
+    } else {
+      elevatorUse[workFront] = +(
+        (value / engineHours[workFront]) *
+        100
+      ).toFixed(2);
+    }
+  }
+  return elevatorUse;
+};
+
 const calcSummary = (
   ctOffenders: Record<string, number>
 ): CttSummaryReturn[] => {
@@ -496,18 +520,20 @@ const calcSummary = (
   }
 
   let summary: CttSummaryReturn[] = [];
+  let totalPercentage: number = 0;
   for (const [workFrontCode, ctOffender] of Object.entries(formatCtOffender)) {
+    totalPercentage += (ctOffender / total) * 100;
     summary.push({
       label: `Frente ${workFrontCode}`,
-      lostTons: normalizeCalc(ctOffender),
-      progress: normalizeCalc(ctOffender * 100, 2),
+      lostTons: ctOffender,
+      progress: +((ctOffender / total) * 100).toFixed(2),
     });
   }
 
   summary.push({
     label: `Geral`,
-    lostTons: normalizeCalc(total),
-    progress: normalizeCalc(total * 100, 2),
+    lostTons: total,
+    progress: normalizeCalc(totalPercentage, 2),
   });
 
   return summary;
@@ -527,7 +553,8 @@ const formatPerformanceIndicatorReturn = (
   ctOffenders: Record<string, number>,
   unproductiveTime: Record<string, string>,
   averageRadius: Record<string, number>,
-  summary: CttSummaryReturn[]
+  summary: CttSummaryReturn[],
+  elevatorUse: Record<string, number>
 ): CttPerformanceIndicators => {
   const availabilityAllocation: CttPerformanceIndicators = {
     workFronts: workFronts.map((workfront) => {
@@ -537,7 +564,7 @@ const formatPerformanceIndicatorReturn = (
         workFrontCode: workfrontCode,
         trips: tripQtd[workfrontCode] || 0,
         averageWeight: averageWeight[workfrontCode] || 0,
-        trucksLack: trucksLack[workfrontCode] || "",
+        trucksLack: trucksLack[workfrontCode] || "00:00:00",
         awaitingTransshipment:
           awaitingTransshipment[workfrontCode] || "00:00:00",
         engineIdle: idleTime[workfrontCode] || "00:00:00",
@@ -545,8 +572,11 @@ const formatPerformanceIndicatorReturn = (
           value: autoPilotUse[workfrontCode]?.value || 0,
           goal: autoPilotUse[workfrontCode]?.goal || 0,
         },
-        elevatorUse: 0,
-        unproductiveTime: unproductiveTime[workfrontCode],
+        elevatorUse: {
+          value: elevatorUse[workfrontCode] || 0,
+          goal: 69,
+        },
+        unproductiveTime: unproductiveTime[workfrontCode] || "00:00:00",
         ctOffenders: ctOffenders[workfrontCode] || 0,
         tOffenders: tOffenders[workfrontCode] || 0,
         agriculturalEfficiency: {

@@ -32,11 +32,11 @@ export interface CttTrucksLack {
     formattedTrucksLack: Record<string, string>;
     trucksLack: Record<string, number>;
 }
-export type CttAutoPilotUse = Record<string, {
+export declare type CttAutoPilotUse = Record<string, {
     value: number;
     goal: number;
 }>;
-export type CttAgriculturalEfficiency = Record<string, {
+export declare type CttAgriculturalEfficiency = Record<string, {
     value: number;
     goal: number;
 }>;
@@ -58,7 +58,10 @@ export interface CttPerformanceIndicators {
             value: number;
             goal: number;
         };
-        elevatorUse: number;
+        elevatorUse: {
+            value: number;
+            goal: number;
+        };
         unproductiveTime: string;
         ctOffenders: number;
         tOffenders: number;
