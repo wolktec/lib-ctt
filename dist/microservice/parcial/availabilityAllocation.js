@@ -139,8 +139,10 @@ const formatAvailabilityReturn = (groupedEquipments, mechanicalAvailability, ave
             workFronts: Object.entries(workFronts).map(([workFrontCode, equipments]) => ({
                 workFrontCode: +workFrontCode,
                 equipments,
-                availability: mechanicalAvailability.get(group)?.get(workFrontCode.toString()) ||
-                    0,
+                availability: equipments &&
+                    mechanicalAvailability.get(group)?.get(workFrontCode.toString())
+                    ? mechanicalAvailability.get(group)?.get(workFrontCode.toString())
+                    : null,
             })),
         })),
     };

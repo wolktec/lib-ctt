@@ -223,8 +223,10 @@ const formatAvailabilityReturn = (
           workFrontCode: +workFrontCode,
           equipments,
           availability:
-            mechanicalAvailability.get(group)?.get(workFrontCode.toString()) ||
-            0,
+            equipments &&
+            mechanicalAvailability.get(group)?.get(workFrontCode.toString())
+              ? mechanicalAvailability.get(group)?.get(workFrontCode.toString())
+              : null,
         })
       ),
     })),
