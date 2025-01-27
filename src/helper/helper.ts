@@ -28,7 +28,9 @@ export function calcMechanicalAvailability(
     return 100.0;
   }
   const calc = normalizeCalc(
-    ((( currentHour * 3600) - totalMaintenance / countMaintenance) / (currentHour * 3600)) * 100,
+    ((currentHour * 3600 - totalMaintenance / countMaintenance) /
+      (currentHour * 3600)) *
+      100,
     2
   );
   return calc;
@@ -201,18 +203,15 @@ export const calcTelemetryByFront = (
 ): Record<string, number> => {
   let telemetryResult: Record<string, number> = {};
   for (const telemetry of telemetryByFront) {
+    const telemetryCalc = (
+      +telemetry.lastRecord.current_value - +telemetry.firstRecord.current_value
+    ).toFixed(2);
     if (telemetryResult[telemetry.workFrontCode]) {
-      telemetryResult[telemetry.workFrontCode] += normalizeCalc(
-        +telemetry.lastRecord.current_value -
-          +telemetry.firstRecord.current_value,
-        2
-      );
+      telemetryResult[telemetry.workFrontCode] +=
+        +telemetryCalc > 0 ? +telemetryCalc : 0;
     } else {
-      telemetryResult[telemetry.workFrontCode] = normalizeCalc(
-        +telemetry.lastRecord.current_value -
-          +telemetry.firstRecord.current_value,
-        2
-      );
+      telemetryResult[telemetry.workFrontCode] =
+        +telemetryCalc > 0 ? +telemetryCalc : 0;
     }
   }
   return telemetryResult;
