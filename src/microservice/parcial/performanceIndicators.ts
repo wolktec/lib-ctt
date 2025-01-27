@@ -110,7 +110,7 @@ const createPerformanceIndicators = async (
       telemetry.filter((hourMeter) => hourMeter.sensor_name === "odometer")
     );
 
-    const summary = calcSummary(ctOffenders);
+    const summary = calcSummary(ctOffenders, workFronts);
 
     const formatPerformanceIndicator = formatPerformanceIndicatorReturn(
       tripQtd,
@@ -504,18 +504,28 @@ const calcElevatorUse = (
 };
 
 const calcSummary = (
-  ctOffenders: Record<string, number>
+  ctOffenders: Record<string, number>,
+  workFronts: CttWorkFronts[]
 ): CttSummaryReturn[] => {
   let total: number = 0;
   const formatCtOffender: Record<string, number> = {};
 
-  for (const [workFrontCode, ctOffender] of Object.entries(ctOffenders)) {
-    total += ctOffender;
+  for (const workFront of workFronts) {
+    const workFrontCode = workFront.code;
 
-    if (formatCtOffender[workFrontCode]) {
-      formatCtOffender[workFrontCode] += ctOffender;
+    if (ctOffenders[workFrontCode] !== undefined) {
+      const ctOffender = ctOffenders[workFrontCode];
+      total += ctOffender;
+
+      if (formatCtOffender[workFrontCode]) {
+        formatCtOffender[workFrontCode] += ctOffender;
+      } else {
+        formatCtOffender[workFrontCode] = ctOffender;
+      }
     } else {
-      formatCtOffender[workFrontCode] = ctOffender;
+      if (!formatCtOffender[workFrontCode]) {
+        formatCtOffender[workFrontCode] = 0;
+      }
     }
   }
 
@@ -526,7 +536,7 @@ const calcSummary = (
     summary.push({
       label: `Frente ${workFrontCode}`,
       lostTons: ctOffender,
-      progress: +((ctOffender / total) * 100).toFixed(2),
+      progress: ctOffender ? +((ctOffender / total) * 100).toFixed(2) : 0,
     });
   }
 
