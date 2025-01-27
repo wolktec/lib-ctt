@@ -14,7 +14,11 @@ import {
 } from "../../interfaces/availabilityAllocation.interface";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
-import { CttAvailability, CttAvailabilityWorkFrontData, } from "../../interfaces/availabilityByHour.interface";
+import {
+  CttAvailability,
+  CttAvailabilityWorkFrontData,
+  CttAvailabilityGroupData,
+} from "../../interfaces/availabilityByHour.interface";
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
@@ -55,14 +59,19 @@ const createAvailabilityByHour = async (
 
   // console.log("groupedEventsByHour: ", groupedEventsByHour);
 
+  let mechanicalAvailabilityCalculated = calcAverageMechanicalAvailabilityHours(
+    groupedEventsByHour,
+    currentHour,
+  );
+
   let averageMechanicalAvailability = calcAverageMechanicalAvailability(
-    groupedEventsByHour
+    mechanicalAvailabilityCalculated
   );
 
   // console.log("averageMechanicalAvailability: ", averageMechanicalAvailability);
 
   const formattedValues = await formatAvailabilityReturn(
-    groupedEventsByHour,
+    mechanicalAvailabilityCalculated,
     currentHour,
     averageMechanicalAvailability,
     equipmentsGrouped,
@@ -196,16 +205,14 @@ const groupEventsByHour = async (
           //   currentHour
           // ));
 
-          if (!hourMap.has(hour)) {
-            hourMap.set(
-              hour,
-              calcMechanicalAvailability(
-                totalMaintenanceTime,
-                uniqMaintenanceEquip,
-                currentHour
-              )
-            );
-          }
+          hourMap.set(
+            hour,
+            calcMechanicalAvailability(
+              totalMaintenanceTime,
+              uniqMaintenanceEquip,
+              currentHour
+            )
+          );
         }
         // console.log("----- -----");
         // console.log("equipmentType - workFrontCode - events: ", equipmentType, " - ", workFrontCode, " - ", eventsArray);
@@ -257,6 +264,36 @@ const sumEquipmentsByTypeAndFront = async (
  * CALC average mechanical availability by TYPE, FRONT and HOUR
  * @param mechanicalAvailability
  */
+const calcAverageMechanicalAvailabilityHours = (
+  mechanicalAvailability: Map<string, Map<number, Map<number, number>>>,
+  currentHour: number,
+) => {
+  for (const [type, workFronts] of mechanicalAvailability.entries()) {
+    for (const [workFrontCode, hoursMap] of workFronts) {
+      let totalAvailability = 0;
+      const sortedHours: [number, number][] = [];
+
+      // console.log("----- ----- -----");
+      for (let hour = 0; hour < currentHour; hour++) {
+        totalAvailability += hoursMap.get(hour) ?? 100;
+        const availability = normalizeCalc(totalAvailability / (hour+1), 2);
+        // console.log("equipment: ", type, workFrontCode);
+        // console.log("count: ", hour, totalAvailability, (hour+1), availability);
+        sortedHours.push([hour, availability]);
+      }
+
+      sortedHours.sort((a, b) => a[0] - b[0]);
+      hoursMap.clear();
+      sortedHours.forEach(([hour, availability]) => hoursMap.set(hour, availability));
+    }
+  }
+  return mechanicalAvailability;
+};
+
+/**
+ * CALC average mechanical availability by TYPE and FRONT
+ * @param mechanicalAvailability
+ */
 const calcAverageMechanicalAvailability = (
   mechanicalAvailability: Map<string, Map<number, Map<number, number>>>
 ) => {
@@ -266,11 +303,9 @@ const calcAverageMechanicalAvailability = (
     let totalAvailability = 0;
     let workFrontCount = 0;
 
-    for (const hourMap of workFronts.values()) {
-      for (const availability of hourMap.values()) {
-        totalAvailability += availability;
-        workFrontCount++;
-      }
+    for (const [_, hoursMap] of workFronts) {
+      hoursMap.get(23); // last hour is already the avarage value
+      workFrontCount++;
     }
 
     const averageAvailability =
@@ -297,6 +332,9 @@ const formatAvailabilityReturn = async(
     goal: 88, // hardcoded
     groups: [],
   };
+
+  const equipmentTypeOrder = ["Colhedoras", "Tratores", "Caminhões"];
+  const groupsMap = new Map<string, CttAvailabilityGroupData>();
 
   for (const [equipmentType, workFrontsMap] of events) {
     const workFrontsData: CttAvailabilityWorkFrontData[] = [];
@@ -331,11 +369,17 @@ const formatAvailabilityReturn = async(
 
     workFrontsData.sort((a, b) => a.workFrontCode - b.workFrontCode);
 
-    availabilityResult.groups.push({
+    const groupData = {
       group: translations[equipmentType],
       average: averageMechanicalAvailability.get(equipmentType) || 0,
       workFronts: workFrontsData,
-    });
+    };
+
+    groupsMap.set(equipmentType, groupData);
+
+    availabilityResult.groups = equipmentTypeOrder.map(equipmentType =>
+      groupsMap.get(equipmentType)!
+    );
   }
 
   return availabilityResult;
