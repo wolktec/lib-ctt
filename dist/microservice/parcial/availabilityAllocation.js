@@ -18,18 +18,19 @@ exports.localTimeZone = "America/Sao_Paulo";
  * @param events the events of the equipment
  * @param date '2023-12-23 15:41:51' datetime filter
  * @param interferences interferences coming from the interference table
+ * @param workFronts workFronts coming from the workFront table
  */
-const createAvailabilityAllocation = async (equipments, events, date, interferences) => {
+const createAvailabilityAllocation = async (equipments, events, date, interferences, workFronts) => {
     let startDate = (0, helper_1.dateFilter)(date, "-");
     let currentHour = (0, helper_1.getCurrentHour)(startDate);
     const groupedEvents = groupEventsByTypeAndFront(events, equipments, interferences);
-    let equipmentsGroups = await sumEquipmentsByGroup(equipments, events);
+    let equipmentsGroups = await sumEquipmentsByGroup(equipments, events, workFronts);
     let mechanicalAvailability = getMechanicalAvailability(groupedEvents, currentHour);
     let averageAvailability = calcAverageAvailability(mechanicalAvailability);
     const formattedValues = formatAvailabilityReturn(equipmentsGroups, mechanicalAvailability, averageAvailability);
     return formattedValues;
 };
-const sumEquipmentsByGroup = async (equipments, events) => {
+const sumEquipmentsByGroup = async (equipments, events, workFronts) => {
     try {
         const eventEquipmentCodes = new Set(events.map((event) => +event.equipment.code));
         let groupedEquipments = {};
@@ -37,21 +38,34 @@ const sumEquipmentsByGroup = async (equipments, events) => {
             if (!eventEquipmentCodes.has(equipment.code)) {
                 continue;
             }
-            else {
-                if (!groupedEquipments[equipment.description]) {
-                    groupedEquipments[equipment.description] = {};
+            if (!groupedEquipments[equipment.description]) {
+                groupedEquipments[equipment.description] = {};
+            }
+            if (!groupedEquipments[equipment.description][equipment.work_front_code]) {
+                groupedEquipments[equipment.description][equipment.work_front_code] = 0;
+            }
+            groupedEquipments[equipment.description][equipment.work_front_code] += 1;
+        }
+        const equipmentsTypes = ["Colhedoras", "Tratores", "Caminhões"];
+        equipmentsTypes.forEach((type) => {
+            if (!groupedEquipments[type]) {
+                groupedEquipments[type] = {};
+            }
+        });
+        for (const workFront of workFronts) {
+            for (const description in groupedEquipments) {
+                if (equipmentsTypes.includes(description)) {
+                    if (!groupedEquipments[description][workFront.code]) {
+                        groupedEquipments[description][workFront.code] = 0;
+                    }
                 }
-                if (!groupedEquipments[equipment.description][equipment.work_front_code]) {
-                    groupedEquipments[equipment.description][equipment.work_front_code] = 0;
-                }
-                groupedEquipments[equipment.description][equipment.work_front_code] += 1;
             }
         }
         return groupedEquipments;
     }
     catch (error) {
-        console.error("Ocorreu um erro:", error);
-        throw error;
+        console.error(error);
+        return {};
     }
 };
 /**
