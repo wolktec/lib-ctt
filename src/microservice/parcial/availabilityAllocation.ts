@@ -82,6 +82,15 @@ const sumEquipmentsByGroup = async (
         continue;
       }
 
+      if (
+        (equipment.work_front_code !== 900 &&
+          equipment.description === "Caminhões") ||
+        (equipment.work_front_code === 900 &&
+          equipment.description !== "Caminhões")
+      ) {
+        continue;
+      }
+
       if (!groupedEquipments[equipment.description]) {
         groupedEquipments[equipment.description] = {};
       }
@@ -105,6 +114,13 @@ const sumEquipmentsByGroup = async (
     for (const workFront of workFronts) {
       for (const description in groupedEquipments) {
         if (equipmentsTypes.includes(description)) {
+          if (
+            (workFront.code !== 900 && description === "Caminhões") ||
+            (workFront.code === 900 && description !== "Caminhões")
+          ) {
+            continue;
+          }
+
           if (!groupedEquipments[description][workFront.code]) {
             groupedEquipments[description][workFront.code] = 0;
           }
@@ -207,8 +223,10 @@ const formatAvailabilityReturn = (
           workFrontCode: +workFrontCode,
           equipments,
           availability:
-            mechanicalAvailability.get(group)?.get(workFrontCode.toString()) ||
-            0,
+            equipments &&
+            mechanicalAvailability.get(group)?.get(workFrontCode.toString())
+              ? mechanicalAvailability.get(group)?.get(workFrontCode.toString())
+              : null,
         })
       ),
     })),
