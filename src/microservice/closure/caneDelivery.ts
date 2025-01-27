@@ -510,20 +510,22 @@ const formatCaneDeliveryReturn = (
   );
 
   const caneDeliveryReturn = {
-    workFronts: workFronts.map((workFront) => {
-      const workFrontCode = workFront.code;
+    workFronts: workFronts
+      .map((workFront) => {
+        const workFrontCode = workFront.code;
 
-      return {
-        workFrontCode: workFrontCode,
-        day: frontsDayProductivity[workFrontCode.toString()] || 0,
-        dayGoalPercentage: dayGoalPercentage[workFrontCode.toString()] || 0,
-        month: frontsMonthProductivity[workFrontCode.toString()] || 0,
-        tonPerHour: tonPerHour[workFrontCode.toString()] || 0,
-        harvest: frontsHarvestProductivity[workFrontCode.toString()] || 0,
-        harvestGoalPercentage:
-          harvestGoalPercentage[workFrontCode.toString()] || 0,
-      };
-    }),
+        return {
+          workFrontCode: workFrontCode,
+          day: frontsDayProductivity[workFrontCode.toString()] || 0,
+          dayGoalPercentage: dayGoalPercentage[workFrontCode.toString()] || 0,
+          month: frontsMonthProductivity[workFrontCode.toString()] || 0,
+          tonPerHour: tonPerHour[workFrontCode.toString()] || 0,
+          harvest: frontsHarvestProductivity[workFrontCode.toString()] || 0,
+          harvestGoalPercentage:
+            harvestGoalPercentage[workFrontCode.toString()] || 0,
+        };
+      })
+      .sort((a, b) => a.workFrontCode - b.workFrontCode),
     units: unitsReturn,
     periods: dayPeriodCaneDelivery,
   };

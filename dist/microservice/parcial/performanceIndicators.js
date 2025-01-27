@@ -35,7 +35,7 @@ const createPerformanceIndicators = async (equipmentProductivity, events, equipm
         const ctOffenders = await calcCtOffenders(unproductiveTime, equipments, tonPerHour);
         const unproductiveTimeFormatted = formatUnproductiveTime(unproductiveTime);
         const averageRadius = await calcAverageRadius(events, telemetry.filter((hourMeter) => hourMeter.sensor_name === "odometer"));
-        const summary = calcSummary(ctOffenders);
+        const summary = calcSummary(ctOffenders, workFronts);
         const formatPerformanceIndicator = formatPerformanceIndicatorReturn(tripQtd, averageWeight, awaitingTransshipment, idleTime, autoPilotUse, trucksLack.formattedTrucksLack, tOffenders, agriculturalEfficiency, maneuvers, workFronts, ctOffenders, unproductiveTimeFormatted, averageRadius, summary, elevatorUse);
         return formatPerformanceIndicator;
     }
@@ -313,16 +313,25 @@ const calcElevatorUse = (elevatorHours, engineHours) => {
     }
     return elevatorUse;
 };
-const calcSummary = (ctOffenders) => {
+const calcSummary = (ctOffenders, workFronts) => {
     let total = 0;
     const formatCtOffender = {};
-    for (const [workFrontCode, ctOffender] of Object.entries(ctOffenders)) {
-        total += ctOffender;
-        if (formatCtOffender[workFrontCode]) {
-            formatCtOffender[workFrontCode] += ctOffender;
+    for (const workFront of workFronts) {
+        const workFrontCode = workFront.code;
+        if (ctOffenders[workFrontCode] !== undefined) {
+            const ctOffender = ctOffenders[workFrontCode];
+            total += ctOffender;
+            if (formatCtOffender[workFrontCode]) {
+                formatCtOffender[workFrontCode] += ctOffender;
+            }
+            else {
+                formatCtOffender[workFrontCode] = ctOffender;
+            }
         }
         else {
-            formatCtOffender[workFrontCode] = ctOffender;
+            if (!formatCtOffender[workFrontCode]) {
+                formatCtOffender[workFrontCode] = 0;
+            }
         }
     }
     let summary = [];
@@ -332,7 +341,7 @@ const calcSummary = (ctOffenders) => {
         summary.push({
             label: `Frente ${workFrontCode}`,
             lostTons: ctOffender,
-            progress: +((ctOffender / total) * 100).toFixed(2),
+            progress: ctOffender ? +((ctOffender / total) * 100).toFixed(2) : 0,
         });
     }
     summary.push({

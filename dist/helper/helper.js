@@ -3,25 +3,25 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getHarvesterEvents = exports.getHarvestDateRange = exports.getDaysBetweenDates = exports.getDaysInMonth = exports.calcJourneyByFront = exports.convertSecondstoTimeString = exports.createValueWithGoal = exports.getTotalHourmeter = exports.calcTotalInterferenceByFront = exports.calcJourney = exports.calcTelemetryByFront = exports.groupEquipmentTelemetryByFront = exports.secToTime = exports.msToTime = exports.getEventTime = exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = void 0;
-exports.convertHourToDecimal = convertHourToDecimal;
-exports.calcMechanicalAvailability = calcMechanicalAvailability;
-exports.normalizeCalc = normalizeCalc;
-exports.removeOutliers = removeOutliers;
+exports.getHarvesterEvents = exports.getHarvestDateRange = exports.getDaysBetweenDates = exports.getDaysInMonth = exports.calcJourneyByFront = exports.convertSecondstoTimeString = exports.createValueWithGoal = exports.removeOutliers = exports.getTotalHourmeter = exports.calcTotalInterferenceByFront = exports.calcJourney = exports.calcTelemetryByFront = exports.groupEquipmentTelemetryByFront = exports.secToTime = exports.msToTime = exports.getEventTime = exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = exports.normalizeCalc = exports.calcMechanicalAvailability = exports.convertHourToDecimal = void 0;
 const dayjs_1 = __importDefault(require("dayjs"));
 function convertHourToDecimal(hour) {
     const [hours, minutes] = hour.split(":").map(Number);
     const decimalMinutes = minutes / 60;
     return hours + decimalMinutes;
 }
+exports.convertHourToDecimal = convertHourToDecimal;
 function calcMechanicalAvailability(totalMaintenance, countMaintenance, currentHour // 24 dia anterior ou hora atual
 ) {
     if (totalMaintenance === 0) {
         return 100.0;
     }
-    const calc = normalizeCalc((((currentHour * 3600) - totalMaintenance / countMaintenance) / (currentHour * 3600)) * 100, 2);
+    const calc = normalizeCalc(((currentHour * 3600 - totalMaintenance / countMaintenance) /
+        (currentHour * 3600)) *
+        100, 2);
     return calc;
 }
+exports.calcMechanicalAvailability = calcMechanicalAvailability;
 function normalizeCalc(value, fixed = 1) {
     if (Number.isNaN(value) || !Number.isFinite(value)) {
         return 0;
@@ -29,6 +29,7 @@ function normalizeCalc(value, fixed = 1) {
     value = value * 1;
     return parseFloat(value.toFixed(fixed));
 }
+exports.normalizeCalc = normalizeCalc;
 const getCurrentHour = (date) => {
     const currentDate = (0, dayjs_1.default)().subtract(3, "hours");
     const isSame = (0, exports.isSameDay)(date, currentDate.valueOf());
@@ -153,13 +154,14 @@ exports.groupEquipmentTelemetryByFront = groupEquipmentTelemetryByFront;
 const calcTelemetryByFront = (telemetryByFront) => {
     let telemetryResult = {};
     for (const telemetry of telemetryByFront) {
+        const telemetryCalc = (+telemetry.lastRecord.current_value - +telemetry.firstRecord.current_value).toFixed(2);
         if (telemetryResult[telemetry.workFrontCode]) {
-            telemetryResult[telemetry.workFrontCode] += normalizeCalc(+telemetry.lastRecord.current_value -
-                +telemetry.firstRecord.current_value, 2);
+            telemetryResult[telemetry.workFrontCode] +=
+                +telemetryCalc > 0 ? +telemetryCalc : 0;
         }
         else {
-            telemetryResult[telemetry.workFrontCode] = normalizeCalc(+telemetry.lastRecord.current_value -
-                +telemetry.firstRecord.current_value, 2);
+            telemetryResult[telemetry.workFrontCode] =
+                +telemetryCalc > 0 ? +telemetryCalc : 0;
         }
     }
     return telemetryResult;
@@ -345,6 +347,7 @@ function removeOutliers(values, totalDays = 1) {
     }
     return filteredData;
 }
+exports.removeOutliers = removeOutliers;
 const createValueWithGoal = (value, hasTotalField = false, hasAverageField = false) => {
     return {
         value: Number(value.toFixed(2)),

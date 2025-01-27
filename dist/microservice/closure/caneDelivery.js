@@ -305,7 +305,8 @@ const formatCaneDeliveryReturn = (workFronts, frontsDayProductivity, dayGoalPerc
         return acc;
     }, []);
     const caneDeliveryReturn = {
-        workFronts: workFronts.map((workFront) => {
+        workFronts: workFronts
+            .map((workFront) => {
             const workFrontCode = workFront.code;
             return {
                 workFrontCode: workFrontCode,
@@ -316,7 +317,8 @@ const formatCaneDeliveryReturn = (workFronts, frontsDayProductivity, dayGoalPerc
                 harvest: frontsHarvestProductivity[workFrontCode.toString()] || 0,
                 harvestGoalPercentage: harvestGoalPercentage[workFrontCode.toString()] || 0,
             };
-        }),
+        })
+            .sort((a, b) => a.workFrontCode - b.workFrontCode),
         units: unitsReturn,
         periods: dayPeriodCaneDelivery,
     };

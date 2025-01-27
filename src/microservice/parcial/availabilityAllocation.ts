@@ -16,6 +16,7 @@ import {
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
 import { CttInterferences } from "../../interfaces/performanceIndicators.interface";
+import { CttWorkFronts } from "../../interfaces/partialDelivered.interface";
 dayjs.extend(utc);
 dayjs.extend(timezone);
 // dayjs.tz.setDefault('America/Sao_Paulo');
@@ -27,12 +28,14 @@ export const localTimeZone = "America/Sao_Paulo";
  * @param events the events of the equipment
  * @param date '2023-12-23 15:41:51' datetime filter
  * @param interferences interferences coming from the interference table
+ * @param workFronts workFronts coming from the workFront table
  */
 const createAvailabilityAllocation = async (
   equipments: CttEquipment[],
   events: CttEvent[],
   date: string,
-  interferences: CttInterferences[]
+  interferences: CttInterferences[],
+  workFronts: CttWorkFronts[]
 ): Promise<CttAvailabilityAndAllocationResult> => {
   let startDate = dateFilter(date, "-");
   let currentHour = getCurrentHour(startDate);
@@ -43,7 +46,11 @@ const createAvailabilityAllocation = async (
     interferences
   );
 
-  let equipmentsGroups = await sumEquipmentsByGroup(equipments, events);
+  let equipmentsGroups = await sumEquipmentsByGroup(
+    equipments,
+    events,
+    workFronts
+  );
 
   let mechanicalAvailability = getMechanicalAvailability(
     groupedEvents,
@@ -61,7 +68,8 @@ const createAvailabilityAllocation = async (
 
 const sumEquipmentsByGroup = async (
   equipments: CttEquipment[],
-  events: CttEvent[]
+  events: CttEvent[],
+  workFronts: CttWorkFronts[]
 ): Promise<CttEquipmentsGroupsType> => {
   try {
     const eventEquipmentCodes = new Set(
@@ -72,28 +80,42 @@ const sumEquipmentsByGroup = async (
     for (const equipment of equipments) {
       if (!eventEquipmentCodes.has(equipment.code)) {
         continue;
-      } else {
-        if (!groupedEquipments[equipment.description]) {
-          groupedEquipments[equipment.description] = {};
-        }
+      }
 
-        if (
-          !groupedEquipments[equipment.description][equipment.work_front_code]
-        ) {
-          groupedEquipments[equipment.description][
-            equipment.work_front_code
-          ] = 0;
+      if (!groupedEquipments[equipment.description]) {
+        groupedEquipments[equipment.description] = {};
+      }
+
+      if (
+        !groupedEquipments[equipment.description][equipment.work_front_code]
+      ) {
+        groupedEquipments[equipment.description][equipment.work_front_code] = 0;
+      }
+      groupedEquipments[equipment.description][equipment.work_front_code] += 1;
+    }
+
+    const equipmentsTypes = ["Colhedoras", "Tratores", "Caminhões"];
+
+    equipmentsTypes.forEach((type) => {
+      if (!groupedEquipments[type]) {
+        groupedEquipments[type] = {};
+      }
+    });
+
+    for (const workFront of workFronts) {
+      for (const description in groupedEquipments) {
+        if (equipmentsTypes.includes(description)) {
+          if (!groupedEquipments[description][workFront.code]) {
+            groupedEquipments[description][workFront.code] = 0;
+          }
         }
-        groupedEquipments[equipment.description][
-          equipment.work_front_code
-        ] += 1;
       }
     }
 
     return groupedEquipments;
   } catch (error) {
-    console.error("Ocorreu um erro:", error);
-    throw error;
+    console.error(error);
+    return {};
   }
 };
 
