@@ -5,7 +5,11 @@ on:
       - closed
 
 jobs:
-  build:
+  build-and-release:
+    if: >
+      github.event.pull_request.merged == true && 
+      github.event.pull_request.base.ref == 'main' &&
+      github.event.pull_request.head.ref != 'build-and-release'    
     runs-on: ubuntu-latest
     env:
       GIT_AUTHOR_NAME: "GitHub Actions"
