@@ -1,0 +1,38 @@
+name: Build and Commit Dist
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout do código
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Configurar Node.js (ou sua stack)
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      # Instalar dependências
+      - name: Install dependencies
+        run: npm install
+
+      # Build do projeto
+      - name: Build project
+        run: npm run build
+
+      # Commit da pasta dist na branch main
+      - name: Commit and push dist folder
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add dist
+          git commit -m "Add dist folder [skip ci]" || echo "No changes to commit"
+          git push origin main
