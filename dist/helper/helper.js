@@ -3,14 +3,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getHarvesterEvents = exports.getHarvestDateRange = exports.getDaysBetweenDates = exports.getDaysInMonth = exports.calcJourneyByFront = exports.convertSecondstoTimeString = exports.createValueWithGoal = exports.removeOutliers = exports.getTotalHourmeter = exports.calcTotalInterferenceByFront = exports.calcJourney = exports.calcTelemetryByFront = exports.groupEquipmentTelemetryByFront = exports.secToTime = exports.msToTime = exports.getEventTime = exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = exports.normalizeCalc = exports.calcMechanicalAvailability = exports.convertHourToDecimal = void 0;
+exports.getDefaultHoursData = exports.getHarvesterEvents = exports.getHarvestDateRange = exports.getDaysBetweenDates = exports.getDaysInMonth = exports.calcJourneyByFront = exports.convertSecondstoTimeString = exports.createValueWithGoal = exports.getTotalHourmeter = exports.calcTotalInterferenceByFront = exports.calcJourney = exports.calcTelemetryByFront = exports.groupEquipmentTelemetryByFront = exports.secToTime = exports.msToTime = exports.getEventTime = exports.defaultFronts = exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = void 0;
+exports.convertHourToDecimal = convertHourToDecimal;
+exports.calcMechanicalAvailability = calcMechanicalAvailability;
+exports.normalizeCalc = normalizeCalc;
+exports.removeOutliers = removeOutliers;
 const dayjs_1 = __importDefault(require("dayjs"));
 function convertHourToDecimal(hour) {
     const [hours, minutes] = hour.split(":").map(Number);
     const decimalMinutes = minutes / 60;
     return hours + decimalMinutes;
 }
-exports.convertHourToDecimal = convertHourToDecimal;
 function calcMechanicalAvailability(totalMaintenance, countMaintenance, currentHour // 24 dia anterior ou hora atual
 ) {
     if (totalMaintenance === 0) {
@@ -27,7 +30,6 @@ function calcMechanicalAvailability(totalMaintenance, countMaintenance, currentH
     }
     return calc;
 }
-exports.calcMechanicalAvailability = calcMechanicalAvailability;
 function normalizeCalc(value, fixed = 1) {
     if (Number.isNaN(value) || !Number.isFinite(value)) {
         return 0;
@@ -35,7 +37,6 @@ function normalizeCalc(value, fixed = 1) {
     value = value * 1;
     return parseFloat(value.toFixed(fixed));
 }
-exports.normalizeCalc = normalizeCalc;
 const getCurrentHour = (date) => {
     const currentDate = (0, dayjs_1.default)().subtract(3, "hours");
     const isSame = (0, exports.isSameDay)(date, currentDate.valueOf());
@@ -96,6 +97,13 @@ exports.translations = {
     Tratores: "tractor",
     Empilhadeiras: "forklift",
     Pulverizadores: "pulverizer",
+};
+exports.defaultFronts = {
+    Caminhões: 900,
+    Colhedoras: 0,
+    Tratores: 0,
+    Empilhadeiras: 0,
+    Pulverizadores: 12,
 };
 const getEventTime = (event) => {
     if (!event.time.end) {
@@ -353,7 +361,6 @@ function removeOutliers(values, totalDays = 1) {
     }
     return filteredData;
 }
-exports.removeOutliers = removeOutliers;
 const createValueWithGoal = (value, hasTotalField = false, hasAverageField = false) => {
     return {
         value: Number(value.toFixed(2)),
@@ -536,4 +543,15 @@ const getHarvesterEvents = (equipments, events) => {
     return harvestEvents;
 };
 exports.getHarvesterEvents = getHarvesterEvents;
+const getDefaultHoursData = (currentHour) => {
+    const hoursData = [];
+    for (let hour = 0; hour <= currentHour; hour++) {
+        hoursData.push({
+            hour: `${hour.toString().padStart(2, '0')}:00`,
+            value: 100
+        });
+    }
+    return hoursData;
+};
+exports.getDefaultHoursData = getDefaultHoursData;
 //# sourceMappingURL=helper.js.map
