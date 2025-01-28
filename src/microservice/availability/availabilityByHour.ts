@@ -306,14 +306,13 @@ const calcAverageMechanicalAvailability = (
     let workFrontCount = 0;
 
     for (const [workFrontCode, hoursMap] of workFronts) {
-      console.log(type, workFrontCode, totalAvailability, hoursMap.get(23));
+      // console.log(type, workFrontCode, totalAvailability, hoursMap.get(23));
       totalAvailability += hoursMap.get(23) ?? 100; // last hour is already the avarage value
       workFrontCount++;
     }
 
     const averageAvailability =
       workFrontCount > 0 ? totalAvailability / workFrontCount : 0;
-    console.log("averageAvailability: ", averageAvailability);
     averageAvailabilityByType.set(type, normalizeCalc(averageAvailability, 2));
   }
   return averageAvailabilityByType;
