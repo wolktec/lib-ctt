@@ -222,11 +222,11 @@ const formatAvailabilityReturn = (
         ([workFrontCode, equipments]) => ({
           workFrontCode: +workFrontCode,
           equipments,
-          availability:
-            equipments &&
-            mechanicalAvailability.get(group)?.get(workFrontCode.toString())
-              ? mechanicalAvailability.get(group)?.get(workFrontCode.toString())
-              : null,
+          availability: equipments
+            ? mechanicalAvailability
+                .get(group)
+                ?.get(workFrontCode.toString()) ?? 100
+            : null,
         })
       ),
     })),
