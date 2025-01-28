@@ -23,6 +23,12 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      # Certifique-se de que o diretório está limpo antes de continuar
+      - name: Ensure Git working directory is clean
+        run: |
+          git add .
+          git diff-index --quiet HEAD || git commit -m "Commit untracked changes [skip ci]"
+
       # Determine version bump type from labels
       - name: Determine version bump
         id: determine_bump
