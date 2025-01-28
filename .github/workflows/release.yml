@@ -23,10 +23,6 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # Build do projeto
-      - name: Build project
-        run: npm run build
-
       # Determine version bump type from labels
       - name: Determine version bump
         id: determine_bump
@@ -40,6 +36,10 @@ jobs:
           else
             echo "VERSION_BUMP=patch" >> $GITHUB_ENV
           fi
+
+      # Build do projeto
+      - name: Build project
+        run: npm run build
       
       # Bump version based on label
       - name: Bump version
@@ -60,8 +60,7 @@ jobs:
           git checkout main
           git pull origin main
           git checkout -b build-and-release
-          git add dist
-          git commit -m "Update dist folder [skip ci]" || echo "No changes to commit"
+          git add .
           git commit -am "Bump version to ${{ env.VERSION }}"
           git tag "v${{ env.VERSION }}"
           git push origin build-and-release
