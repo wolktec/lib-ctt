@@ -7,6 +7,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      GIT_AUTHOR_NAME: "GitHub Actions"
+      GIT_AUTHOR_EMAIL: "actions@github.com"
 
     steps:
       # Checkout do código
@@ -19,13 +22,11 @@ jobs:
         with:
           node-version: 18
 
-      # Instalar dependências
-      - name: Install dependencies
-        run: npm install
-
-      # Certifique-se de que o diretório está limpo antes de continuar
+      # Certifique-se de que o diretório do Git está limpo antes de continuar
       - name: Ensure Git working directory is clean
         run: |
+          git checkout main
+          git pull origin main
           git add .
           git diff-index --quiet HEAD || git commit -m "Commit untracked changes [skip ci]"
 
@@ -47,8 +48,6 @@ jobs:
       - name: Bump version
         id: bump_version
         run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
           npm version ${{ env.VERSION_BUMP }} --no-commit-hooks
           VERSION=$(node -p "require('./package.json').version")
           echo "VERSION=$VERSION" >> $GITHUB_ENV
@@ -60,8 +59,6 @@ jobs:
       # Commit and push changes
       - name: Push version changes
         run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
           git checkout main
           git pull origin main
           git checkout -b build-and-release
@@ -70,7 +67,7 @@ jobs:
           git tag "v${{ env.VERSION }}"
           git push origin build-and-release
 
-       # Create GitHub Release
+      # Create GitHub Release
       - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -85,6 +82,4 @@ jobs:
           branch: update-dist
           base: main
           title: "Build and release v${{ env.VERSION }}"
-          body: "This pull request release and build."
-
-     
+          body: "This pull request releases and builds."
