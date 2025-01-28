@@ -23,6 +23,10 @@ jobs:
         with:
           node-version: 18
 
+      # Instalar dependências
+      - name: Install dependencies
+        run: npm install
+
       # Certifique-se de que o diretório do Git está limpo antes de continuar
       - name: Ensure Git working directory is clean
         run: |
