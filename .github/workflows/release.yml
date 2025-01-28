@@ -100,7 +100,7 @@ jobs:
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          branch: update-dist
+          branch: build-and-release
           base: main
           title: "Build and release v${{ env.VERSION }}"
           body: "This pull request releases and builds."
