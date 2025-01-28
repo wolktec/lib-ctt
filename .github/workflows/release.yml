@@ -23,10 +23,6 @@ jobs:
         with:
           node-version: 18
 
-      # Instalar dependências
-      - name: Install dependencies
-        run: npm install
-
       # Certifique-se de que o diretório do Git está limpo antes de continuar
       - name: Ensure Git working directory is clean
         run: |
@@ -62,6 +58,10 @@ jobs:
           npm version ${{ env.VERSION_BUMP }} --no-commit-hooks
           VERSION=$(node -p "require('./package.json').version")
           echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      # Instalar dependências
+      - name: Install dependencies
+        run: npm install
 
       # Build do projeto
       - name: Build project
