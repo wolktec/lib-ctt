@@ -19,6 +19,12 @@ function calcMechanicalAvailability(totalMaintenance, countMaintenance, currentH
     const calc = normalizeCalc(((currentHour * 3600 - totalMaintenance / countMaintenance) /
         (currentHour * 3600)) *
         100, 2);
+    if (calc > 100) {
+        return 100.0;
+    }
+    if (calc < 0) {
+        return 0;
+    }
     return calc;
 }
 exports.calcMechanicalAvailability = calcMechanicalAvailability;

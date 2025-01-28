@@ -23,7 +23,7 @@ export interface CttEvent {
         end: number;
     };
 }
-export type CttAvailabilityAndAllocationResult = {
+export declare type CttAvailabilityAndAllocationResult = {
     goal: number;
     groups: [
         {
@@ -41,8 +41,8 @@ export type CttAvailabilityAndAllocationResult = {
         workFronts: {
             workFrontCode: number;
             equipments: number;
-            availability: number;
+            availability?: number | null;
         }[];
     }[];
 };
-export type CttEquipmentsGroupsType = Record<string, Record<number, number>>;
+export declare type CttEquipmentsGroupsType = Record<string, Record<number, number>>;
