@@ -34,6 +34,7 @@ export const localTimeZone = "America/Sao_Paulo";
 const createAvailabilityByHour = async (
   equipments: CttEquipment[],
   events: CttEvent[],
+  workFronts: number[],
   date: string
 ): Promise<CttAvailability> => {
   let startDate = dateFilter(date, "-");
@@ -77,9 +78,8 @@ const createAvailabilityByHour = async (
     currentHour,
     averageMechanicalAvailability,
     equipmentsGrouped,
+    workFronts,
   );
-
-  // console.log("formattedValues: ", formattedValues);
 
   return formattedValues;
 };
@@ -329,7 +329,8 @@ const formatAvailabilityReturn = async(
   events: Map<string, Map<number, Map<number, number>>>,
   currentHour: number,
   averageMechanicalAvailability: Map<string, number>,
-  equipmentsGrouped: CttEquipmentsGroupsType
+  equipmentsGrouped: CttEquipmentsGroupsType,
+  workFronts: number[],
 ) => {
   const availabilityResult: CttAvailability = {
     goal: 88, // hardcoded
@@ -358,7 +359,6 @@ const formatAvailabilityReturn = async(
         hours: hoursData,
         average: averageHourValue,
       });
-
     }
 
     workFrontsData.sort((a, b) => a.workFrontCode - b.workFrontCode);
@@ -376,8 +376,33 @@ const formatAvailabilityReturn = async(
     );
   }
 
+  // Fill default data
+  const equipmentTypesToProcess = ["harvester", "tractor"]; // to match logistic fronts
+  const filteredGroups = availabilityResult.groups.filter(item =>
+    equipmentTypesToProcess.includes(item.group)
+  );
+
   for (const equipmentType of equipmentTypeOrder) {
-    if (!groupsMap.has(equipmentType)) {
+    for (const item of filteredGroups) {
+      const existingWorkFrontCodes = new Set(item.workFronts.map(w => w.workFrontCode));
+
+      for (const workFront of workFronts) {
+        if (!existingWorkFrontCodes.has(workFront)) {
+          // Create default workFrontData
+          const defaultWorkFrontData: CttAvailabilityWorkFrontData = {
+              workFrontCode: workFront,
+              equipments: 0,
+              shift: "A",
+              hours: getDefaultHoursData(currentHour),
+              average: 100,
+          };
+          item.workFronts.push(defaultWorkFrontData); // Push to existing array
+        }
+      }
+      item.workFronts.sort((a, b) => a.workFrontCode - b.workFrontCode);
+    }
+
+    if (!groupsMap.has(equipmentType) && equipmentType === translations["truck"]) {
       groupsMap.set(equipmentType, {
         group: translations[equipmentType],
         average: 100,
