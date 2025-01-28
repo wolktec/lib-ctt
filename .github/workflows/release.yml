@@ -1,25 +1,31 @@
-name: Release with PR Labels
-
+name: Build and Release
 on:
   pull_request:
     types:
       - closed
 
 jobs:
-  release:
-    if: github.event.pull_request.merged == true && github.base_ref == 'main'
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout the repository
-      - name: Checkout repository
+      # Checkout do código
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      # Set up Node.js
+      # Configurar Node.js (ou sua stack)
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: 18
+
+      # Instalar dependências
+      - name: Install dependencies
+        run: npm install
+
+      # Build do projeto
+      - name: Build project
+        run: npm run build
 
       # Determine version bump type from labels
       - name: Determine version bump
@@ -34,7 +40,7 @@ jobs:
           else
             echo "VERSION_BUMP=patch" >> $GITHUB_ENV
           fi
-      
+
       # Bump version based on label
       - name: Bump version
         id: bump_version
@@ -45,19 +51,35 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-
-      # Commit and push changes
-      - name: Push version changes
+      # Commit and push
+      - name: Commit and push to a new branch
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
+          git checkout main
+          git pull origin main
+          git checkout -b build-and-release
+          git add dist
+          git commit -m "Update dist folder [skip ci]" || echo "No changes to commit"
           git commit -am "Bump version to ${{ env.VERSION }}"
           git tag "v${{ env.VERSION }}"
-          git push origin main --tags
+          git push origin build-and-release
 
-      # Create GitHub Release
+       # Create GitHub Release
       - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create "v${{ env.VERSION }}" --title "Release ${{ env.VERSION }}" --notes "Automatically generated release."
+
+      # Criar pull request automaticamente
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: update-dist
+          base: main
+          title: "Build and release v${{ env.VERSION }}"
+          body: "This pull request release and build."
+
+     
