@@ -60,7 +60,7 @@ jobs:
           git checkout main
           git pull origin main
           git checkout -b build-and-release
-          git add .          
+          git add .
           git commit -am "Bump version to ${{ env.VERSION }}"
           git tag "v${{ env.VERSION }}"
           git push origin build-and-release
