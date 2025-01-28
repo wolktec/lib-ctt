@@ -59,10 +59,6 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      # Instalar dependências
-      - name: Install dependencies
-        run: npm install
-
       # Build do projeto
       - name: Build project
         run: npm run build
@@ -75,8 +71,18 @@ jobs:
           git checkout -b build-and-release
           git add .
           git commit -am "Bump version to ${{ env.VERSION }}"
-          git tag "v${{ env.VERSION }}"
           git push origin build-and-release
+
+      # Verificar se a tag já existe
+      - name: Check if tag exists
+        run: |
+          git fetch --tags
+          if git rev-parse "v${{ env.VERSION }}" >/dev/null 2>&1; then
+            echo "Tag v${{ env.VERSION }} already exists, skipping tag creation."
+          else
+            git tag "v${{ env.VERSION }}"
+            git push origin "v${{ env.VERSION }}"
+          fi
 
       # Create GitHub Release
       - name: Create GitHub Release
