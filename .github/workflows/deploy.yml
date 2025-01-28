@@ -1,10 +1,9 @@
-name: Build Dist
+name: Build and Commit Dist
 
 on:
   push:
     branches:
       - main
-  pull_request:
 
 jobs:
   build:
@@ -15,7 +14,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Configurar Node.js (caso use Node.js, ajuste conforme sua stack)
+      # Configurar Node.js (ou sua stack)
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
@@ -29,9 +28,11 @@ jobs:
       - name: Build project
         run: npm run build
 
-      # Fazer upload da pasta dist como artefato (opcional)
-      - name: Upload dist folder
-        uses: actions/upload-artifact@v3
-        with:
-          name: dist
-          path: dist/
+      # Commit da pasta dist na branch main
+      - name: Commit and push dist folder
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add dist
+          git commit -m "Add dist folder [skip ci]" || echo "No changes to commit"
+          git push origin main
