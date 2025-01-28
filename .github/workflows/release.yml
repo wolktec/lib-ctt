@@ -5,7 +5,11 @@ on:
       - closed
 
 jobs:
-  build:
+  build-and-release:
+    if: >
+      github.event.pull_request.merged == true && 
+      github.event.pull_request.base.ref == 'main' &&
+      github.event.pull_request.head.ref != 'build-and-release'    
     runs-on: ubuntu-latest
     env:
       GIT_AUTHOR_NAME: "GitHub Actions"
@@ -79,6 +83,7 @@ jobs:
 
       # Verificar se a tag já existe
       - name: Check if tag exists
+        if: success()
         run: |
           git fetch --tags
           if git rev-parse "v${{ env.VERSION }}" >/dev/null 2>&1; then
@@ -90,6 +95,7 @@ jobs:
 
       # Create GitHub Release
       - name: Create GitHub Release
+        if: success()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -98,6 +104,7 @@ jobs:
       # Criar pull request automaticamente
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
+        if: success()
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: build-and-release
