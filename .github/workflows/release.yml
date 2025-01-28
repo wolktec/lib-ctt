@@ -37,10 +37,6 @@ jobs:
             echo "VERSION_BUMP=patch" >> $GITHUB_ENV
           fi
 
-      # Build do projeto
-      - name: Build project
-        run: npm run build
-      
       # Bump version based on label
       - name: Bump version
         id: bump_version
@@ -51,6 +47,9 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
+      # Build do projeto
+      - name: Build project
+        run: npm run build
 
       # Commit and push changes
       - name: Push version changes
