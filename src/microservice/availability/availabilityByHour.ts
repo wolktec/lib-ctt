@@ -6,6 +6,8 @@ import {
   getEventTime,
   normalizeCalc,
   translations,
+  defaultFronts,
+  getDefaultHoursData,
 } from "../../helper/helper";
 import {
   CttEquipment,
@@ -304,7 +306,7 @@ const calcAverageMechanicalAvailability = (
     let workFrontCount = 0;
 
     for (const [_, hoursMap] of workFronts) {
-      hoursMap.get(23); // last hour is already the avarage value
+      totalAvailability = hoursMap.get(23) ?? 100; // last hour is already the avarage value
       workFrontCount++;
     }
 
@@ -380,6 +382,26 @@ const formatAvailabilityReturn = async(
     availabilityResult.groups = equipmentTypeOrder.map(equipmentType =>
       groupsMap.get(equipmentType)!
     );
+  }
+
+  for (const equipmentType of equipmentTypeOrder) {
+    if (!groupsMap.has(equipmentType)) {
+      groupsMap.set(equipmentType, {
+        group: translations[equipmentType],
+        average: 100,
+        workFronts: [{
+          workFrontCode: defaultFronts[equipmentType],
+          equipments: 0,
+          shift: "A", // hardcoded
+          hours: getDefaultHoursData(currentHour),
+          average: 100,
+        }],
+      });
+
+      availabilityResult.groups = equipmentTypeOrder.map(equipmentType =>
+        groupsMap.get(equipmentType)!
+      );
+    }
   }
 
   return availabilityResult;

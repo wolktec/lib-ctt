@@ -12,6 +12,7 @@ import {
   CttEquipment,
   CttEvent,
 } from "../interfaces/availabilityAllocation.interface";
+import { HoursValue } from "../interfaces/availabilityByHour.interface";
 
 export function convertHourToDecimal(hour: string): number {
   const [hours, minutes] = hour.split(":").map(Number);
@@ -119,6 +120,14 @@ export const translations: { [key: string]: string } = {
   Tratores: "tractor",
   Empilhadeiras: "forklift",
   Pulverizadores: "pulverizer",
+};
+
+export const defaultFronts: { [key: string]: number } = {
+  Caminhões: 900,
+  Colhedoras: 0,
+  Tratores: 0,
+  Empilhadeiras: 0,
+  Pulverizadores: 12,
 };
 
 export const getEventTime = (event: CttEvent) => {
@@ -674,4 +683,19 @@ export const getHarvesterEvents = (
   );
 
   return harvestEvents;
+};
+
+export const getDefaultHoursData = (
+  currentHour: number,
+): HoursValue[] => {
+  const hoursData: HoursValue[] = [];
+
+  for (let hour = 0; hour <= currentHour; hour++) {
+    hoursData.push({
+      hour: `${hour.toString().padStart(2, '0')}:00`,
+      value: 100
+    });
+  }
+
+  return hoursData;
 };
