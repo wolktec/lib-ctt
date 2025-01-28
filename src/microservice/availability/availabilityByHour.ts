@@ -305,13 +305,15 @@ const calcAverageMechanicalAvailability = (
     let totalAvailability = 0;
     let workFrontCount = 0;
 
-    for (const [_, hoursMap] of workFronts) {
-      totalAvailability = hoursMap.get(23) ?? 100; // last hour is already the avarage value
+    for (const [workFrontCode, hoursMap] of workFronts) {
+      console.log(type, workFrontCode, totalAvailability, hoursMap.get(23));
+      totalAvailability += hoursMap.get(23) ?? 100; // last hour is already the avarage value
       workFrontCount++;
     }
 
     const averageAvailability =
       workFrontCount > 0 ? totalAvailability / workFrontCount : 0;
+    console.log("averageAvailability: ", averageAvailability);
     averageAvailabilityByType.set(type, normalizeCalc(averageAvailability, 2));
   }
   return averageAvailabilityByType;
@@ -342,21 +344,12 @@ const formatAvailabilityReturn = async(
     const workFrontsData: CttAvailabilityWorkFrontData[] = [];
     for (const [workFrontCode, hoursMap] of workFrontsMap) {
       const hoursData = [];
-      for (let hour = 0; hour <= currentHour; hour++) {
+      for (let hour = 0; hour < currentHour; hour++) {
         const value = hoursMap.get(hour) ?? 100;
         hoursData.push({ hour: `${hour.toString().padStart(2, '0')}:00`, value });
       }
-      if(currentHour < 23) {
-        for (let hour = currentHour + 1; hour <= 23; hour++) {
-          hoursData.push({ hour: `${hour.toString().padStart(2, '0')}:00`, value: 100 });
-        }
-      }
 
-      let totalHourValue = 0;
-      for (const hourValue of hoursData) {
-        totalHourValue += hourValue.value;
-      }
-
+      let averageHourValue = hoursData[hoursData.length - 1].value;
       const equipmentsCount = equipmentsGrouped[equipmentType]?.[+workFrontCode] || 0;
 
       workFrontsData.push({
@@ -364,7 +357,7 @@ const formatAvailabilityReturn = async(
         equipments: equipmentsCount,
         shift: "A", // hardcoded
         hours: hoursData,
-        average: normalizeCalc(totalHourValue / hoursData.length, 2),
+        average: averageHourValue,
       });
 
     }
