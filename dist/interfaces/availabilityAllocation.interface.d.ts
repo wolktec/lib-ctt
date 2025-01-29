@@ -41,7 +41,7 @@ export type CttAvailabilityAndAllocationResult = {
         workFronts: {
             workFrontCode: number;
             equipments: number;
-            availability: number;
+            availability?: number | null;
         }[];
     }[];
 };

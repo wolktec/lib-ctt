@@ -336,6 +336,7 @@ const formatAvailabilityReturn = async(
 
   const equipmentTypeOrder = ["Colhedoras", "Tratores", "Caminhões"];
   const groupsMap = new Map<string, CttAvailabilityGroupData>();
+
   const defaultFronts: { [key: string]: Array<number> } = {
     Colhedoras: workFronts,
     Tratores: workFronts,

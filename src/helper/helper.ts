@@ -34,6 +34,15 @@ export function calcMechanicalAvailability(
       100,
     2
   );
+
+  if (calc > 100) {
+    return 100.0;
+  }
+
+  if (calc < 0) {
+    return 0;
+  }
+
   return calc;
 }
 
