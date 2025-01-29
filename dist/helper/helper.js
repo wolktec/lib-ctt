@@ -38,7 +38,8 @@ function normalizeCalc(value, fixed = 1) {
     return parseFloat(value.toFixed(fixed));
 }
 const getCurrentHour = (date) => {
-    const currentDate = (0, dayjs_1.default)().subtract(3, "hours");
+    // const currentDate = dayjs().subtract(3, "hours");
+    const currentDate = (0, dayjs_1.default)();
     const isSame = (0, exports.isSameDay)(date, currentDate.valueOf());
     let hour = 24;
     if (isSame) {
