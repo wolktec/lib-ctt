@@ -28,9 +28,7 @@ export function calcMechanicalAvailability(
     return 100.0;
   }
   const calc = normalizeCalc(
-    ((currentHour * 3600 - totalMaintenance / countMaintenance) /
-      (currentHour * 3600)) *
-      100,
+    ((currentHour - totalMaintenance / countMaintenance) / currentHour) * 100,
     2
   );
 
@@ -135,9 +133,10 @@ export const getEventTime = (event: CttEvent) => {
     return 0;
   }
 
-  const startTime = dayjs(event.time.start);
-  const endTime = dayjs(event.time.end);
-  return endTime.diff(startTime, "seconds");
+  const diff = event.time.end - event.time.start;
+  const seconds = diff / 1000;
+
+  return seconds;
 };
 
 export const msToTime = (ms: number): string => {
@@ -176,6 +175,7 @@ export const groupEquipmentTelemetryByFront = (
 
   const equipmentMap = new Map(equipments.map((equip) => [equip.code, equip]));
 
+  //telemetry = removeTelemetryAnomalies(telemetry);
   const telemetryGrouped = new Map<number, typeof telemetry>([]);
   for (const record of telemetry) {
     const equipmentCode = +record.equipment_code;
@@ -211,10 +211,13 @@ export const calcTelemetryByFront = (
   telemetryByFront: CttTelemetryByFront[]
 ): Record<string, number> => {
   let telemetryResult: Record<string, number> = {};
+  //console.log("///////////////////////////////////");
+  //console.log(JSON.stringify(telemetryByFront));
   for (const telemetry of telemetryByFront) {
-    const telemetryCalc = (
-      +telemetry.lastRecord.current_value - +telemetry.firstRecord.current_value
-    ).toFixed(2);
+    const telemetryCalc =
+      +telemetry.lastRecord.current_value -
+      +telemetry.firstRecord.current_value;
+
     if (telemetryResult[telemetry.workFrontCode]) {
       telemetryResult[telemetry.workFrontCode] +=
         +telemetryCalc > 0 ? +telemetryCalc : 0;
@@ -684,3 +687,7 @@ export const getHarvesterEvents = (
 
   return harvestEvents;
 };
+
+/* export const removeTelemetryAnomalies = (
+  telemetry: CttTelemetry[]
+): CttTelemetry[] => {}; */
