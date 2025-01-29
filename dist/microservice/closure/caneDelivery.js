@@ -323,7 +323,6 @@ const formatCaneDeliveryReturn = (workFronts, frontsDayProductivity, dayGoalPerc
         units: unitsReturn,
         periods: dayPeriodCaneDelivery,
     };
-    console.log(caneDeliveryReturn);
     return caneDeliveryReturn;
 };
 exports.default = createCaneDelivery;
