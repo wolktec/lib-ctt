@@ -6,7 +6,6 @@ import {
   getEventTime,
   normalizeCalc,
   translations,
-  defaultFronts,
   getDefaultHoursData,
 } from "../../helper/helper";
 import {
@@ -39,8 +38,6 @@ const createAvailabilityByHour = async (
 ): Promise<CttAvailability> => {
   let startDate = dateFilter(date, "-");
   let currentHour = getCurrentHour(startDate);
-  // console.log("date: ", currentHour);
-  // console.log("startDate: ", startDate);
 
   const groupedEvents = groupEventsByType(
     events,
@@ -339,7 +336,49 @@ const formatAvailabilityReturn = async(
 
   const equipmentTypeOrder = ["Colhedoras", "Tratores", "Caminhões"];
   const groupsMap = new Map<string, CttAvailabilityGroupData>();
+  const defaultFronts: { [key: string]: Array<number> } = {
+    Colhedoras: workFronts,
+    Tratores: workFronts,
+    Caminhões: [900],
+    Pulverizadores: [12],
+  };
+  const defaultHoursData = getDefaultHoursData(currentHour);
 
+  // fill return with all equipmentTypes and workFronts
+  for (const equipmentType of equipmentTypeOrder) {
+    if (!events.has(equipmentType)) {
+
+      const workFrontsToCreate = defaultFronts[equipmentType];
+      const defaultWorkFrontsData: CttAvailabilityWorkFrontData[] = [];
+
+      for (const workFrontToCreate of workFrontsToCreate) {
+        defaultWorkFrontsData.push({
+          workFrontCode: workFrontToCreate,
+          equipments: 0,
+          shift: "A",
+          hours: defaultHoursData,
+          average: 100,
+        });
+      }
+
+      groupsMap.set(equipmentType, {
+        group: translations[equipmentType],
+        average: 100,
+        workFronts: defaultWorkFrontsData,
+      });
+
+      if (workFrontsToCreate) {
+        const defaultHoursMap = new Map(defaultHoursData.map(hourData => [parseInt(hourData.hour.split(":")[0]), hourData.value]));
+        const workFrontsMap = new Map(workFrontsToCreate.map(workFrontCode => [workFrontCode, defaultHoursMap]));
+        events.set(
+          equipmentType,
+          workFrontsMap
+        );
+      }
+    }
+  }
+
+  // format return with values
   for (const [equipmentType, workFrontsMap] of events) {
     const workFrontsData: CttAvailabilityWorkFrontData[] = [];
     for (const [workFrontCode, hoursMap] of workFrontsMap) {
@@ -365,7 +404,7 @@ const formatAvailabilityReturn = async(
 
     const groupData = {
       group: translations[equipmentType],
-      average: averageMechanicalAvailability.get(equipmentType) || 0,
+      average: averageMechanicalAvailability.get(equipmentType) || 100,
       workFronts: workFrontsData,
     };
 
@@ -374,51 +413,6 @@ const formatAvailabilityReturn = async(
     availabilityResult.groups = equipmentTypeOrder.map(equipmentType =>
       groupsMap.get(equipmentType)!
     );
-  }
-
-  // Fill default data
-  const equipmentTypesToProcess = ["harvester", "tractor"]; // to match logistic fronts
-  const filteredGroups = availabilityResult.groups.filter(item =>
-    equipmentTypesToProcess.includes(item.group)
-  );
-
-  for (const equipmentType of equipmentTypeOrder) {
-    for (const item of filteredGroups) {
-      const existingWorkFrontCodes = new Set(item.workFronts.map(w => w.workFrontCode));
-
-      for (const workFront of workFronts) {
-        if (!existingWorkFrontCodes.has(workFront)) {
-          // Create default workFrontData
-          const defaultWorkFrontData: CttAvailabilityWorkFrontData = {
-              workFrontCode: workFront,
-              equipments: 0,
-              shift: "A",
-              hours: getDefaultHoursData(currentHour),
-              average: 100,
-          };
-          item.workFronts.push(defaultWorkFrontData); // Push to existing array
-        }
-      }
-      item.workFronts.sort((a, b) => a.workFrontCode - b.workFrontCode);
-    }
-
-    if (!groupsMap.has(equipmentType) && equipmentType === translations["truck"]) {
-      groupsMap.set(equipmentType, {
-        group: translations[equipmentType],
-        average: 100,
-        workFronts: [{
-          workFrontCode: defaultFronts[equipmentType],
-          equipments: 0,
-          shift: "A", // hardcoded
-          hours: getDefaultHoursData(currentHour),
-          average: 100,
-        }],
-      });
-
-      availabilityResult.groups = equipmentTypeOrder.map(equipmentType =>
-        groupsMap.get(equipmentType)!
-      );
-    }
   }
 
   return availabilityResult;
