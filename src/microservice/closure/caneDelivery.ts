@@ -523,6 +523,7 @@ const formatCaneDeliveryReturn = (
           harvest: frontsHarvestProductivity[workFrontCode.toString()] || 0,
           harvestGoalPercentage:
             harvestGoalPercentage[workFrontCode.toString()] || 0,
+          goal: workFront.goal
         };
       })
       .sort((a, b) => a.workFrontCode - b.workFrontCode),

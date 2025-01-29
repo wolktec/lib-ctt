@@ -316,12 +316,14 @@ const formatCaneDeliveryReturn = (workFronts, frontsDayProductivity, dayGoalPerc
                 tonPerHour: tonPerHour[workFrontCode.toString()] || 0,
                 harvest: frontsHarvestProductivity[workFrontCode.toString()] || 0,
                 harvestGoalPercentage: harvestGoalPercentage[workFrontCode.toString()] || 0,
+                goal: workFront.goal
             };
         })
             .sort((a, b) => a.workFrontCode - b.workFrontCode),
         units: unitsReturn,
         periods: dayPeriodCaneDelivery,
     };
+    console.log(caneDeliveryReturn);
     return caneDeliveryReturn;
 };
 exports.default = createCaneDelivery;
