@@ -179,40 +179,26 @@ const twoCaracters = (num: number): string => {
 export const groupEquipmentTelemetryByFront = (
   equipments: CttEquipment[],
   telemetry: CttTelemetry[]
-): CttTelemetryByFront[] => {
-  const telemetryByFront: CttTelemetryByFront[] = [];
+) => {
+  const telemetryByFront: Record<string, any> = {};
 
-  const equipmentMap = new Map(equipments.map((equip) => [equip.code, equip]));
-
-  //telemetry = removeTelemetryAnomalies(telemetry);
-  const telemetryGrouped = new Map<number, typeof telemetry>([]);
-  for (const record of telemetry) {
-    const equipmentCode = +record.equipment_code;
-    if (!telemetryGrouped.has(equipmentCode)) {
-      telemetryGrouped.set(equipmentCode, []);
-    }
-    telemetryGrouped.get(equipmentCode)!.push(record);
-  }
-
-  for (const [equipmentCode, records] of telemetryGrouped.entries()) {
-    const equipment = equipmentMap.get(equipmentCode);
-
-    if (!equipment || equipment.description !== "Colhedoras") {
+  const telemetryHourmeterByEquipment =
+    groupTelemetryByEquipmentCode(telemetry);
+  for (const equipment of equipments) {
+    const workFrontCode = equipment.work_front_code;
+    if (!workFrontCode) {
       continue;
     }
+    const telemetryData = telemetryHourmeterByEquipment[equipment.code] || [];
 
-    records.sort((a, b) => a.occurrence - b.occurrence);
-    const firstRecord = records[0];
-    const lastRecord = records[records.length - 1];
+    const totalHourmeter = normalizeCalc(getTotalHourmeter(telemetryData), 2);
 
-    telemetryByFront.push({
-      equipmentCode: equipment.code,
-      workFrontCode: equipment.work_front_code,
-      firstRecord: firstRecord,
-      lastRecord: lastRecord,
-    });
+    if (!telemetryByFront[workFrontCode]) {
+      telemetryByFront[workFrontCode] = 0;
+    }
+
+    telemetryByFront[workFrontCode] += totalHourmeter;
   }
-
   return telemetryByFront;
 };
 
@@ -708,4 +694,15 @@ export const getDefaultHoursData = (currentHour: number): HoursValue[] => {
   }
 
   return hoursData;
+};
+export const groupTelemetryByEquipmentCode = (telemetry: CttTelemetry[]) => {
+  return telemetry.reduce((acc, cur) => {
+    if (cur.equipment_code && cur.current_value !== "0.0") {
+      return {
+        ...acc,
+        [cur.equipment_code]: [...(acc[cur.equipment_code] || []), cur],
+      };
+    }
+    return acc;
+  }, {} as { [key: string]: CttTelemetry[] });
 };
