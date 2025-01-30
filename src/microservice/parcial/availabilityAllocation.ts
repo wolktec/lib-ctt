@@ -145,38 +145,52 @@ const getMechanicalAvailability = (
 ): Map<string, Map<string, number>> => {
   try {
     let mechanicalAvailability = new Map<string, Map<string, number>>();
-    let workFrontCode: number = 0;
-    let totalMaintenanceTime: number = 0;
     let eventCode: string = "";
-    let uniqMaintenanceEquip: number = 0;
-
     for (const [type, eventsOfType] of Object.entries(events)) {
-      for (const [total, event] of Object.entries(eventsOfType)) {
-        totalMaintenanceTime = 0;
-        if (event.interference) {
-          workFrontCode = event.workFront.code;
-          totalMaintenanceTime += getEventTime(event);
-          if (totalMaintenanceTime > 0) {
-            eventCode = event.code;
-            uniqMaintenanceEquip = new Set(
-              eventsOfType.map((event) => event.equipment.code)
-            ).size;
+      const eventByWorkFront = eventsOfType.reduce<Record<number, CttEvent[]>>(
+        (acc, event) => {
+          const workFrontId = event.workFront.id;
 
-            if (!mechanicalAvailability.has(type)) {
-              mechanicalAvailability.set(type, new Map<string, number>());
+          if (!acc[workFrontId]) {
+            acc[workFrontId] = [];
+          }
+
+          acc[workFrontId].push(event);
+
+          return acc;
+        },
+        {}
+      );
+      for (const [workFront, events] of Object.entries(eventByWorkFront)) {
+        let totalMaintenanceTime: number = 0;
+        let totalMaintenanceTeste = 0;
+        let workFrontCode: string = "";
+        const uniqMaintenanceEquip: Set<number> = new Set();
+
+        for (const event of events) {
+          if (workFrontCode.length === 0) {
+            workFrontCode = event.workFront.code.toString();
+          }
+          if (event.interference) {
+            totalMaintenanceTime += getEventTime(event);
+            const equipmentCode = event.equipment.code;
+            if (totalMaintenanceTime > 0) {
+              eventCode = event.code;
+              uniqMaintenanceEquip.add(equipmentCode);
+
+              if (!mechanicalAvailability.has(type)) {
+                mechanicalAvailability.set(type, new Map<string, number>());
+              }
             }
-
-            const availability = calcMechanicalAvailability(
-              totalMaintenanceTime,
-              uniqMaintenanceEquip,
-              currentHour
-            );
-
-            mechanicalAvailability
-              .get(type)
-              ?.set(workFrontCode.toString(), availability);
           }
         }
+        const availability = calcMechanicalAvailability(
+          totalMaintenanceTime / 3600,
+          uniqMaintenanceEquip.size,
+          currentHour
+        );
+
+        mechanicalAvailability.get(type)?.set(workFrontCode, availability);
       }
     }
 
@@ -249,7 +263,9 @@ const groupEventsByTypeAndFront = (
   });
 
   const interferenceIds = interference
-    .filter((e) => e.interferenceType?.name === "Manutenção")
+    .filter(
+      (e) => e.interferenceType?.name?.toLocaleLowerCase() === "manutenção"
+    )
     .map((e) => e.id);
 
   const eventsByType: Record<string, CttEvent[]> = {};

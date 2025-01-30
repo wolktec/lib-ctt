@@ -57,32 +57,29 @@ const createPerformanceIndicators = async (
     const awaitingTransshipment = getAwaitingTransshipment(events);
     const idleTime = getIdleTime(events, idleEvents);
 
-    const hourmeterByFront = groupEquipmentTelemetryByFront(
+    const engineHours = groupEquipmentTelemetryByFront(
       equipments,
       telemetry.filter((hourMeter) => hourMeter.sensor_name === "hour_meter")
     );
-    const engineHours = calcTelemetryByFront(hourmeterByFront);
 
-    const autoPilotByFront = groupEquipmentTelemetryByFront(
+    const autoPilot = groupEquipmentTelemetryByFront(
       equipments,
       telemetry.filter(
         (hourMeter) => hourMeter.sensor_name === "autopilot_hour_meter"
       )
     );
-    const autoPilot = calcTelemetryByFront(autoPilotByFront);
-    const autoPilotUse = calcAutopilotUse(autoPilot, engineHours);
 
+    const autoPilotUse = calcAutopilotUse(autoPilot, engineHours);
     const trucksLack = calcTrucksLack(events);
     const tOffenders = calcTOffenders(trucksLack.trucksLack, tonPerHour);
 
-    const elevatorHoursByFront = groupEquipmentTelemetryByFront(
+    const elevatorHours = groupEquipmentTelemetryByFront(
       equipments,
       telemetry.filter(
         (hourMeter) =>
           hourMeter.sensor_name === "elevator_conveyor_belt_hour_meter"
       )
     );
-    const elevatorHours = calcTelemetryByFront(elevatorHoursByFront);
 
     const elevatorUse = calcElevatorUse(elevatorHours, engineHours);
 
@@ -342,16 +339,12 @@ const calcAgriculturalEfficiency = (
   for (const workFrontCode in elevatorHours) {
     if (engineHours.hasOwnProperty(workFrontCode)) {
       if (agriculturalEfficiency[workFrontCode]) {
-        agriculturalEfficiency[workFrontCode].value += normalizeCalc(
-          (elevatorHours[workFrontCode] / engineHours[workFrontCode]) * 100,
-          2
-        );
+        agriculturalEfficiency[workFrontCode].value +=
+          (elevatorHours[workFrontCode] / engineHours[workFrontCode]) * 100;
       } else {
         agriculturalEfficiency[workFrontCode] = { value: 0, goal: 70 };
-        agriculturalEfficiency[workFrontCode].value = normalizeCalc(
-          (elevatorHours[workFrontCode] / engineHours[workFrontCode]) * 100,
-          2
-        );
+        agriculturalEfficiency[workFrontCode].value =
+          (elevatorHours[workFrontCode] / engineHours[workFrontCode]) * 100;
       }
     }
   }
