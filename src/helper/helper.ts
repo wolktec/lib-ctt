@@ -54,7 +54,8 @@ export function normalizeCalc(value: number, fixed = 1) {
 }
 
 export const getCurrentHour = (date: number) => {
-  const currentDate = dayjs().subtract(3, "hours");
+  // const currentDate = dayjs().subtract(3, "hours");
+  const currentDate = dayjs();
 
   const isSame = isSameDay(date, currentDate.valueOf());
 

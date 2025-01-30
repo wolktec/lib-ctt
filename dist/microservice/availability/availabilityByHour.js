@@ -20,8 +20,6 @@ exports.localTimeZone = "America/Sao_Paulo";
 const createAvailabilityByHour = async (equipments, events, date) => {
     let startDate = (0, helper_1.dateFilter)(date, "-");
     let currentHour = (0, helper_1.getCurrentHour)(startDate);
-    // console.log("date: ", currentHour);
-    // console.log("startDate: ", startDate);
     const groupedEvents = groupEventsByType(events, equipments);
     let groupedEventsByFront = await groupEventsByFront(groupedEvents);
     // console.log("groupedEventsByFront: ", groupedEventsByFront);
@@ -205,6 +203,7 @@ const formatAvailabilityReturn = async (events, currentHour, averageMechanicalAv
         goal: 88, // hardcoded
         groups: [],
     };
+
     for (const [equipmentType, workFrontsMap] of events) {
         const workFrontsData = [];
         for (const [workFrontCode, hoursMap] of workFrontsMap) {
@@ -234,9 +233,12 @@ const formatAvailabilityReturn = async (events, currentHour, averageMechanicalAv
         workFrontsData.sort((a, b) => a.workFrontCode - b.workFrontCode);
         availabilityResult.groups.push({
             group: helper_1.translations[equipmentType],
-            average: averageMechanicalAvailability.get(equipmentType) || 0,
+            average: averageMechanicalAvailability.get(equipmentType) || 100,
             workFronts: workFrontsData,
-        });
+
+        };
+        groupsMap.set(equipmentType, groupData);
+        availabilityResult.groups = equipmentTypeOrder.map(equipmentType => groupsMap.get(equipmentType));
     }
     return availabilityResult;
 };
