@@ -18,15 +18,12 @@ const createPerformanceIndicators = async (equipmentProductivity, events, equipm
         const averageWeight = getAverageWeight(equipmentProductivity, workFronts);
         const awaitingTransshipment = getAwaitingTransshipment(events);
         const idleTime = getIdleTime(events, idleEvents);
-        const hourmeterByFront = (0, helper_1.groupEquipmentTelemetryByFront)(equipments, telemetry.filter((hourMeter) => hourMeter.sensor_name === "hour_meter"));
-        const engineHours = (0, helper_1.calcTelemetryByFront)(hourmeterByFront);
-        const autoPilotByFront = (0, helper_1.groupEquipmentTelemetryByFront)(equipments, telemetry.filter((hourMeter) => hourMeter.sensor_name === "autopilot_hour_meter"));
-        const autoPilot = (0, helper_1.calcTelemetryByFront)(autoPilotByFront);
+        const engineHours = (0, helper_1.groupEquipmentTelemetryByFront)(equipments, telemetry.filter((hourMeter) => hourMeter.sensor_name === "hour_meter"));
+        const autoPilot = (0, helper_1.groupEquipmentTelemetryByFront)(equipments, telemetry.filter((hourMeter) => hourMeter.sensor_name === "autopilot_hour_meter"));
         const autoPilotUse = calcAutopilotUse(autoPilot, engineHours);
         const trucksLack = calcTrucksLack(events);
         const tOffenders = calcTOffenders(trucksLack.trucksLack, tonPerHour);
-        const elevatorHoursByFront = (0, helper_1.groupEquipmentTelemetryByFront)(equipments, telemetry.filter((hourMeter) => hourMeter.sensor_name === "elevator_conveyor_belt_hour_meter"));
-        const elevatorHours = (0, helper_1.calcTelemetryByFront)(elevatorHoursByFront);
+        const elevatorHours = (0, helper_1.groupEquipmentTelemetryByFront)(equipments, telemetry.filter((hourMeter) => hourMeter.sensor_name === "elevator_conveyor_belt_hour_meter"));
         const elevatorUse = calcElevatorUse(elevatorHours, engineHours);
         const agriculturalEfficiency = calcAgriculturalEfficiency(elevatorHours, engineHours);
         const maneuvers = calcManuvers(events);
@@ -201,11 +198,13 @@ const calcAgriculturalEfficiency = (elevatorHours, engineHours) => {
     for (const workFrontCode in elevatorHours) {
         if (engineHours.hasOwnProperty(workFrontCode)) {
             if (agriculturalEfficiency[workFrontCode]) {
-                agriculturalEfficiency[workFrontCode].value += (0, helper_1.normalizeCalc)((elevatorHours[workFrontCode] / engineHours[workFrontCode]) * 100, 2);
+                agriculturalEfficiency[workFrontCode].value +=
+                    (elevatorHours[workFrontCode] / engineHours[workFrontCode]) * 100;
             }
             else {
                 agriculturalEfficiency[workFrontCode] = { value: 0, goal: 70 };
-                agriculturalEfficiency[workFrontCode].value = (0, helper_1.normalizeCalc)((elevatorHours[workFrontCode] / engineHours[workFrontCode]) * 100, 2);
+                agriculturalEfficiency[workFrontCode].value =
+                    (elevatorHours[workFrontCode] / engineHours[workFrontCode]) * 100;
             }
         }
     }

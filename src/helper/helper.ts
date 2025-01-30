@@ -12,6 +12,7 @@ import {
   CttEquipment,
   CttEvent,
 } from "../interfaces/availabilityAllocation.interface";
+import { HoursValue } from "../interfaces/availabilityByHour.interface";
 
 export function convertHourToDecimal(hour: string): number {
   const [hours, minutes] = hour.split(":").map(Number);
@@ -28,9 +29,7 @@ export function calcMechanicalAvailability(
     return 100.0;
   }
   const calc = normalizeCalc(
-    ((currentHour * 3600 - totalMaintenance / countMaintenance) /
-      (currentHour * 3600)) *
-      100,
+    ((currentHour - totalMaintenance / countMaintenance) / currentHour) * 100,
     2
   );
 
@@ -55,7 +54,8 @@ export function normalizeCalc(value: number, fixed = 1) {
 }
 
 export const getCurrentHour = (date: number) => {
-  const currentDate = dayjs().subtract(3, "hours");
+  // const currentDate = dayjs().subtract(3, "hours");
+  const currentDate = dayjs();
 
   const isSame = isSameDay(date, currentDate.valueOf());
 
@@ -130,14 +130,23 @@ export const translations: { [key: string]: string } = {
   Pulverizadores: "pulverizer",
 };
 
+export const defaultFronts: { [key: string]: number } = {
+  Caminhões: 900,
+  Colhedoras: 0,
+  Tratores: 0,
+  Empilhadeiras: 0,
+  Pulverizadores: 12,
+};
+
 export const getEventTime = (event: CttEvent) => {
   if (!event.time.end) {
     return 0;
   }
 
-  const startTime = dayjs(event.time.start);
-  const endTime = dayjs(event.time.end);
-  return endTime.diff(startTime, "seconds");
+  const diff = event.time.end - event.time.start;
+  const seconds = diff / 1000;
+
+  return seconds;
 };
 
 export const msToTime = (ms: number): string => {
@@ -171,39 +180,26 @@ const twoCaracters = (num: number): string => {
 export const groupEquipmentTelemetryByFront = (
   equipments: CttEquipment[],
   telemetry: CttTelemetry[]
-): CttTelemetryByFront[] => {
-  const telemetryByFront: CttTelemetryByFront[] = [];
+) => {
+  const telemetryByFront: Record<string, any> = {};
 
-  const equipmentMap = new Map(equipments.map((equip) => [equip.code, equip]));
-
-  const telemetryGrouped = new Map<number, typeof telemetry>([]);
-  for (const record of telemetry) {
-    const equipmentCode = +record.equipment_code;
-    if (!telemetryGrouped.has(equipmentCode)) {
-      telemetryGrouped.set(equipmentCode, []);
-    }
-    telemetryGrouped.get(equipmentCode)!.push(record);
-  }
-
-  for (const [equipmentCode, records] of telemetryGrouped.entries()) {
-    const equipment = equipmentMap.get(equipmentCode);
-
-    if (!equipment || equipment.description !== "Colhedoras") {
+  const telemetryHourmeterByEquipment =
+    groupTelemetryByEquipmentCode(telemetry);
+  for (const equipment of equipments) {
+    const workFrontCode = equipment.work_front_code;
+    if (!workFrontCode) {
       continue;
     }
+    const telemetryData = telemetryHourmeterByEquipment[equipment.code] || [];
 
-    records.sort((a, b) => a.occurrence - b.occurrence);
-    const firstRecord = records[0];
-    const lastRecord = records[records.length - 1];
+    const totalHourmeter = normalizeCalc(getTotalHourmeter(telemetryData), 2);
 
-    telemetryByFront.push({
-      equipmentCode: equipment.code,
-      workFrontCode: equipment.work_front_code,
-      firstRecord: firstRecord,
-      lastRecord: lastRecord,
-    });
+    if (!telemetryByFront[workFrontCode]) {
+      telemetryByFront[workFrontCode] = 0;
+    }
+
+    telemetryByFront[workFrontCode] += totalHourmeter;
   }
-
   return telemetryByFront;
 };
 
@@ -211,10 +207,13 @@ export const calcTelemetryByFront = (
   telemetryByFront: CttTelemetryByFront[]
 ): Record<string, number> => {
   let telemetryResult: Record<string, number> = {};
+  //console.log("///////////////////////////////////");
+  //console.log(JSON.stringify(telemetryByFront));
   for (const telemetry of telemetryByFront) {
-    const telemetryCalc = (
-      +telemetry.lastRecord.current_value - +telemetry.firstRecord.current_value
-    ).toFixed(2);
+    const telemetryCalc =
+      +telemetry.lastRecord.current_value -
+      +telemetry.firstRecord.current_value;
+
     if (telemetryResult[telemetry.workFrontCode]) {
       telemetryResult[telemetry.workFrontCode] +=
         +telemetryCalc > 0 ? +telemetryCalc : 0;
@@ -683,4 +682,28 @@ export const getHarvesterEvents = (
   );
 
   return harvestEvents;
+};
+
+export const getDefaultHoursData = (currentHour: number): HoursValue[] => {
+  const hoursData: HoursValue[] = [];
+
+  for (let hour = 0; hour <= currentHour; hour++) {
+    hoursData.push({
+      hour: `${hour.toString().padStart(2, "0")}:00`,
+      value: 100,
+    });
+  }
+
+  return hoursData;
+};
+export const groupTelemetryByEquipmentCode = (telemetry: CttTelemetry[]) => {
+  return telemetry.reduce((acc, cur) => {
+    if (cur.equipment_code && cur.current_value !== "0.0") {
+      return {
+        ...acc,
+        [cur.equipment_code]: [...(acc[cur.equipment_code] || []), cur],
+      };
+    }
+    return acc;
+  }, {} as { [key: string]: CttTelemetry[] });
 };

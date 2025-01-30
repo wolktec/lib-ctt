@@ -7,5 +7,5 @@ export declare const localTimeZone = "America/Sao_Paulo";
  * @param events the events of the equipment(s)
  * @param date '2023-12-23 15:41:51' datetime filter
  */
-declare const createAvailabilityByHour: (equipments: CttEquipment[], events: CttEvent[], date: string) => Promise<CttAvailability>;
+declare const createAvailabilityByHour: (equipments: CttEquipment[], events: CttEvent[], workFronts: number[], date: string) => Promise<CttAvailability>;
 export default createAvailabilityByHour;
