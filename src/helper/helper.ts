@@ -207,8 +207,6 @@ export const calcTelemetryByFront = (
   telemetryByFront: CttTelemetryByFront[]
 ): Record<string, number> => {
   let telemetryResult: Record<string, number> = {};
-  //console.log("///////////////////////////////////");
-  //console.log(JSON.stringify(telemetryByFront));
   for (const telemetry of telemetryByFront) {
     const telemetryCalc =
       +telemetry.lastRecord.current_value -
@@ -388,16 +386,30 @@ export const getTotalHourmeter = (
   const hourmeterWithoutAnomalies = removeOutliers(
     hourmeters.map((e) => Number(e.current_value))
   );
+  let total = 0;
   if (hourmeterWithoutAnomalies.length > 0) {
-    let firstHourmeter =
-      firstHourmeterValue ?? Number(hourmeterWithoutAnomalies[0]);
-    let lastHourmeter = Number(
-      hourmeterWithoutAnomalies[hourmeterWithoutAnomalies.length - 1]
-    );
-    const total = lastHourmeter - firstHourmeter;
-    return total;
+    let firstHourmeter = Number(hourmeterWithoutAnomalies[0]);
+
+    let lastHourmeter =
+      hourmeterWithoutAnomalies.length > 1
+        ? Number(
+            hourmeterWithoutAnomalies[hourmeterWithoutAnomalies.length - 1]
+          )
+        : firstHourmeter;
+    if (
+      lastHourmeter <= firstHourmeter &&
+      hourmeterWithoutAnomalies.length > 1
+    ) {
+      lastHourmeter = Number(
+        hourmeterWithoutAnomalies[hourmeterWithoutAnomalies.length - 2]
+      );
+    }
+
+    if (lastHourmeter > firstHourmeter) {
+      total = lastHourmeter - firstHourmeter;
+    }
   }
-  return 0;
+  return Number(total.toFixed(2));
 };
 
 export function removeOutliers(values: number[], totalDays = 1): number[] {
