@@ -3,22 +3,23 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getHarvesterEvents = exports.getHarvestDateRange = exports.getDaysBetweenDates = exports.getDaysInMonth = exports.calcJourneyByFront = exports.convertSecondstoTimeString = exports.createValueWithGoal = exports.removeOutliers = exports.getTotalHourmeter = exports.calcTotalInterferenceByFront = exports.calcJourney = exports.calcTelemetryByFront = exports.groupEquipmentTelemetryByFront = exports.secToTime = exports.msToTime = exports.getEventTime = exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = exports.normalizeCalc = exports.calcMechanicalAvailability = exports.convertHourToDecimal = void 0;
+exports.groupTelemetryByEquipmentCode = exports.getDefaultHoursData = exports.getHarvesterEvents = exports.getHarvestDateRange = exports.getDaysBetweenDates = exports.getDaysInMonth = exports.calcJourneyByFront = exports.convertSecondstoTimeString = exports.createValueWithGoal = exports.getTotalHourmeter = exports.calcTotalInterferenceByFront = exports.calcJourney = exports.calcTelemetryByFront = exports.groupEquipmentTelemetryByFront = exports.secToTime = exports.msToTime = exports.getEventTime = exports.defaultFronts = exports.translations = exports.dateParts = exports.dateFilter = exports.isSameDay = exports.getCurrentHour = void 0;
+exports.convertHourToDecimal = convertHourToDecimal;
+exports.calcMechanicalAvailability = calcMechanicalAvailability;
+exports.normalizeCalc = normalizeCalc;
+exports.removeOutliers = removeOutliers;
 const dayjs_1 = __importDefault(require("dayjs"));
 function convertHourToDecimal(hour) {
     const [hours, minutes] = hour.split(":").map(Number);
     const decimalMinutes = minutes / 60;
     return hours + decimalMinutes;
 }
-exports.convertHourToDecimal = convertHourToDecimal;
 function calcMechanicalAvailability(totalMaintenance, countMaintenance, currentHour // 24 dia anterior ou hora atual
 ) {
     if (totalMaintenance === 0) {
         return 100.0;
     }
-    const calc = normalizeCalc(((currentHour * 3600 - totalMaintenance / countMaintenance) /
-        (currentHour * 3600)) *
-        100, 2);
+    const calc = normalizeCalc(((currentHour - totalMaintenance / countMaintenance) / currentHour) * 100, 2);
     if (calc > 100) {
         return 100.0;
     }
@@ -27,7 +28,6 @@ function calcMechanicalAvailability(totalMaintenance, countMaintenance, currentH
     }
     return calc;
 }
-exports.calcMechanicalAvailability = calcMechanicalAvailability;
 function normalizeCalc(value, fixed = 1) {
     if (Number.isNaN(value) || !Number.isFinite(value)) {
         return 0;
@@ -35,7 +35,6 @@ function normalizeCalc(value, fixed = 1) {
     value = value * 1;
     return parseFloat(value.toFixed(fixed));
 }
-exports.normalizeCalc = normalizeCalc;
 const getCurrentHour = (date) => {
     // const currentDate = dayjs().subtract(3, "hours");
     const currentDate = (0, dayjs_1.default)();
@@ -98,13 +97,20 @@ exports.translations = {
     Empilhadeiras: "forklift",
     Pulverizadores: "pulverizer",
 };
+exports.defaultFronts = {
+    Caminhões: 900,
+    Colhedoras: 0,
+    Tratores: 0,
+    Empilhadeiras: 0,
+    Pulverizadores: 12,
+};
 const getEventTime = (event) => {
     if (!event.time.end) {
         return 0;
     }
-    const startTime = (0, dayjs_1.default)(event.time.start);
-    const endTime = (0, dayjs_1.default)(event.time.end);
-    return endTime.diff(startTime, "seconds");
+    const diff = event.time.end - event.time.start;
+    const seconds = diff / 1000;
+    return seconds;
 };
 exports.getEventTime = getEventTime;
 const msToTime = (ms) => {
@@ -130,38 +136,30 @@ const twoCaracters = (num) => {
     return num < 10 ? `0${num}` : num.toString().padStart(2, "0");
 };
 const groupEquipmentTelemetryByFront = (equipments, telemetry) => {
-    const telemetryByFront = [];
-    const equipmentMap = new Map(equipments.map((equip) => [equip.code, equip]));
-    const telemetryGrouped = new Map([]);
-    for (const record of telemetry) {
-        const equipmentCode = +record.equipment_code;
-        if (!telemetryGrouped.has(equipmentCode)) {
-            telemetryGrouped.set(equipmentCode, []);
-        }
-        telemetryGrouped.get(equipmentCode).push(record);
-    }
-    for (const [equipmentCode, records] of telemetryGrouped.entries()) {
-        const equipment = equipmentMap.get(equipmentCode);
-        if (!equipment || equipment.description !== "Colhedoras") {
+    const telemetryByFront = {};
+    const telemetryHourmeterByEquipment = (0, exports.groupTelemetryByEquipmentCode)(telemetry);
+    for (const equipment of equipments) {
+        const workFrontCode = equipment.work_front_code;
+        if (!workFrontCode) {
             continue;
         }
-        records.sort((a, b) => a.occurrence - b.occurrence);
-        const firstRecord = records[0];
-        const lastRecord = records[records.length - 1];
-        telemetryByFront.push({
-            equipmentCode: equipment.code,
-            workFrontCode: equipment.work_front_code,
-            firstRecord: firstRecord,
-            lastRecord: lastRecord,
-        });
+        const telemetryData = telemetryHourmeterByEquipment[equipment.code] || [];
+        const totalHourmeter = normalizeCalc((0, exports.getTotalHourmeter)(telemetryData), 2);
+        if (!telemetryByFront[workFrontCode]) {
+            telemetryByFront[workFrontCode] = 0;
+        }
+        telemetryByFront[workFrontCode] += totalHourmeter;
     }
     return telemetryByFront;
 };
 exports.groupEquipmentTelemetryByFront = groupEquipmentTelemetryByFront;
 const calcTelemetryByFront = (telemetryByFront) => {
     let telemetryResult = {};
+    //console.log("///////////////////////////////////");
+    //console.log(JSON.stringify(telemetryByFront));
     for (const telemetry of telemetryByFront) {
-        const telemetryCalc = (+telemetry.lastRecord.current_value - +telemetry.firstRecord.current_value).toFixed(2);
+        const telemetryCalc = +telemetry.lastRecord.current_value -
+            +telemetry.firstRecord.current_value;
         if (telemetryResult[telemetry.workFrontCode]) {
             telemetryResult[telemetry.workFrontCode] +=
                 +telemetryCalc > 0 ? +telemetryCalc : 0;
@@ -354,7 +352,6 @@ function removeOutliers(values, totalDays = 1) {
     }
     return filteredData;
 }
-exports.removeOutliers = removeOutliers;
 const createValueWithGoal = (value, hasTotalField = false, hasAverageField = false) => {
     return {
         value: Number(value.toFixed(2)),
@@ -537,4 +534,27 @@ const getHarvesterEvents = (equipments, events) => {
     return harvestEvents;
 };
 exports.getHarvesterEvents = getHarvesterEvents;
+const getDefaultHoursData = (currentHour) => {
+    const hoursData = [];
+    for (let hour = 0; hour <= currentHour; hour++) {
+        hoursData.push({
+            hour: `${hour.toString().padStart(2, "0")}:00`,
+            value: 100,
+        });
+    }
+    return hoursData;
+};
+exports.getDefaultHoursData = getDefaultHoursData;
+const groupTelemetryByEquipmentCode = (telemetry) => {
+    return telemetry.reduce((acc, cur) => {
+        if (cur.equipment_code && cur.current_value !== "0.0") {
+            return {
+                ...acc,
+                [cur.equipment_code]: [...(acc[cur.equipment_code] || []), cur],
+            };
+        }
+        return acc;
+    }, {});
+};
+exports.groupTelemetryByEquipmentCode = groupTelemetryByEquipmentCode;
 //# sourceMappingURL=helper.js.map

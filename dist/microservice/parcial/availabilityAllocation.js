@@ -85,28 +85,39 @@ const sumEquipmentsByGroup = async (equipments, events, workFronts) => {
 const getMechanicalAvailability = (events, currentHour) => {
     try {
         let mechanicalAvailability = new Map();
-        let workFrontCode = 0;
-        let totalMaintenanceTime = 0;
         let eventCode = "";
-        let uniqMaintenanceEquip = 0;
         for (const [type, eventsOfType] of Object.entries(events)) {
-            for (const [total, event] of Object.entries(eventsOfType)) {
-                totalMaintenanceTime = 0;
-                if (event.interference) {
-                    workFrontCode = event.workFront.code;
-                    totalMaintenanceTime += (0, helper_1.getEventTime)(event);
-                    if (totalMaintenanceTime > 0) {
-                        eventCode = event.code;
-                        uniqMaintenanceEquip = new Set(eventsOfType.map((event) => event.equipment.code)).size;
-                        if (!mechanicalAvailability.has(type)) {
-                            mechanicalAvailability.set(type, new Map());
+            const eventByWorkFront = eventsOfType.reduce((acc, event) => {
+                const workFrontId = event.workFront.id;
+                if (!acc[workFrontId]) {
+                    acc[workFrontId] = [];
+                }
+                acc[workFrontId].push(event);
+                return acc;
+            }, {});
+            for (const [workFront, events] of Object.entries(eventByWorkFront)) {
+                let totalMaintenanceTime = 0;
+                let totalMaintenanceTeste = 0;
+                let workFrontCode = "";
+                const uniqMaintenanceEquip = new Set();
+                for (const event of events) {
+                    if (workFrontCode.length === 0) {
+                        workFrontCode = event.workFront.code.toString();
+                    }
+                    if (event.interference) {
+                        totalMaintenanceTime += (0, helper_1.getEventTime)(event);
+                        const equipmentCode = event.equipment.code;
+                        if (totalMaintenanceTime > 0) {
+                            eventCode = event.code;
+                            uniqMaintenanceEquip.add(equipmentCode);
+                            if (!mechanicalAvailability.has(type)) {
+                                mechanicalAvailability.set(type, new Map());
+                            }
                         }
-                        const availability = (0, helper_1.calcMechanicalAvailability)(totalMaintenanceTime, uniqMaintenanceEquip, currentHour);
-                        mechanicalAvailability
-                            .get(type)
-                            ?.set(workFrontCode.toString(), availability);
                     }
                 }
+                const availability = (0, helper_1.calcMechanicalAvailability)(totalMaintenanceTime / 3600, uniqMaintenanceEquip.size, currentHour);
+                mechanicalAvailability.get(type)?.set(workFrontCode, availability);
             }
         }
         return mechanicalAvailability;
@@ -158,7 +169,7 @@ const groupEventsByTypeAndFront = (events, equipments, interference) => {
         equipmentTypeMap.set(equipment.code, equipment.description);
     });
     const interferenceIds = interference
-        .filter((e) => e.interferenceType?.name === "Manutenção")
+        .filter((e) => e.interferenceType?.name?.toLocaleLowerCase() === "manutenção")
         .map((e) => e.id);
     const eventsByType = {};
     events.forEach((event) => {
