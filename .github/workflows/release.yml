@@ -63,10 +63,8 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-          # Adiciona e commit a nova versão do package.json
-          git add package.json
-          git commit -m "chore: bump version to $VERSION"
-
+          # O commit já foi feito pelo npm version, então apenas faça o push
+          git push origin main
 
       # Instalar dependências
       - name: Install dependencies
