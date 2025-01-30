@@ -22,28 +22,32 @@ export const localTimeZone = "America/Sao_Paulo";
  * CALCULATE percentage and time awaiting transshipment by TYPE 
  * @param partialEvents the equipment's events
  * @param closureEvents the equipment's events
+ * @param workFronts logistic work fronts
  */
 const createAvailabilityAwaitingTransshipment = async (
   partialEvents: CttEvent[],
   closureEvents: CttEvent[],
+  workFronts: number[]
 ): Promise<CttAvailabilityAwaitingTransshipment> => {
   // Partial
-  let groupedEventsByFrontPartial = await groupEventsByFront(
-    partialEvents
+  let groupedEventsByFrontPartial = groupEventsByFront(
+    partialEvents,
+    workFronts
   );
 
-  let timeAwaitingTransshipmentByFrontPartial = await calcAwaitingTransshipmentTime(
+  let timeAwaitingTransshipmentByFrontPartial = calcAwaitingTransshipmentTime(
     groupedEventsByFrontPartial
   );
   
   let percentageWeightByFrontPartial = calcProgressWeightByFront(timeAwaitingTransshipmentByFrontPartial);
 
   // Closure
-  let groupedEventsByFrontClosure = await groupEventsByFront(
-    closureEvents
+  let groupedEventsByFrontClosure = groupEventsByFront(
+    closureEvents,
+    workFronts
   );
 
-  let timeAwaitingTransshipmentByFrontClosure = await calcAwaitingTransshipmentTime(
+  let timeAwaitingTransshipmentByFrontClosure = calcAwaitingTransshipmentTime(
     groupedEventsByFrontClosure
   );
   
@@ -62,24 +66,18 @@ const createAvailabilityAwaitingTransshipment = async (
 /**
  * GROUP events by equipment FRONT
  * @param events
+ * @param workFronts
  */
 const groupEventsByFront = (
   events: CttEvent[],
+  workFronts: number[]
 ): Map<number, CttEvent[]> => {
   let eventsByFront = new Map<number, CttEvent[]>();
-  let workFrontCode: number = 0;
 
-  for (const [_, event] of Object.entries(events)) {
-    workFrontCode = +event.workFront.code;
-
-    const workFrontMap = eventsByFront.get(workFrontCode)!;
-
-    if (!workFrontMap) {
-      eventsByFront.set(workFrontCode, []);
-    }
-
-    eventsByFront.get(workFrontCode)!.push(event);
-  }
+  workFronts.forEach(workFrontCode => {
+    const filteredEvents = events.filter(event => event.workFront.code === workFrontCode);
+    eventsByFront.set(workFrontCode, filteredEvents);
+  });
 
   return eventsByFront;
 };
@@ -93,11 +91,11 @@ const calcAwaitingTransshipmentTime = (
 ): Map<number, number> => {
   const averageByType = new Map<number, number>();
   let diff: number = 0;
-  let time: number = 0;
 
   for (const [workFrontCode, events] of eventsByFront.entries()) {
     diff = 0;
-    time = 0;
+
+    console.log(workFrontCode, events.length);
 
     for (const [_, event] of events.entries()) {
       diff += getEventTime(event);
