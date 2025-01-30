@@ -344,7 +344,7 @@ const getDayPeriodCaneDelivery = (
     }
   });
 
-  const unitTotalDayPercentage = normalizeCalc((unitTotal / goalUnit) * 100);
+  const unitTotalDayPercentage = normalizeCalc((unitTotal / goalUnit) * 100, 2);
 
   const dayPeriod = [
     {
@@ -383,7 +383,10 @@ const getMonthPeriodCaneDelivery = (
   });
 
   goalUnit = goalUnit * daysMonth;
-  const unitTotalMonthPercentage = normalizeCalc((unitTotal / goalUnit) * 100);
+  const unitTotalMonthPercentage = normalizeCalc(
+    (unitTotal / goalUnit) * 100,
+    2
+  );
 
   const toDo = goalUnit - unitTotal;
   const toDoPercentage = normalizeCalc((toDo / goalUnit) * 100, 2);
