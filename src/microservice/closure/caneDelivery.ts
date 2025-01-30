@@ -436,7 +436,8 @@ const getHarvestPeriodCaneDelivery = (
 
   goalUnit = goalUnit * daysHarvest;
   const unitTotalHarvestPercentage = normalizeCalc(
-    (unitTotal / goalUnit) * 100
+    (unitTotal / goalUnit) * 100,
+    2
   );
 
   const toDo = goalUnit - unitTotal;
@@ -523,7 +524,7 @@ const formatCaneDeliveryReturn = (
           harvest: frontsHarvestProductivity[workFrontCode.toString()] || 0,
           harvestGoalPercentage:
             harvestGoalPercentage[workFrontCode.toString()] || 0,
-          goal: workFront.goal
+          goal: workFront.goal,
         };
       })
       .sort((a, b) => a.workFrontCode - b.workFrontCode),
