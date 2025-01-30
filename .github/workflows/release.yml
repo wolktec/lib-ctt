@@ -34,6 +34,7 @@ jobs:
           git pull origin main
           git add .
           git diff-index --quiet HEAD || git commit -m "Commit untracked changes [skip ci]"
+
       # Configure user identity for git
       - name: Configure Git user
         run: |
@@ -42,16 +43,26 @@ jobs:
 
       # Determine version bump type from labels
       - name: Determine version bump
-@@ -52,7 +32,8 @@ jobs:
+        id: determine_bump
+        run: |
+          if [[ "$(jq -r '.pull_request.labels[].name' $GITHUB_EVENT_PATH)" == *"major"* ]]; then
+            echo "VERSION_BUMP=major" >> $GITHUB_ENV
+          elif [[ "$(jq -r '.pull_request.labels[].name' $GITHUB_EVENT_PATH)" == *"minor"* ]]; then
+            echo "VERSION_BUMP=minor" >> $GITHUB_ENV
           elif [[ "$(jq -r '.pull_request.labels[].name' $GITHUB_EVENT_PATH)" == *"patch"* ]]; then
             echo "VERSION_BUMP=patch" >> $GITHUB_ENV
           else
             echo "VERSION_BUMP=patch" >> $GITHUB_ENV
           fi
+
       # Bump version based on label
-@@ -63,46 +44,18 @@ jobs:
+      - name: Bump version
+        id: bump_version
+        run: |
+          npm version ${{ env.VERSION_BUMP }} --no-commit-hooks
           VERSION=$(node -p "require('./package.json').version")
           echo "VERSION=$VERSION" >> $GITHUB_ENV
+
       # Instalar dependências
       - name: Install dependencies
         run: npm install
@@ -84,6 +95,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create "v${{ env.VERSION }}" --title "Release ${{ env.VERSION }}" --notes "Automatically generated release." --target main
+
       # Criar pull request automaticamente
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
