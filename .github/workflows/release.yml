@@ -74,20 +74,18 @@ jobs:
       - name: Push version changes
         run: |
           git checkout main
-          git pull origin main
-          git checkout -b build-and-release
+          git pull origin main          
           npm run build
-          git add .
+          git add -f dist/
           git commit -am "Bump version to ${{ env.VERSION }}"
-          git push origin build-and-release
+          git push origin
           # Verifique se a tag já existe
           if git rev-parse "v${{ env.VERSION }}" >/dev/null 2>&1; then
             echo "Tag v${{ env.VERSION }} already exists, skipping tag creation."
           else
             git tag "v${{ env.VERSION }}"
             git push origin "v${{ env.VERSION }}"
-          fi
-          git push origin build-and-release
+          fi          
       
       # Create GitHub Release
       - name: Create GitHub Release
@@ -95,14 +93,3 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create "v${{ env.VERSION }}" --title "Release ${{ env.VERSION }}" --notes "Automatically generated release." --target main
-
-      # Criar pull request automaticamente
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
-        if: success()
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: build-and-release
-          base: main
-          title: "Build and release v${{ env.VERSION }}"
-          body: "This pull request releases and builds."
