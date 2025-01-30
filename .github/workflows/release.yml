@@ -64,7 +64,7 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
           # Adiciona e commit a nova versão do package.json
-          git add package.json package-lock.json
+          git add package.json
           git commit -m "chore: bump version to $VERSION"
 
 
