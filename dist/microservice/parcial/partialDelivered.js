@@ -1,15 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const helper_1 = require("../helper/helper");
+const helper_1 = require("../../helper/helper");
 /**
-  * GET the partial develired tons by Front
-  * @param workFronts the fronts code with the goals
-  * @param realTons object with the tons by Front, it comes from the productivity API
-  * @param date '2023-12-23 15:41:51' datetime filter
+ * GET the partial develired tons by Front
+ * @param workFronts the fronts code with the goals
+ * @param realTons object with the tons by Front, it comes from the productivity API
+ * @param date '2023-12-23 15:41:51' datetime filter
  */
 const createPartialDelivered = async (workFronts, realTons, date) => {
     try {
-        let startDate = (0, helper_1.dateFilter)(date, '-');
+        let startDate = (0, helper_1.dateFilter)(date, "-");
         let currentHour = (0, helper_1.getCurrentHour)(startDate);
         let estimatedTons = calcEstimatedTons(realTons, currentHour);
         const tonPerHour = calcTonPerHour(realTons, currentHour);
@@ -45,11 +45,11 @@ const calcTonPerHour = (realTons, currentHour) => {
 };
 const calcEstimatedPerGoal = (workFronts, estimatedTons) => {
     let estimatedPerGoal = {};
-    workFronts.forEach(workFrontGoal => {
+    workFronts.forEach((workFrontGoal) => {
         Object.entries(estimatedTons).forEach(([workFront, ton]) => {
             if (workFront !== "estimated" && typeof ton === "number") {
                 if (workFrontGoal.code == +workFront) {
-                    estimatedPerGoal[+workFront] = (0, helper_1.normalizeCalc)((ton / workFrontGoal.goal) * 100);
+                    estimatedPerGoal[+workFront] = (0, helper_1.normalizeCalc)((ton / workFrontGoal.goal) * 100, 2);
                 }
             }
         });
@@ -59,15 +59,18 @@ const calcEstimatedPerGoal = (workFronts, estimatedTons) => {
 const formatDeliveredPartialReturn = async (estimatedTons, tonPerHour, estimatedPerGoal, realTons, workFronts) => {
     const delivered = [];
     const goalMap = new Map(workFronts.map((workFront) => [workFront.code, workFront.goal]));
+    goalMap.forEach((goal) => {
+        estimatedTons.estimated.goal += goal;
+    });
     for (const key of Object.keys(estimatedTons)) {
-        if (key === 'estimated') {
+        if (key === "estimated") {
             continue;
         }
         const workFrontCode = Number(key);
         delivered.push({
             workFrontCode,
             goal: goalMap.get(workFrontCode) || 0,
-            realTons: realTons[key] || 0,
+            realTons: (0, helper_1.normalizeCalc)(realTons[key], 2) || 0,
             estimatedTons: estimatedTons[key],
             tonPerHour: tonPerHour[key] || 0,
             estimatedPerGoal: estimatedPerGoal[key] || 0,
@@ -80,7 +83,7 @@ const formatDeliveredPartialReturn = async (estimatedTons, tonPerHour, estimated
 };
 const calcEstimatedPercentage = (workFronts, estimatedTons) => {
     let frontGoal = 0;
-    workFronts.forEach(workFront => {
+    workFronts.forEach((workFront) => {
         frontGoal += workFront.goal;
     });
     estimatedTons.estimated.progress = (0, helper_1.normalizeCalc)((estimatedTons.estimated.total / frontGoal) * 100, 2);

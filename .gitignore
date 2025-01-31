@@ -1,6 +1,8 @@
 node_modules
-# Keep environment variables out of version control
 .env
 .vscode
 
+src/examples/*
+
 package-lock.json
+pnpm-lock.yaml
