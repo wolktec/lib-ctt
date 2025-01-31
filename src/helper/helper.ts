@@ -20,6 +20,32 @@ export function convertHourToDecimal(hour: string): number {
   return hours + decimalMinutes;
 }
 
+export function calcMechanicalAvailabilitySeconds(
+  totalMaintenance: number,
+  countMaintenance: number,
+  currentHour: number // 24 dia anterior ou hora atual
+) {
+  if (totalMaintenance === 0) {
+    return 100.0;
+  }
+  const calc = normalizeCalc(
+    ((currentHour * 3600 - totalMaintenance / countMaintenance) /
+      (currentHour * 3600)) *
+      100,
+    2
+  );
+
+  if (calc > 100) {
+    return 100.0;
+  }
+
+  if (calc < 0) {
+    return 0;
+  }
+
+  return calc;
+}
+
 export function calcMechanicalAvailability(
   totalMaintenance: number,
   countMaintenance: number,
