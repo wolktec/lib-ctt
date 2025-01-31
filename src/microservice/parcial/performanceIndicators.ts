@@ -523,7 +523,9 @@ const calcSummary = (
   }
 
   let summary: CttSummaryReturn[] = [];
+
   let totalPercentage: number = 0;
+
   for (const [workFrontCode, ctOffender] of Object.entries(formatCtOffender)) {
     totalPercentage += (ctOffender / total) * 100;
     summary.push({
@@ -533,7 +535,7 @@ const calcSummary = (
     });
   }
 
-  summary.push({
+  summary.unshift({
     label: `Geral`,
     lostTons: total,
     progress: normalizeCalc(totalPercentage, 2),
