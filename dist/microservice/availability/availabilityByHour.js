@@ -112,9 +112,8 @@ const groupEventsByHour = async (events, currentHour) => {
                     // const hour = dayjs(event.time.start).format("HH");
                     const hour = (0, dayjs_1.default)(event.time.start).hour();
                     // console.log(equipmentType, " - " , workFrontCode, " - hour: ", hour);
-                    // console.log("eventTime: ", dayjs.utc(event.time.start).format(), " - ", dayjs.utc(event.time.end).format());
                     totalMaintenanceTime += (0, helper_1.getEventTime)(event);
-                    // console.log("totalMaintenanceTime: ", totalMaintenanceTime);
+                    // console.log("eventTime: ", dayjs.utc(event.time.start).format(), " - ", dayjs.utc(event.time.end).format() , ' = ', totalMaintenanceTime);
                     if (!eventsByHour.has(equipmentType)) {
                         eventsByHour.set(equipmentType, new Map());
                     }
@@ -125,12 +124,12 @@ const groupEventsByHour = async (events, currentHour) => {
                         workFrontMap.set(workFrontCode, new Map());
                     }
                     const hourMap = workFrontMap.get(workFrontCode);
-                    // console.log("hour - calc: ", hour, calcMechanicalAvailability(
+                    // console.log("hour - calc - currentHour: ", hour, calcMechanicalAvailabilitySeconds(
                     //   totalMaintenanceTime,
                     //   uniqMaintenanceEquip,
                     //   currentHour
-                    // ));
-                    hourMap.set(hour, (0, helper_1.calcMechanicalAvailability)(totalMaintenanceTime, uniqMaintenanceEquip, currentHour));
+                    // ), currentHour);
+                    hourMap.set(hour, (0, helper_1.calcMechanicalAvailabilitySeconds)(totalMaintenanceTime, uniqMaintenanceEquip, currentHour));
                 }
                 // console.log("----- -----");
                 // console.log("equipmentType - workFrontCode - events: ", equipmentType, " - ", workFrontCode, " - ", eventsArray);
