@@ -2,6 +2,7 @@ import { CttInterferences, CttTelemetry, CttTelemetryByFront, Journey, JourneyFr
 import { CttEquipment, CttEvent } from "../interfaces/availabilityAllocation.interface";
 import { HoursValue } from "../interfaces/availabilityByHour.interface";
 export declare function convertHourToDecimal(hour: string): number;
+export declare function calcMechanicalAvailabilitySeconds(totalMaintenance: number, countMaintenance: number, currentHour: number): number;
 export declare function calcMechanicalAvailability(totalMaintenance: number, countMaintenance: number, currentHour: number): number;
 export declare function normalizeCalc(value: number, fixed?: number): number;
 export declare const getCurrentHour: (date: number) => number;

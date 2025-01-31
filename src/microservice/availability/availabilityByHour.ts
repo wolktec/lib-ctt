@@ -1,12 +1,12 @@
 import dayjs from "dayjs";
 import {
-  calcMechanicalAvailability,
   dateFilter,
   getCurrentHour,
   getEventTime,
   normalizeCalc,
   translations,
   getDefaultHoursData,
+  calcMechanicalAvailabilitySeconds,
 } from "../../helper/helper";
 import {
   CttEquipment,
@@ -178,9 +178,8 @@ const groupEventsByHour = async (
           // const hour = dayjs(event.time.start).format("HH");
           const hour = dayjs(event.time.start).hour();
           // console.log(equipmentType, " - " , workFrontCode, " - hour: ", hour);
-          // console.log("eventTime: ", dayjs.utc(event.time.start).format(), " - ", dayjs.utc(event.time.end).format());
           totalMaintenanceTime += getEventTime(event);
-          // console.log("totalMaintenanceTime: ", totalMaintenanceTime);
+          // console.log("eventTime: ", dayjs.utc(event.time.start).format(), " - ", dayjs.utc(event.time.end).format() , ' = ', totalMaintenanceTime);
 
           if (!eventsByHour.has(equipmentType)) {
             eventsByHour.set(equipmentType, new Map());
@@ -198,15 +197,15 @@ const groupEventsByHour = async (
           }
 
           const hourMap = workFrontMap.get(workFrontCode)!;
-          // console.log("hour - calc: ", hour, calcMechanicalAvailability(
+          // console.log("hour - calc - currentHour: ", hour, calcMechanicalAvailabilitySeconds(
           //   totalMaintenanceTime,
           //   uniqMaintenanceEquip,
           //   currentHour
-          // ));
+          // ), currentHour);
 
           hourMap.set(
             hour,
-            calcMechanicalAvailability(
+            calcMechanicalAvailabilitySeconds(
               totalMaintenanceTime,
               uniqMaintenanceEquip,
               currentHour
@@ -317,13 +316,13 @@ const calcAverageMechanicalAvailability = (
 
 /**
  * FORMAT mechanical availability by TYPE, FRONT and HOUR, added equipments and averages
- * @param events
+ * @param equipmentsMap
  * @param currentHour
  * @param averageMechanicalAvailability
  * @param equipmentsGrouped
  */
 const formatAvailabilityReturn = async(
-  events: Map<string, Map<number, Map<number, number>>>,
+  equipmentsMap: Map<string, Map<number, Map<number, number>>>,
   currentHour: number,
   averageMechanicalAvailability: Map<string, number>,
   equipmentsGrouped: CttEquipmentsGroupsType,
@@ -347,12 +346,15 @@ const formatAvailabilityReturn = async(
 
   // fill return with all equipmentTypes and workFronts
   for (const equipmentType of equipmentTypeOrder) {
-    if (!events.has(equipmentType)) {
 
-      const workFrontsToCreate = defaultFronts[equipmentType];
-      const defaultWorkFrontsData: CttAvailabilityWorkFrontData[] = [];
+    const workFrontsToCreate = defaultFronts[equipmentType];
+    const workFrontsMap = equipmentsMap.get(equipmentType) || new Map();
+    const existingWorkFrontCodes = new Set(workFrontsMap.keys());
 
-      for (const workFrontToCreate of workFrontsToCreate) {
+    const defaultWorkFrontsData: CttAvailabilityWorkFrontData[] = [];
+
+    for (const workFrontToCreate of workFrontsToCreate) {
+      if (!existingWorkFrontCodes.has(workFrontToCreate)) {
         defaultWorkFrontsData.push({
           workFrontCode: workFrontToCreate,
           equipments: 0,
@@ -360,27 +362,21 @@ const formatAvailabilityReturn = async(
           hours: defaultHoursData,
           average: 100,
         });
-      }
 
-      groupsMap.set(equipmentType, {
-        group: translations[equipmentType],
-        average: 100,
-        workFronts: defaultWorkFrontsData,
-      });
-
-      if (workFrontsToCreate) {
         const defaultHoursMap = new Map(defaultHoursData.map(hourData => [parseInt(hourData.hour.split(":")[0]), hourData.value]));
-        const workFrontsMap = new Map(workFrontsToCreate.map(workFrontCode => [workFrontCode, defaultHoursMap]));
-        events.set(
-          equipmentType,
-          workFrontsMap
-        );
+        workFrontsMap.set(workFrontToCreate, defaultHoursMap);
       }
     }
+
+    groupsMap.set(equipmentType, {
+      group: translations[equipmentType],
+      average: averageMechanicalAvailability.get(equipmentType) || 100,
+      workFronts: defaultWorkFrontsData,
+    });
   }
 
   // format return with values
-  for (const [equipmentType, workFrontsMap] of events) {
+  for (const [equipmentType, workFrontsMap] of equipmentsMap) {
     const workFrontsData: CttAvailabilityWorkFrontData[] = [];
     for (const [workFrontCode, hoursMap] of workFrontsMap) {
       const hoursData = [];

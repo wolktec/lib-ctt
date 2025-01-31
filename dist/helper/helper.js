@@ -30,6 +30,7 @@ exports.groupTelemetryByEquipmentCode =
   exports.getCurrentHour =
     void 0;
 exports.convertHourToDecimal = convertHourToDecimal;
+exports.calcMechanicalAvailabilitySeconds = calcMechanicalAvailabilitySeconds;
 exports.calcMechanicalAvailability = calcMechanicalAvailability;
 exports.normalizeCalc = normalizeCalc;
 exports.removeOutliers = removeOutliers;
@@ -39,11 +40,24 @@ function convertHourToDecimal(hour) {
   const decimalMinutes = minutes / 60;
   return hours + decimalMinutes;
 }
-function calcMechanicalAvailability(
-  totalMaintenance,
-  countMaintenance,
-  currentHour // 24 dia anterior ou hora atual
+function calcMechanicalAvailabilitySeconds(totalMaintenance, countMaintenance, currentHour // 24 dia anterior ou hora atual
 ) {
+    if (totalMaintenance === 0) {
+        return 100.0;
+    }
+    const calc = normalizeCalc(((currentHour * 3600 - totalMaintenance / countMaintenance) /
+        (currentHour * 3600)) *
+        100, 2);
+    if (calc > 100) {
+        return 100.0;
+    }
+    if (calc < 0) {
+        return 0;
+    }
+    return calc;
+}
+function calcMechanicalAvailability(totalMaintenance, countMaintenance, currentHour) // 24 dia anterior ou hora atual 
+{
   if (totalMaintenance === 0) {
     return 100.0;
   }
