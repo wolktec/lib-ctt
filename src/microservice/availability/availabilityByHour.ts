@@ -1,12 +1,12 @@
 import dayjs from "dayjs";
 import {
-  calcMechanicalAvailability,
   dateFilter,
   getCurrentHour,
   getEventTime,
   normalizeCalc,
   translations,
   getDefaultHoursData,
+  calcMechanicalAvailabilitySeconds,
 } from "../../helper/helper";
 import {
   CttEquipment,
@@ -178,9 +178,8 @@ const groupEventsByHour = async (
           // const hour = dayjs(event.time.start).format("HH");
           const hour = dayjs(event.time.start).hour();
           // console.log(equipmentType, " - " , workFrontCode, " - hour: ", hour);
-          // console.log("eventTime: ", dayjs.utc(event.time.start).format(), " - ", dayjs.utc(event.time.end).format());
           totalMaintenanceTime += getEventTime(event);
-          // console.log("totalMaintenanceTime: ", totalMaintenanceTime);
+          // console.log("eventTime: ", dayjs.utc(event.time.start).format(), " - ", dayjs.utc(event.time.end).format() , ' = ', totalMaintenanceTime);
 
           if (!eventsByHour.has(equipmentType)) {
             eventsByHour.set(equipmentType, new Map());
@@ -198,15 +197,15 @@ const groupEventsByHour = async (
           }
 
           const hourMap = workFrontMap.get(workFrontCode)!;
-          // console.log("hour - calc: ", hour, calcMechanicalAvailability(
+          // console.log("hour - calc - currentHour: ", hour, calcMechanicalAvailabilitySeconds(
           //   totalMaintenanceTime,
           //   uniqMaintenanceEquip,
           //   currentHour
-          // ));
+          // ), currentHour);
 
           hourMap.set(
             hour,
-            calcMechanicalAvailability(
+            calcMechanicalAvailabilitySeconds(
               totalMaintenanceTime,
               uniqMaintenanceEquip,
               currentHour
