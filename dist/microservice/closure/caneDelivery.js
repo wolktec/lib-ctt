@@ -190,7 +190,7 @@ const getDayPeriodCaneDelivery = (unitTotalDay, workFronts) => {
             unitTotal = unitTotalDay[workFront.unitId];
         }
     });
-    const unitTotalDayPercentage = (0, helper_1.normalizeCalc)((unitTotal / goalUnit) * 100);
+    const unitTotalDayPercentage = (0, helper_1.normalizeCalc)((unitTotal / goalUnit) * 100, 2);
     const dayPeriod = [
         {
             key: "day",
@@ -219,7 +219,7 @@ const getMonthPeriodCaneDelivery = (unitTotalMonth, workFronts, date) => {
         }
     });
     goalUnit = goalUnit * daysMonth;
-    const unitTotalMonthPercentage = (0, helper_1.normalizeCalc)((unitTotal / goalUnit) * 100);
+    const unitTotalMonthPercentage = (0, helper_1.normalizeCalc)((unitTotal / goalUnit) * 100, 2);
     const toDo = goalUnit - unitTotal;
     const toDoPercentage = (0, helper_1.normalizeCalc)((toDo / goalUnit) * 100, 2);
     const monthPeriod = [
@@ -257,7 +257,7 @@ const getHarvestPeriodCaneDelivery = (unitTotalHarvest, workFronts, date) => {
         }
     });
     goalUnit = goalUnit * daysHarvest;
-    const unitTotalHarvestPercentage = (0, helper_1.normalizeCalc)((unitTotal / goalUnit) * 100);
+    const unitTotalHarvestPercentage = (0, helper_1.normalizeCalc)((unitTotal / goalUnit) * 100, 2);
     const toDo = goalUnit - unitTotal;
     const toDoPercentage = (0, helper_1.normalizeCalc)((toDo / goalUnit) * 100, 2);
     const harvestPeriod = [
@@ -316,7 +316,7 @@ const formatCaneDeliveryReturn = (workFronts, frontsDayProductivity, dayGoalPerc
                 tonPerHour: tonPerHour[workFrontCode.toString()] || 0,
                 harvest: frontsHarvestProductivity[workFrontCode.toString()] || 0,
                 harvestGoalPercentage: harvestGoalPercentage[workFrontCode.toString()] || 0,
-                goal: workFront.goal
+                goal: workFront.goal,
             };
         })
             .sort((a, b) => a.workFrontCode - b.workFrontCode),
