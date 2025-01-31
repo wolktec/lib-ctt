@@ -343,7 +343,7 @@ const calcSummary = (ctOffenders, workFronts) => {
             progress: ctOffender ? +((ctOffender / total) * 100).toFixed(2) : 0,
         });
     }
-    summary.push({
+    summary.unshift({
         label: `Geral`,
         lostTons: total,
         progress: (0, helper_1.normalizeCalc)(totalPercentage, 2),
