@@ -80,8 +80,8 @@ export function normalizeCalc(value: number, fixed = 1) {
 }
 
 export const getCurrentHour = (date: number) => {
-  // const currentDate = dayjs().subtract(3, "hours");
-  const currentDate = dayjs();
+  const currentDate = dayjs().subtract(3, "hours");
+  // const currentDate = dayjs();
 
   const isSame = isSameDay(date, currentDate.valueOf());
 
@@ -730,6 +730,13 @@ export const getDefaultHoursData = (currentHour: number): HoursValue[] => {
       hour: `${hour.toString().padStart(2, "0")}:00`,
       value: 100,
     });
+  }
+
+  if (currentHour !== 24) {
+    currentHour += 1;
+    for (let hour = currentHour; hour < 24; hour++) {
+      hoursData.push({ hour: `${hour.toString().padStart(2, '0')}:00`, value: null });
+    }
   }
 
   return hoursData;
