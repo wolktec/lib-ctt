@@ -24,8 +24,8 @@ const createAvailabilityByHour = async (equipments, events, workFronts, date) =>
     let groupedEventsByFront = await groupEventsByFront(groupedEvents);
     // console.log("groupedEventsByFront: ", groupedEventsByFront);
     // console.log("equipments: ", equipments);
-    let equipmentsGrouped = await sumEquipmentsByTypeAndFront(equipments, groupedEventsByFront);
-    // console.log("equipmentsGrouped: ", equipmentsGrouped);
+    // Get from all events
+    let equipmentsGrouped = await sumEquipmentsByTypeAndFront(equipments, events);
     let groupedEventsByHour = await groupEventsByHour(groupedEventsByFront, currentHour);
     // console.log("groupedEventsByHour: ", groupedEventsByHour);
     let mechanicalAvailabilityCalculated = calcAverageMechanicalAvailabilityHours(groupedEventsByHour, currentHour);
@@ -149,16 +149,30 @@ const groupEventsByHour = async (events, currentHour) => {
  */
 const sumEquipmentsByTypeAndFront = async (equipments, events) => {
     try {
+        const equipmentTypeMap = new Map();
+        equipments.forEach((equipment) => {
+            equipmentTypeMap.set(equipment.code, equipment.description);
+        });
+        const equipmentsByTypeAndFrontTemp = {};
+        for (const event of events) {
+            const equipmentCode = event.equipment.code;
+            const equipmentType = equipmentTypeMap.get(equipmentCode);
+            const workFrontCode = event.workFront.code;
+            if (equipmentType && !equipmentsByTypeAndFrontTemp[equipmentType]) {
+                equipmentsByTypeAndFrontTemp[equipmentType] = {};
+            }
+            if (equipmentType && !equipmentsByTypeAndFrontTemp[equipmentType][workFrontCode]) {
+                equipmentsByTypeAndFrontTemp[equipmentType][workFrontCode] = new Set();
+            }
+            if (equipmentType) {
+                equipmentsByTypeAndFrontTemp[equipmentType][workFrontCode].add(equipmentCode);
+            }
+        }
         const equipmentsByTypeAndFront = {};
-        for (const [equipmentType, workFrontsMap] of events) {
-            for (const [workFrontCode, eventsArray] of workFrontsMap) {
-                const filteredEquipments = equipments.filter(equipment => equipment.description === equipmentType &&
-                    equipment.work_front_code === workFrontCode);
-                // console.log("filteredEquipments: ", filteredEquipments);
-                if (!equipmentsByTypeAndFront[equipmentType]) {
-                    equipmentsByTypeAndFront[equipmentType] = {};
-                }
-                equipmentsByTypeAndFront[equipmentType][workFrontCode] = filteredEquipments.length;
+        for (const equipmentType in equipmentsByTypeAndFrontTemp) {
+            equipmentsByTypeAndFront[equipmentType] = {};
+            for (const workFrontCode in equipmentsByTypeAndFrontTemp[equipmentType]) {
+                equipmentsByTypeAndFront[equipmentType][workFrontCode] = equipmentsByTypeAndFrontTemp[equipmentType][workFrontCode].size;
             }
         }
         return equipmentsByTypeAndFront;
@@ -242,8 +256,7 @@ const formatAvailabilityReturn = async (equipmentsMap, currentHour, averageMecha
             if (!existingWorkFrontCodes.has(workFrontToCreate)) {
                 defaultWorkFrontsData.push({
                     workFrontCode: workFrontToCreate,
-                    equipments: 0,
-                    shift: "A",
+                    equipments: equipmentsGrouped[equipmentType]?.[workFrontToCreate] || 0,
                     hours: defaultHoursData,
                     average: 100,
                 });
@@ -262,16 +275,26 @@ const formatAvailabilityReturn = async (equipmentsMap, currentHour, averageMecha
         const workFrontsData = [];
         for (const [workFrontCode, hoursMap] of workFrontsMap) {
             const hoursData = [];
+            let sum = 0;
+            let count = 0;
             for (let hour = 0; hour < currentHour; hour++) {
                 const value = hoursMap.get(hour) ?? 100;
                 hoursData.push({ hour: `${hour.toString().padStart(2, '0')}:00`, value });
+                sum += value;
+                count++;
             }
-            let averageHourValue = hoursData[hoursData.length - 1].value;
-            const equipmentsCount = equipmentsGrouped[equipmentType]?.[+workFrontCode] || 0;
+            // fill rest of hours will null
+            if (currentHour !== 24) {
+                currentHour += 1;
+                for (let hour = currentHour; hour < 24; hour++) {
+                    hoursData.push({ hour: `${hour.toString().padStart(2, '0')}:00`, value: null });
+                }
+            }
+            let averageHourValue = count > 0 ? sum / count : 100;
+            const equipmentsCount = equipmentsGrouped[equipmentType]?.[workFrontCode] || 0;
             workFrontsData.push({
                 workFrontCode: +workFrontCode,
                 equipments: equipmentsCount,
-                shift: "A", // hardcoded
                 hours: hoursData,
                 average: averageHourValue,
             });
@@ -284,6 +307,17 @@ const formatAvailabilityReturn = async (equipmentsMap, currentHour, averageMecha
         };
         groupsMap.set(equipmentType, groupData);
         availabilityResult.groups = equipmentTypeOrder.map(equipmentType => groupsMap.get(equipmentType));
+    }
+    if (equipmentsMap.size == 0) {
+        for (const [equipmentType, groupData] of groupsMap) {
+            const workFrontsData = groupData.workFronts;
+            for (const workFrontData of workFrontsData) {
+                workFrontData.equipments = equipmentsGrouped[equipmentType]?.[workFrontData.workFrontCode] || 0;
+            }
+            workFrontsData.sort((a, b) => a.workFrontCode - b.workFrontCode);
+            groupsMap.get(equipmentType).workFronts = workFrontsData;
+        }
+        availabilityResult.groups = Array.from(groupsMap.values());
     }
     return availabilityResult;
 };

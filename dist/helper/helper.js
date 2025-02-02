@@ -53,8 +53,8 @@ function normalizeCalc(value, fixed = 1) {
     return parseFloat(value.toFixed(fixed));
 }
 const getCurrentHour = (date) => {
-    // const currentDate = dayjs().subtract(3, "hours");
-    const currentDate = (0, dayjs_1.default)();
+    const currentDate = (0, dayjs_1.default)().subtract(3, "hours");
+    // const currentDate = dayjs();
     const isSame = (0, exports.isSameDay)(date, currentDate.valueOf());
     let hour = 24;
     if (isSame) {
@@ -564,6 +564,12 @@ const getDefaultHoursData = (currentHour) => {
             hour: `${hour.toString().padStart(2, "0")}:00`,
             value: 100,
         });
+    }
+    if (currentHour !== 24) {
+        currentHour += 1;
+        for (let hour = currentHour; hour < 24; hour++) {
+            hoursData.push({ hour: `${hour.toString().padStart(2, '0')}:00`, value: null });
+        }
     }
     return hoursData;
 };
