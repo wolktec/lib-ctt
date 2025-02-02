@@ -212,16 +212,20 @@ const calcAgriculturalEfficiency = (elevatorHours, engineHours) => {
 };
 const calcManuvers = (events) => {
     let manuvers = {};
+    let teste = {};
     events.forEach((event) => {
-        if (event.time.end > 0 && event.name === "Manobra") {
+        if (event.time.end > 0 && event.name === "Manobra" && event.type === "AUTOMATIC") {
             if (manuvers[event.workFront.code]) {
                 manuvers[event.workFront.code] += (0, helper_1.getEventTime)(event) / 3600;
+                teste[event.workFront.code].push(event);
             }
             else {
+                teste[event.workFront.code] = [event];
                 manuvers[event.workFront.code] = (0, helper_1.getEventTime)(event) / 3600;
             }
         }
     });
+    console.log(teste["274"].length);
     const formattedManuvers = {};
     for (const [code, timeInHours] of Object.entries(manuvers)) {
         if (!timeInHours) {
