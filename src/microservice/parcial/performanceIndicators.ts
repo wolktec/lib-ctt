@@ -353,16 +353,19 @@ const calcAgriculturalEfficiency = (
 
 const calcManuvers = (events: CttEvent[]): Record<string, string> => {
   let manuvers: Record<string, number> = {};
+  let teste: Record<string, CttEvent[]> = {};
   events.forEach((event) => {
-    if (event.time.end > 0 && event.name === "Manobra") {
+    if (event.time.end > 0 && event.name === "Manobra" && event.type === "AUTOMATIC") {
       if (manuvers[event.workFront.code]) {
         manuvers[event.workFront.code] += getEventTime(event) / 3600;
+        teste[event.workFront.code].push(event)
       } else {
+        teste[event.workFront.code] = [event]
         manuvers[event.workFront.code] = getEventTime(event) / 3600;
       }
     }
   });
-
+console.log(teste["274"].length)
   const formattedManuvers: Record<string, string> = {};
   for (const [code, timeInHours] of Object.entries(manuvers)) {
     if (!timeInHours) {

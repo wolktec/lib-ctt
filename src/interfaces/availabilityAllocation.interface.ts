@@ -23,6 +23,7 @@ export interface CttEvent {
     start: number;
     end: number;
   };
+  type: "AUTOMATIC" | "MANUAL";
 }
 
 export type CttAvailabilityAndAllocationResult = {
