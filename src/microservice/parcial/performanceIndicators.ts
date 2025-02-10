@@ -28,6 +28,7 @@ import {
   CttSummaryReturn,
   CttTelemetry,
   CttTrucksLack,
+  CttShiftInefficiencyByFront,
 } from "../../interfaces/performanceIndicators.interface";
 
 /**
@@ -52,6 +53,8 @@ const createPerformanceIndicators = async (
   interferences: CttInterferences[]
 ): Promise<CttPerformanceIndicators> => {
   try {
+    const shiftsInefficiency = getShiftsInefficiency(events, workFronts);
+
     const tripQtd = getTripQtdByFront(equipmentProductivity, workFronts);
     const averageWeight = getAverageWeight(equipmentProductivity, workFronts);
     const awaitingTransshipment = getAwaitingTransshipment(events);
@@ -124,7 +127,8 @@ const createPerformanceIndicators = async (
       unproductiveTimeFormatted,
       averageRadius,
       summary,
-      elevatorUse
+      elevatorUse,
+      shiftsInefficiency
     );
 
     return formatPerformanceIndicator;
@@ -365,7 +369,7 @@ const calcManuvers = (events: CttEvent[]): Record<string, string> => {
       }
     }
   });
-console.log(teste["274"].length)
+// console.log(teste["274"].length)
   const formattedManuvers: Record<string, string> = {};
   for (const [code, timeInHours] of Object.entries(manuvers)) {
     if (!timeInHours) {
@@ -547,6 +551,130 @@ const calcSummary = (
   return summary;
 };
 
+
+const getShiftsInefficiency = (
+  events: CttEvent[],
+  workFronts: CttWorkFronts[]
+): CttShiftInefficiencyByFront[] => {
+  const filteredEvents = events.filter((event) => event.code !== 'engine_off');
+  const eventsByWorkFrontCode = splitEventsByFrontAndEquipment(filteredEvents);
+  const timeByFrontAndEquipment: Record<number, Record<number, number>> = {};
+
+  for (const [workFrontCode, equipmentCodes] of Object.entries(eventsByWorkFrontCode)) {
+    const workFrontCodeNumber = Number(workFrontCode);
+
+    if (!timeByFrontAndEquipment[workFrontCodeNumber]) {
+      timeByFrontAndEquipment[workFrontCodeNumber] = {};
+    }
+
+    for (const [equipmentCode, events] of Object.entries(equipmentCodes)) {
+      const equipmentCodeNumber = Number(equipmentCode);
+      let timeDiff = 0;
+      let changes = 0;
+
+      const shiftEvents: CttEvent[] = [];
+
+      for (const event of events) {
+        const currentShiftOrder = event.shift.order;
+        if (currentShiftOrder === undefined) {
+          continue;
+        }
+
+        const lastEventShiftOrder = shiftEvents.length > 0 ? shiftEvents[shiftEvents.length-1].shift.order : null;
+
+        if (lastEventShiftOrder && currentShiftOrder !== lastEventShiftOrder) {
+          const previousEventsIndex = shiftEvents.slice().reverse().findIndex((event) => event.name === "Operação");
+          const previousEvents = shiftEvents.slice().reverse().slice(0, previousEventsIndex + 1).reverse();
+          if (previousEvents.length === 0) {
+            shiftEvents.push(event);
+            continue;
+          }
+
+          const furtherEventsIndex = events.slice(shiftEvents.length).findIndex((event) => event.name === "Operação");
+          const furtherEvents = events.slice(shiftEvents.length).slice(0, furtherEventsIndex + 1);
+          if (furtherEvents.length === 0) {
+            shiftEvents.push(event);
+            continue;
+          }
+
+          const mergedEvents = [...previousEvents, ...furtherEvents];
+          const maintenanceEvents = mergedEvents.filter((event) => event.interference?.id === 1366); // 1366 == MANUTENÇÃO CORRETIVA
+          const totalMaintenanceTime = maintenanceEvents.reduce((acc, event) => {
+            const diff = event.time.end - event.time.start;
+            return acc + diff;
+          }, 0);
+
+          const timeIni = previousEvents[0].time.end;
+          const timeEnd = furtherEvents[furtherEvents.length - 1].time.start;
+          timeDiff += timeEnd - timeIni - totalMaintenanceTime;
+          changes += timeDiff > 0 ? 1 : 0; // average with valid values
+        }
+        shiftEvents.push(event);
+      }
+
+      let equipmentAverage = 0;
+      if (changes > 0) {
+        equipmentAverage = timeDiff/changes;
+      } 
+
+      timeByFrontAndEquipment[workFrontCodeNumber][equipmentCodeNumber] = equipmentAverage;
+    }
+  }
+
+  return formatShiftsInefficiency(workFronts, timeByFrontAndEquipment);
+};
+
+const formatShiftsInefficiency = (
+  workFronts: CttWorkFronts[],
+  timeByFrontAndEquipment: Record<number, Record<number, number>>
+): CttShiftInefficiencyByFront[] => {
+  const shiftsInefficiencyFormatted: CttShiftInefficiencyByFront[] = [];
+
+  for (const workFront of workFronts) {
+    const workFrontCode = Number(workFront.code);
+    if (!timeByFrontAndEquipment[workFrontCode]) {
+      shiftsInefficiencyFormatted.push({
+        workFrontCode: workFrontCode,
+        time: "00:00:00"
+      });
+    } else {
+      const nonZeroTimes = Object.values(timeByFrontAndEquipment[workFrontCode]).filter((value) => value !== 0);
+      // console.log("nonZeroTimes: ", workFrontCode, nonZeroTimes);
+
+      let average = 0;
+      if (nonZeroTimes.length > 0) {
+        average = nonZeroTimes.reduce((acc, value) => acc + value, 0) / nonZeroTimes.length;
+      }
+
+      shiftsInefficiencyFormatted.push({
+        workFrontCode: workFrontCode,
+        time: msToTime(average)
+      });
+    }
+  }
+
+  return shiftsInefficiencyFormatted;
+}
+
+const splitEventsByFrontAndEquipment = (events: CttEvent[]) => {
+  const eventsByWorkFrontCodeAndEquipment: Record<number, Record<number, CttEvent[]>> = {};
+  for (const event of events) {
+    const workFrontCode = event.workFront.code;
+    const equipmentCode = event.equipment.code;
+
+    if (!eventsByWorkFrontCodeAndEquipment[workFrontCode]) {
+      eventsByWorkFrontCodeAndEquipment[workFrontCode] = {};
+    }
+
+    if (!eventsByWorkFrontCodeAndEquipment[workFrontCode][equipmentCode]) {
+      eventsByWorkFrontCodeAndEquipment[workFrontCode][equipmentCode] = [];
+    }
+
+    eventsByWorkFrontCodeAndEquipment[workFrontCode][equipmentCode].push(event);
+  }
+  return eventsByWorkFrontCodeAndEquipment;
+};
+
 const formatPerformanceIndicatorReturn = (
   tripQtd: Record<string, number>,
   averageWeight: Record<string, number>,
@@ -562,7 +690,8 @@ const formatPerformanceIndicatorReturn = (
   unproductiveTime: Record<string, string>,
   averageRadius: Record<string, number>,
   summary: CttSummaryReturn[],
-  elevatorUse: Record<string, number>
+  elevatorUse: Record<string, number>,
+  shiftsInefficiency: CttShiftInefficiencyByFront[]
 ): CttPerformanceIndicators => {
   const availabilityAllocation: CttPerformanceIndicators = {
     workFronts: workFronts.map((workfront) => {
@@ -594,6 +723,7 @@ const formatPerformanceIndicatorReturn = (
         maneuvers: maneuvers[workfrontCode] || "00:00:00",
         zone: 0,
         averageRadius: averageRadius[workfrontCode] || 0,
+        averageShiftInefficiency: shiftsInefficiency.find((object) => object.workFrontCode === workfrontCode)?.time || "00:00:00",
       };
     }),
     summary: summary,
