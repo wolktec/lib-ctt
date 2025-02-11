@@ -72,6 +72,7 @@ export interface CttPerformanceIndicators {
         maneuvers: string;
         zone: number;
         averageRadius: number;
+        averageShiftInefficiency: string;
     }>;
     summary: CttSummaryReturn[];
 }
@@ -107,4 +108,8 @@ export interface JourneyFront {
     totalInterferenceOperationalTime: Record<string, number>;
     interferenceOperationalEvents: CttEvent[];
     equipmentsInterferenceOperational: number[];
+}
+export interface CttShiftInefficiencyByFront {
+    workFrontCode: number;
+    time: string;
 }

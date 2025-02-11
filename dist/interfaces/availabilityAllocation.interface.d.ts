@@ -22,6 +22,11 @@ export interface CttEvent {
         start: number;
         end: number;
     };
+    shift: {
+        id: number;
+        name: string;
+        order: number;
+    };
     type: "AUTOMATIC" | "MANUAL";
 }
 export type CttAvailabilityAndAllocationResult = {
