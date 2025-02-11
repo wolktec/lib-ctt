@@ -53,7 +53,7 @@ const createPerformanceIndicators = async (
   interferences: CttInterferences[]
 ): Promise<CttPerformanceIndicators> => {
   try {
-    const shiftsInefficiency = getShiftsInefficiency(events, workFronts);
+    const shiftsInefficiency = getShiftsInefficiency(events, workFronts, interferences);
 
     const tripQtd = getTripQtdByFront(equipmentProductivity, workFronts);
     const averageWeight = getAverageWeight(equipmentProductivity, workFronts);
@@ -554,11 +554,14 @@ const calcSummary = (
 
 const getShiftsInefficiency = (
   events: CttEvent[],
-  workFronts: CttWorkFronts[]
+  workFronts: CttWorkFronts[],
+  interferences: CttInterferences[]
 ): CttShiftInefficiencyByFront[] => {
   const filteredEvents = events.filter((event) => event.code !== 'engine_off');
   const eventsByWorkFrontCode = splitEventsByFrontAndEquipment(filteredEvents);
   const timeByFrontAndEquipment: Record<number, Record<number, number>> = {};
+
+  const idsMaintenance = interferences.filter((item) => item.interferenceType?.name === "Manutenção").map((item) => item.id);
 
   for (const [workFrontCode, equipmentCodes] of Object.entries(eventsByWorkFrontCode)) {
     const workFrontCodeNumber = Number(workFrontCode);
@@ -569,8 +572,7 @@ const getShiftsInefficiency = (
 
     for (const [equipmentCode, events] of Object.entries(equipmentCodes)) {
       const equipmentCodeNumber = Number(equipmentCode);
-      let timeDiff = 0;
-      let changes = 0;
+      let equipmentSum = 0;
 
       const shiftEvents: CttEvent[] = [];
 
@@ -598,7 +600,11 @@ const getShiftsInefficiency = (
           }
 
           const mergedEvents = [...previousEvents, ...furtherEvents];
-          const maintenanceEvents = mergedEvents.filter((event) => event.interference?.id === 1366); // 1366 == MANUTENÇÃO CORRETIVA
+          const maintenanceEvents = mergedEvents.filter((event) => {
+            const interferenceId = event.interference?.id || 0;
+            return idsMaintenance.includes(interferenceId);
+          });
+
           const totalMaintenanceTime = maintenanceEvents.reduce((acc, event) => {
             const diff = event.time.end - event.time.start;
             return acc + diff;
@@ -606,18 +612,12 @@ const getShiftsInefficiency = (
 
           const timeIni = previousEvents[0].time.end;
           const timeEnd = furtherEvents[furtherEvents.length - 1].time.start;
-          timeDiff += timeEnd - timeIni - totalMaintenanceTime;
-          changes += timeDiff > 0 ? 1 : 0; // average with valid values
+          equipmentSum += timeEnd - timeIni - totalMaintenanceTime;
         }
         shiftEvents.push(event);
       }
 
-      let equipmentAverage = 0;
-      if (changes > 0) {
-        equipmentAverage = timeDiff/changes;
-      } 
-
-      timeByFrontAndEquipment[workFrontCodeNumber][equipmentCodeNumber] = equipmentAverage;
+      timeByFrontAndEquipment[workFrontCodeNumber][equipmentCodeNumber] = equipmentSum;
     }
   }
 
@@ -639,16 +639,15 @@ const formatShiftsInefficiency = (
       });
     } else {
       const nonZeroTimes = Object.values(timeByFrontAndEquipment[workFrontCode]).filter((value) => value !== 0);
-      // console.log("nonZeroTimes: ", workFrontCode, nonZeroTimes);
 
-      let average = 0;
+      let sum = 0;
       if (nonZeroTimes.length > 0) {
-        average = nonZeroTimes.reduce((acc, value) => acc + value, 0) / nonZeroTimes.length;
+        sum = nonZeroTimes.reduce((acc, value) => acc + value);
       }
 
       shiftsInefficiencyFormatted.push({
         workFrontCode: workFrontCode,
-        time: msToTime(average)
+        time: msToTime(sum)
       });
     }
   }
