@@ -174,7 +174,7 @@ const calcTrucksLack = (events) => {
     }
     return {
         formattedTrucksLack: formattedTrucksLack,
-        trucksLack: trucksLack,
+        trucksLack: trucksLack
     };
 };
 const calcTOffenders = (trucksLack, delivered) => {
@@ -215,7 +215,9 @@ const calcManuvers = (events) => {
     let manuvers = {};
     let teste = {};
     events.forEach((event) => {
-        if (event.time.end > 0 && event.name === "Manobra" && event.type === "AUTOMATIC") {
+        if (event.time.end > 0 &&
+            event.name === "Manobra" &&
+            event.type === "AUTOMATIC") {
             if (manuvers[event.workFront.code]) {
                 manuvers[event.workFront.code] += (0, helper_1.getEventTime)(event) / 3600;
                 teste[event.workFront.code].push(event);
@@ -345,21 +347,27 @@ const calcSummary = (ctOffenders, workFronts) => {
         summary.push({
             label: `Frente ${workFrontCode}`,
             lostTons: ctOffender,
-            progress: ctOffender ? +((ctOffender / total) * 100).toFixed(2) : 0,
+            progress: ctOffender ? +((ctOffender / total) * 100).toFixed(2) : 0
         });
     }
     summary.unshift({
         label: `Geral`,
         lostTons: total,
-        progress: (0, helper_1.normalizeCalc)(totalPercentage, 2),
+        progress: (0, helper_1.normalizeCalc)(totalPercentage, 2)
     });
     return summary;
 };
 const getShiftsInefficiency = (events, workFronts, interferences) => {
-    const filteredEvents = events.filter((event) => event.code !== 'engine_off');
+    const filteredEvents = events.filter((event) => {
+        return (event.code !== "engine_off" &&
+            event.shift &&
+            event.shift.order !== undefined);
+    });
     const eventsByWorkFrontCode = splitEventsByFrontAndEquipment(filteredEvents);
     const timeByFrontAndEquipment = {};
-    const idsMaintenance = interferences.filter((item) => item.interferenceType?.name === "Manutenção").map((item) => item.id);
+    const idsMaintenance = interferences
+        .filter((item) => item.interferenceType?.name === "Manutenção")
+        .map((item) => item.id);
     for (const [workFrontCode, equipmentCodes] of Object.entries(eventsByWorkFrontCode)) {
         const workFrontCodeNumber = Number(workFrontCode);
         if (!timeByFrontAndEquipment[workFrontCodeNumber]) {
@@ -374,16 +382,34 @@ const getShiftsInefficiency = (events, workFronts, interferences) => {
                 if (currentShiftOrder === undefined) {
                     continue;
                 }
-                const lastEventShiftOrder = shiftEvents.length > 0 ? shiftEvents[shiftEvents.length - 1].shift.order : null;
+                const lastEventShiftOrder = shiftEvents.length > 0
+                    ? shiftEvents[shiftEvents.length - 1].shift.order
+                    : null;
                 if (lastEventShiftOrder && currentShiftOrder !== lastEventShiftOrder) {
-                    const previousEventsIndex = shiftEvents.slice().reverse().findIndex((event) => event.name === "Operação");
-                    const previousEvents = shiftEvents.slice().reverse().slice(0, previousEventsIndex + 1).reverse();
+                    const previousEventsIndex = shiftEvents
+                        .slice()
+                        .reverse()
+                        .findIndex((event) => event.name === "Operação");
+                    const previousEvents = shiftEvents
+                        .slice()
+                        .reverse()
+                        .slice(0, previousEventsIndex + 1)
+                        .reverse();
                     if (previousEvents.length === 0) {
                         shiftEvents.push(event);
                         continue;
                     }
-                    const furtherEventsIndex = events.slice(shiftEvents.length).findIndex((event) => event.name === "Operação");
-                    const furtherEvents = events.slice(shiftEvents.length).slice(0, furtherEventsIndex + 1);
+                    // When searching for last Operation, dont go back to previous shift
+                    if (lastEventShiftOrder > previousEvents[0].shift.order) {
+                        shiftEvents.push(event);
+                        continue;
+                    }
+                    const furtherEventsIndex = events
+                        .slice(shiftEvents.length)
+                        .findIndex((event) => event.name === "Operação");
+                    const furtherEvents = events
+                        .slice(shiftEvents.length)
+                        .slice(0, furtherEventsIndex + 1);
                     if (furtherEvents.length === 0) {
                         shiftEvents.push(event);
                         continue;
@@ -403,7 +429,8 @@ const getShiftsInefficiency = (events, workFronts, interferences) => {
                 }
                 shiftEvents.push(event);
             }
-            timeByFrontAndEquipment[workFrontCodeNumber][equipmentCodeNumber] = equipmentSum;
+            timeByFrontAndEquipment[workFrontCodeNumber][equipmentCodeNumber] =
+                equipmentSum;
         }
     }
     return formatShiftsInefficiency(workFronts, timeByFrontAndEquipment);
@@ -460,26 +487,26 @@ const formatPerformanceIndicatorReturn = (tripQtd, averageWeight, awaitingTranss
                 engineIdle: idleTime[workfrontCode] || "00:00:00",
                 autopilotUse: {
                     value: autoPilotUse[workfrontCode]?.value || 0,
-                    goal: autoPilotUse[workfrontCode]?.goal || 0,
+                    goal: autoPilotUse[workfrontCode]?.goal || 0
                 },
                 elevatorUse: {
                     value: elevatorUse[workfrontCode] || 0,
-                    goal: 69,
+                    goal: 69
                 },
                 unproductiveTime: unproductiveTime[workfrontCode] || "00:00:00",
                 ctOffenders: ctOffenders[workfrontCode] || 0,
                 tOffenders: tOffenders[workfrontCode] || 0,
                 agriculturalEfficiency: {
                     value: agriculturalEfficiency[workfrontCode]?.value || 0,
-                    goal: agriculturalEfficiency[workfrontCode]?.goal || 0,
+                    goal: agriculturalEfficiency[workfrontCode]?.goal || 0
                 },
                 maneuvers: maneuvers[workfrontCode] || "00:00:00",
                 zone: 0,
                 averageRadius: averageRadius[workfrontCode] || 0,
-                averageShiftInefficiency: shiftsInefficiency.find((object) => object.workFrontCode === workfrontCode)?.time || "00:00:00",
+                averageShiftInefficiency: shiftsInefficiency.find((object) => object.workFrontCode === workfrontCode)?.time || "00:00:00"
             };
         }),
-        summary: summary,
+        summary: summary
     };
     return availabilityAllocation;
 };
