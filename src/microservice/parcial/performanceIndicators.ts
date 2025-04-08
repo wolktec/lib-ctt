@@ -1,6 +1,5 @@
 import {
   calcJourneyByFront,
-  calcTelemetryByFront,
   getEventTime,
   getHarvesterEvents,
   getTotalHourmeter,
@@ -8,15 +7,17 @@ import {
   msToTime,
   normalizeCalc
 } from "../../helper/helper";
+
 import {
   CttEquipment,
   CttEvent
 } from "../../interfaces/availabilityAllocation.interface";
+
 import {
   CttDeliveredReturn,
-  CttTon,
   CttWorkFronts
 } from "../../interfaces/partialDelivered.interface";
+
 import {
   CttAgriculturalEfficiency,
   CttAutoPilotUse,
@@ -28,7 +29,7 @@ import {
   CttSummaryReturn,
   CttTelemetry,
   CttTrucksLack,
-  CttShiftInefficiencyByFront
+  CttShiftInefficiencyByFront,
 } from "../../interfaces/performanceIndicators.interface";
 
 /**
@@ -50,14 +51,10 @@ const createPerformanceIndicators = async (
   telemetry: CttTelemetry[],
   tonPerHour: CttDeliveredReturn[],
   workFronts: CttWorkFronts[],
-  interferences: CttInterferences[]
+  interferences: CttInterferences[],
+  shiftsInefficiency: CttShiftInefficiencyByFront[],
 ): Promise<CttPerformanceIndicators> => {
   try {
-    const shiftsInefficiency = getShiftsInefficiency(
-      events,
-      workFronts,
-      interferences
-    );
 
     const tripQtd = getTripQtdByFront(equipmentProductivity, workFronts);
     const averageWeight = getAverageWeight(equipmentProductivity, workFronts);
@@ -557,168 +554,6 @@ const calcSummary = (
   });
 
   return summary;
-};
-
-const getShiftsInefficiency = (
-  events: CttEvent[],
-  workFronts: CttWorkFronts[],
-  interferences: CttInterferences[]
-): CttShiftInefficiencyByFront[] => {
-  const filteredEvents = events.filter((event) => {
-    return (
-      event.code !== "engine_off" &&
-      event.shift &&
-      event.shift.order !== undefined
-    );
-  });
-  const eventsByWorkFrontCode = splitEventsByFrontAndEquipment(filteredEvents);
-  const timeByFrontAndEquipment: Record<number, Record<number, number>> = {};
-
-  const idsMaintenance = interferences
-    .filter((item) => item.interferenceType?.name === "Manutenção")
-    .map((item) => item.id);
-
-  for (const [workFrontCode, equipmentCodes] of Object.entries(
-    eventsByWorkFrontCode
-  )) {
-    const workFrontCodeNumber = Number(workFrontCode);
-
-    if (!timeByFrontAndEquipment[workFrontCodeNumber]) {
-      timeByFrontAndEquipment[workFrontCodeNumber] = {};
-    }
-
-    for (const [equipmentCode, events] of Object.entries(equipmentCodes)) {
-      const equipmentCodeNumber = Number(equipmentCode);
-      let equipmentSum = 0;
-
-      const shiftEvents: CttEvent[] = [];
-
-      for (const event of events) {
-        const currentShiftOrder = event.shift.order;
-        if (currentShiftOrder === undefined) {
-          continue;
-        }
-
-        const lastEventShiftOrder =
-          shiftEvents.length > 0
-            ? shiftEvents[shiftEvents.length - 1].shift.order
-            : null;
-
-        if (lastEventShiftOrder && currentShiftOrder !== lastEventShiftOrder) {
-          const previousEventsIndex = shiftEvents
-            .slice()
-            .reverse()
-            .findIndex((event) => event.name === "Operação");
-
-          const previousEvents = shiftEvents
-            .slice()
-            .reverse()
-            .slice(0, previousEventsIndex + 1)
-            .reverse();
-
-          if (previousEvents.length === 0) {
-            shiftEvents.push(event);
-            continue;
-          }
-
-          // When searching for last Operation, dont go back to previous shift
-          if (lastEventShiftOrder > previousEvents[0].shift.order) {
-            shiftEvents.push(event);
-            continue;
-          }
-
-          const furtherEventsIndex = events
-            .slice(shiftEvents.length)
-            .findIndex((event) => event.name === "Operação");
-          const furtherEvents = events
-            .slice(shiftEvents.length)
-            .slice(0, furtherEventsIndex + 1);
-          if (furtherEvents.length === 0) {
-            shiftEvents.push(event);
-            continue;
-          }
-
-          const mergedEvents = [...previousEvents, ...furtherEvents];
-          const maintenanceEvents = mergedEvents.filter((event) => {
-            const interferenceId = event.interference?.id || 0;
-            return idsMaintenance.includes(interferenceId);
-          });
-
-          const totalMaintenanceTime = maintenanceEvents.reduce(
-            (acc, event) => {
-              const diff = event.time.end - event.time.start;
-              return acc + diff;
-            },
-            0
-          );
-
-          const timeIni = previousEvents[0].time.end;
-          const timeEnd = furtherEvents[furtherEvents.length - 1].time.start;
-          equipmentSum += timeEnd - timeIni - totalMaintenanceTime;
-        }
-        shiftEvents.push(event);
-      }
-      timeByFrontAndEquipment[workFrontCodeNumber][equipmentCodeNumber] =
-        equipmentSum;
-    }
-  }
-
-  return formatShiftsInefficiency(workFronts, timeByFrontAndEquipment);
-};
-
-const formatShiftsInefficiency = (
-  workFronts: CttWorkFronts[],
-  timeByFrontAndEquipment: Record<number, Record<number, number>>
-): CttShiftInefficiencyByFront[] => {
-  const shiftsInefficiencyFormatted: CttShiftInefficiencyByFront[] = [];
-
-  for (const workFront of workFronts) {
-    const workFrontCode = Number(workFront.code);
-    if (!timeByFrontAndEquipment[workFrontCode]) {
-      shiftsInefficiencyFormatted.push({
-        workFrontCode: workFrontCode,
-        time: "00:00:00"
-      });
-    } else {
-      const nonZeroTimes = Object.values(
-        timeByFrontAndEquipment[workFrontCode]
-      ).filter((value) => value !== 0);
-
-      let sum = 0;
-      if (nonZeroTimes.length > 0) {
-        sum = nonZeroTimes.reduce((acc, value) => acc + value);
-      }
-
-      shiftsInefficiencyFormatted.push({
-        workFrontCode: workFrontCode,
-        time: msToTime(sum)
-      });
-    }
-  }
-
-  return shiftsInefficiencyFormatted;
-};
-
-const splitEventsByFrontAndEquipment = (events: CttEvent[]) => {
-  const eventsByWorkFrontCodeAndEquipment: Record<
-    number,
-    Record<number, CttEvent[]>
-  > = {};
-  for (const event of events) {
-    const workFrontCode = event.workFront.code;
-    const equipmentCode = event.equipment.code;
-
-    if (!eventsByWorkFrontCodeAndEquipment[workFrontCode]) {
-      eventsByWorkFrontCodeAndEquipment[workFrontCode] = {};
-    }
-
-    if (!eventsByWorkFrontCodeAndEquipment[workFrontCode][equipmentCode]) {
-      eventsByWorkFrontCodeAndEquipment[workFrontCode][equipmentCode] = [];
-    }
-
-    eventsByWorkFrontCodeAndEquipment[workFrontCode][equipmentCode].push(event);
-  }
-  return eventsByWorkFrontCodeAndEquipment;
 };
 
 const formatPerformanceIndicatorReturn = (
