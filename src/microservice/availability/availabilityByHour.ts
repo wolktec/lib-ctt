@@ -397,27 +397,24 @@ const formatAvailabilityReturn = async(
     const workFrontsData: CttAvailabilityWorkFrontData[] = [];
     for (const [workFrontCode, hoursMap] of workFrontsMap) {
       const hoursData = [];
-
+  
       let sum = 0;
       let count = 0;
+  
       for (let hour = 0; hour < currentHour; hour++) {
         const value = hoursMap.get(hour) ?? 100;
         hoursData.push({ hour: `${hour.toString().padStart(2, '0')}:00`, value });
         sum += value;
         count++;
       }
-
-      // fill rest of hours will null
-      if (currentHour !== 24) {
-        currentHour += 1;
-        for (let hour = currentHour; hour < 24; hour++) {
-          hoursData.push({ hour: `${hour.toString().padStart(2, '0')}:00`, value: null });
-        }
+  
+      for (let hour = currentHour; hour < 24; hour++) {
+        hoursData.push({ hour: `${hour.toString().padStart(2, '0')}:00`, value: null });
       }
-
+  
       let averageHourValue = count > 0 ? sum / count : 100;
       const equipmentsCount = equipmentsGrouped[equipmentType]?.[workFrontCode] || 0;
-
+  
       workFrontsData.push({
         workFrontCode: +workFrontCode,
         equipments: equipmentsCount,
@@ -425,17 +422,17 @@ const formatAvailabilityReturn = async(
         average: averageHourValue,
       });
     }
-
+  
     workFrontsData.sort((a, b) => a.workFrontCode - b.workFrontCode);
-
+  
     const groupData = {
       group: translations[equipmentType],
       average: averageMechanicalAvailability.get(equipmentType) || 100,
       workFronts: workFrontsData,
     };
-
+  
     groupsMap.set(equipmentType, groupData);
-
+  
     availabilityResult.groups = equipmentTypeOrder.map(equipmentType =>
       groupsMap.get(equipmentType)!
     );
