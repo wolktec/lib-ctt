@@ -283,12 +283,8 @@ const formatAvailabilityReturn = async (equipmentsMap, currentHour, averageMecha
                 sum += value;
                 count++;
             }
-            // fill rest of hours will null
-            if (currentHour !== 24) {
-                currentHour += 1;
-                for (let hour = currentHour; hour < 24; hour++) {
-                    hoursData.push({ hour: `${hour.toString().padStart(2, '0')}:00`, value: null });
-                }
+            for (let hour = currentHour; hour < 24; hour++) {
+                hoursData.push({ hour: `${hour.toString().padStart(2, '0')}:00`, value: null });
             }
             let averageHourValue = count > 0 ? sum / count : 100;
             const equipmentsCount = equipmentsGrouped[equipmentType]?.[workFrontCode] || 0;
