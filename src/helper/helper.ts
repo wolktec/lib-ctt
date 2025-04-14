@@ -725,22 +725,17 @@ export const getHarvesterEvents = (
 export const getDefaultHoursData = (currentHour: number): HoursValue[] => {
   const hoursData: HoursValue[] = [];
 
-  for (let hour = 0; hour <= currentHour; hour++) {
-    hoursData.push({
-      hour: `${hour.toString().padStart(2, "0")}:00`,
-      value: 100,
-    });
+  for (let hour = 0; hour < currentHour; hour++) {
+    hoursData.push({ hour: `${hour.toString().padStart(2, '0')}:00`, value: 100 });
   }
 
-  if (currentHour !== 24) {
-    currentHour += 1;
-    for (let hour = currentHour; hour < 24; hour++) {
+  for (let hour = currentHour; hour < 24; hour++) {
       hoursData.push({ hour: `${hour.toString().padStart(2, '0')}:00`, value: null });
-    }
   }
 
   return hoursData;
 };
+
 export const groupTelemetryByEquipmentCode = (telemetry: CttTelemetry[]) => {
   return telemetry.reduce((acc, cur) => {
     if (cur.equipment_code && cur.current_value !== "0.0") {
