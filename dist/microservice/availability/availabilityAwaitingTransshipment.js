@@ -51,7 +51,6 @@ const calcAwaitingTransshipmentTime = (eventsByFront) => {
     let diff = 0;
     for (const [workFrontCode, events] of eventsByFront.entries()) {
         diff = 0;
-        console.log(workFrontCode, events.length);
         for (const [_, event] of events.entries()) {
             diff += (0, helper_1.getEventTime)(event);
         }

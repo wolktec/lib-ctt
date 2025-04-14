@@ -270,7 +270,6 @@ const formatAvailabilityReturn = async (equipmentsMap, currentHour, averageMecha
             workFronts: defaultWorkFrontsData,
         });
     }
-    // format return with values
     for (const [equipmentType, workFrontsMap] of equipmentsMap) {
         const workFrontsData = [];
         for (const [workFrontCode, hoursMap] of workFrontsMap) {

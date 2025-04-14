@@ -392,9 +392,9 @@ const formatAvailabilityReturn = async(
     });
   }
 
-  // format return with values
   for (const [equipmentType, workFrontsMap] of equipmentsMap) {
     const workFrontsData: CttAvailabilityWorkFrontData[] = [];
+    
     for (const [workFrontCode, hoursMap] of workFrontsMap) {
       const hoursData = [];
   
