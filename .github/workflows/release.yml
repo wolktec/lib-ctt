@@ -79,18 +79,26 @@ jobs:
       - name: Push version changes
         run: |
           git checkout main
-          git pull origin main          
+          git pull origin main
           npm run build
           git add -f dist/
-          git commit -am "Bump version to ${{ env.VERSION }}"
-          git push origin
+          
+          # Commit only if there are changes
+          if ! git diff-index --quiet HEAD; then
+            git commit -am "Bump version to ${{ env.VERSION }}"
+            git push origin
+          else
+            echo "No changes to commit."
+          fi
+      
           # Verifique se a tag já existe
           if git rev-parse "v${{ env.VERSION }}" >/dev/null 2>&1; then
             echo "Tag v${{ env.VERSION }} already exists, skipping tag creation."
           else
             git tag "v${{ env.VERSION }}"
             git push origin "v${{ env.VERSION }}"
-          fi          
+          fi
+     
       
       # Create GitHub Release
       - name: Create GitHub Release
