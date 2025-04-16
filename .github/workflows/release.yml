@@ -33,7 +33,12 @@ jobs:
           git checkout main
           git pull origin main
           git add .
-          git diff-index --quiet HEAD || git commit -m "Commit untracked changes [skip ci]"
+          if ! git diff-index --quiet HEAD; then
+            git commit -m "Commit untracked changes [skip ci]"
+          else
+            echo "No changes to commit."
+          fi
+
 
       # Configure user identity for git
       - name: Configure Git user
