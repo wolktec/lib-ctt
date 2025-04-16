@@ -1,6 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const helper_1 = require("../../helper/helper");
+const MONTH_CANE_DELIVERY_GOAL_MAP = {
+    112: 107455,
+    115: 148112,
+};
+const HARVEST_CANE_DELIVERY_GOAL_MAP = {
+    112: 1960000,
+    115: 2687880,
+};
 /**
  * GET the cane delivered based on the productivity API registered by FRONT
  * @param frontsDayProductivity Productivity grouped by front and day
@@ -12,7 +20,7 @@ const helper_1 = require("../../helper/helper");
  * @param otherHarvestProductivity Productivity from the other UNIT available by front and harvest
  * @param date Filtered date
  */
-const createCaneDelivery = async (frontsDayProductivity, frontsMonthProductivity, frontsHarvestProductivity, workFronts, otherUnitDayProductivity, otherMonthProductivity, otherHarvestProductivity, date) => {
+const createCaneDelivery = async (frontsDayProductivity, frontsMonthProductivity, frontsHarvestProductivity, workFronts, otherUnitDayProductivity, otherMonthProductivity, otherHarvestProductivity, date, unitId) => {
     const workFrontsUnits = workFronts;
     workFronts = workFronts.filter((workFront) => workFront.code in frontsDayProductivity);
     const dayGoalPercentage = calcDailyGoalDelivery(frontsDayProductivity, workFronts);
@@ -37,8 +45,8 @@ const createCaneDelivery = async (frontsDayProductivity, frontsMonthProductivity
     const unitTotalDay = calcUnitDayTotal(frontsDayProductivity, workFrontsUnits, otherUnitDayProductivity);
     const unitTotalMonth = calcUnitMonthTotal(frontsMonthProductivity, workFrontsUnits, otherMonthProductivity);
     const dayPeriodCaneDelivery = getDayPeriodCaneDelivery(unitTotalDay, workFronts);
-    const monthPeriodCaneDelivery = getMonthPeriodCaneDelivery(unitTotalMonth, workFronts, date);
-    const harvestPeriodCaneDelivery = getHarvestPeriodCaneDelivery(unitTotalHarvest, workFronts, date);
+    const monthPeriodCaneDelivery = getMonthPeriodCaneDelivery(unitTotalMonth, workFronts, unitId);
+    const harvestPeriodCaneDelivery = getHarvestPeriodCaneDelivery(unitTotalHarvest, workFronts, unitId);
     const unitHarvestGoal = calcUnitHarvestGoal(unitTotalHarvest, workFrontsUnits, date);
     const periodDelivery = [
         ...dayPeriodCaneDelivery,
@@ -208,25 +216,22 @@ const getDayPeriodCaneDelivery = (unitTotalDay, workFronts) => {
     ];
     return dayPeriod;
 };
-const getMonthPeriodCaneDelivery = (unitTotalMonth, workFronts, date) => {
-    let goalUnit = 0;
+const getMonthPeriodCaneDelivery = (unitTotalMonth, workFronts, unitId) => {
     let unitTotal = 0;
-    const daysMonth = (0, helper_1.getDaysInMonth)(date);
+    const deliveryGoal = MONTH_CANE_DELIVERY_GOAL_MAP[unitId] || MONTH_CANE_DELIVERY_GOAL_MAP[115];
     workFronts.forEach((workFront) => {
-        goalUnit += workFront.goal;
         if (unitTotalMonth[workFront.unitId]) {
             unitTotal = unitTotalMonth[workFront.unitId];
         }
     });
-    goalUnit = goalUnit * daysMonth;
-    const unitTotalMonthPercentage = (0, helper_1.normalizeCalc)((unitTotal / goalUnit) * 100, 2);
-    const toDo = goalUnit - unitTotal;
-    const toDoPercentage = (0, helper_1.normalizeCalc)((toDo / goalUnit) * 100, 2);
+    const unitTotalMonthPercentage = (0, helper_1.normalizeCalc)((unitTotal / deliveryGoal) * 100, 2);
+    const toDo = deliveryGoal - unitTotal;
+    const toDoPercentage = (0, helper_1.normalizeCalc)((toDo / deliveryGoal) * 100, 2);
     const monthPeriod = [
         {
             key: "month",
             label: "Mês",
-            goal: goalUnit,
+            goal: deliveryGoal,
             effectiveDays: null,
             data: [
                 {
@@ -245,26 +250,22 @@ const getMonthPeriodCaneDelivery = (unitTotalMonth, workFronts, date) => {
     return monthPeriod;
 };
 //TODO: calcular a reestimativa do 3 grafico
-const getHarvestPeriodCaneDelivery = (unitTotalHarvest, workFronts, date) => {
-    let goalUnit = 0;
+const getHarvestPeriodCaneDelivery = (unitTotalHarvest, workFronts, unitId) => {
     let unitTotal = 0;
-    const dateHarvest = (0, helper_1.getHarvestDateRange)(date);
-    const daysHarvest = (0, helper_1.getDaysBetweenDates)(dateHarvest.startDate, dateHarvest.endDate);
+    const deliveryGoal = HARVEST_CANE_DELIVERY_GOAL_MAP[unitId] || HARVEST_CANE_DELIVERY_GOAL_MAP[115];
     workFronts.forEach((workFront) => {
-        goalUnit += workFront.goal;
         if (unitTotalHarvest[workFront.unitId]) {
             unitTotal = unitTotalHarvest[workFront.unitId];
         }
     });
-    goalUnit = goalUnit * daysHarvest;
-    const unitTotalHarvestPercentage = (0, helper_1.normalizeCalc)((unitTotal / goalUnit) * 100, 2);
-    const toDo = goalUnit - unitTotal;
-    const toDoPercentage = (0, helper_1.normalizeCalc)((toDo / goalUnit) * 100, 2);
+    const unitTotalHarvestPercentage = (0, helper_1.normalizeCalc)((unitTotal / deliveryGoal) * 100, 2);
+    const toDo = deliveryGoal - unitTotal;
+    const toDoPercentage = (0, helper_1.normalizeCalc)((toDo / deliveryGoal) * 100, 2);
     const harvestPeriod = [
         {
             key: "harvest",
             label: "Safra",
-            goal: goalUnit,
+            goal: deliveryGoal,
             effectiveDays: null,
             data: [
                 {
