@@ -113,3 +113,50 @@ export interface CttShiftInefficiencyByFront {
     workFrontCode: number;
     time: string;
 }
+export interface Journey {
+    totalEquipments: number;
+    totalTime: number;
+    activeEquipments: number[];
+    totalActiveEquipmentsInProductive: number;
+    totalActiveEquipmentsInInterference: number;
+    operational: {
+        time: number;
+        progress: number;
+        totalEquipments: number;
+        average: number;
+    };
+    maintenance: {
+        time: number;
+        progress: number;
+        totalEquipments: number;
+        average: number;
+    };
+    improductive: {
+        time: number;
+        progress: number;
+        totalEquipments: number;
+        average: number;
+    };
+    engineIdle: {
+        time: number;
+        average: number;
+        progress: number;
+        engineIdleEquipments: number[];
+    };
+    mechanicalAvailability: number;
+    eventsDetails: JourneyEventDetails[];
+}
+export interface JourneyEventDetails {
+    code: number;
+    name: string;
+    totalTime: number;
+    averageTime: number;
+    totalCount: number;
+    type: "AUTOMATIC" | "MANUAL";
+    workFrontSummary: {
+        totalTime: number;
+        workFrontCode: number;
+        totalCount: number;
+        averageTime: number;
+    }[];
+}

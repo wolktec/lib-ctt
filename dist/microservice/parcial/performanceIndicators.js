@@ -12,25 +12,23 @@ const helper_1 = require("../../helper/helper");
  * @param workFronts the fronts code with the goals
  * @param interferences interferences coming from the interference table
  */
-const createPerformanceIndicators = async (equipmentProductivity, events, equipments, idleEvents, telemetry, tonPerHour, workFronts, interferences, shiftsInefficiency) => {
+const createPerformanceIndicators = async (equipmentProductivity, equipments, telemetry, tonPerHour, workFronts, shiftsInefficiency, journey) => {
     try {
         const tripQtd = getTripQtdByFront(equipmentProductivity, workFronts);
         const averageWeight = getAverageWeight(equipmentProductivity, workFronts);
-        const awaitingTransshipment = getAwaitingTransshipment(events);
-        const idleTime = getIdleTime(events, idleEvents);
         const engineHours = (0, helper_1.groupEquipmentTelemetryByFront)(equipments, telemetry.filter((hourMeter) => hourMeter.sensor_name === "hour_meter"));
         const autoPilot = (0, helper_1.groupEquipmentTelemetryByFront)(equipments, telemetry.filter((hourMeter) => hourMeter.sensor_name === "autopilot_hour_meter"));
         const autoPilotUse = calcAutopilotUse(autoPilot, engineHours);
-        const trucksLack = calcTrucksLack(events);
+        const trucksLack = calcTrucksLack([]);
         const tOffenders = calcTOffenders(trucksLack.trucksLack, tonPerHour);
         const elevatorHours = (0, helper_1.groupEquipmentTelemetryByFront)(equipments, telemetry.filter((hourMeter) => hourMeter.sensor_name === "elevator_conveyor_belt_hour_meter"));
         const elevatorUse = calcElevatorUse(elevatorHours, engineHours);
         const agriculturalEfficiency = calcAgriculturalEfficiency(elevatorHours, engineHours);
-        const maneuvers = calcManuvers(events);
+        // TODO
+        const maneuvers = calcManuvers([]);
         const filteredEvents = (0, helper_1.getHarvesterEvents)(equipments, events);
-        const unproductiveTime = (await (0, helper_1.calcJourneyByFront)(filteredEvents, interferences)).totalInterferenceTime;
         const ctOffenders = await calcCtOffenders(unproductiveTime, equipments, tonPerHour);
-        const unproductiveTimeFormatted = formatUnproductiveTime(unproductiveTime);
+        const unproductiveTimeFormatted = formatUnproductiveTime(journey);
         const averageRadius = await calcAverageRadius(events, telemetry.filter((hourMeter) => hourMeter.sensor_name === "odometer"));
         const summary = calcSummary(ctOffenders, workFronts);
         const formatPerformanceIndicator = formatPerformanceIndicatorReturn(tripQtd, averageWeight, awaitingTransshipment, idleTime, autoPilotUse, trucksLack.formattedTrucksLack, tOffenders, agriculturalEfficiency, maneuvers, workFronts, ctOffenders, unproductiveTimeFormatted, averageRadius, summary, elevatorUse, shiftsInefficiency);
@@ -173,7 +171,7 @@ const calcTrucksLack = (events) => {
     }
     return {
         formattedTrucksLack: formattedTrucksLack,
-        trucksLack: trucksLack
+        trucksLack: trucksLack,
     };
 };
 const calcTOffenders = (trucksLack, delivered) => {
@@ -291,18 +289,25 @@ const calcAverageRadius = async (events, odometerReadings) => {
         throw err;
     }
 };
-const formatUnproductiveTime = (unproductiveTime) => {
-    const formatUnproductiveTime = {};
+const formatUnproductiveTime = (journey) => {
+    let unproductiveTime = {};
+    journey.forEach((journey) => {
+        const totalTime = journey.totalInterferenceOperationalTime;
+        for (const [workFrontCode, time] of Object.entries(totalTime)) {
+            if (unproductiveTime[workFrontCode]) {
+                unproductiveTime[workFrontCode] += time;
+            }
+            else {
+                unproductiveTime[workFrontCode] = time;
+            }
+        }
+    });
+    const formattedUnproductiveTime = {};
     for (const [code, timeInHours] of Object.entries(unproductiveTime)) {
-        if (!timeInHours) {
-            formatUnproductiveTime[code] = "00:00:00";
-        }
-        else {
-            const timeInMs = timeInHours * 3600 * 1000;
-            formatUnproductiveTime[code] = (0, helper_1.msToTime)(timeInMs);
-        }
+        const timeInMs = timeInHours * 1000;
+        formattedUnproductiveTime[code] = (0, helper_1.msToTime)(timeInMs);
     }
-    return formatUnproductiveTime;
+    return formattedUnproductiveTime;
 };
 const calcElevatorUse = (elevatorHours, engineHours) => {
     let elevatorUse = {};
@@ -346,13 +351,13 @@ const calcSummary = (ctOffenders, workFronts) => {
         summary.push({
             label: `Frente ${workFrontCode}`,
             lostTons: ctOffender,
-            progress: ctOffender ? +((ctOffender / total) * 100).toFixed(2) : 0
+            progress: ctOffender ? +((ctOffender / total) * 100).toFixed(2) : 0,
         });
     }
     summary.unshift({
         label: `Geral`,
         lostTons: total,
-        progress: (0, helper_1.normalizeCalc)(totalPercentage, 2)
+        progress: (0, helper_1.normalizeCalc)(totalPercentage, 2),
     });
     return summary;
 };
@@ -369,26 +374,26 @@ const formatPerformanceIndicatorReturn = (tripQtd, averageWeight, awaitingTranss
                 engineIdle: idleTime[workfrontCode] || "00:00:00",
                 autopilotUse: {
                     value: autoPilotUse[workfrontCode]?.value || 0,
-                    goal: autoPilotUse[workfrontCode]?.goal || 0
+                    goal: autoPilotUse[workfrontCode]?.goal || 0,
                 },
                 elevatorUse: {
                     value: elevatorUse[workfrontCode] || 0,
-                    goal: 69
+                    goal: 69,
                 },
                 unproductiveTime: unproductiveTime[workfrontCode] || "00:00:00",
                 ctOffenders: ctOffenders[workfrontCode] || 0,
                 tOffenders: tOffenders[workfrontCode] || 0,
                 agriculturalEfficiency: {
                     value: agriculturalEfficiency[workfrontCode]?.value || 0,
-                    goal: agriculturalEfficiency[workfrontCode]?.goal || 0
+                    goal: agriculturalEfficiency[workfrontCode]?.goal || 0,
                 },
                 maneuvers: maneuvers[workfrontCode] || "00:00:00",
                 zone: 0,
                 averageRadius: averageRadius[workfrontCode] || 0,
-                averageShiftInefficiency: shiftsInefficiency.find((object) => object.workFrontCode === workfrontCode)?.time || "00:00:00"
+                averageShiftInefficiency: shiftsInefficiency.find((object) => object.workFrontCode === workfrontCode)?.time || "00:00:00",
             };
         }),
-        summary: summary
+        summary: summary,
     };
     return availabilityAllocation;
 };
