@@ -176,10 +176,10 @@ export interface JourneyEventDetails {
   averageTime: number;
   totalCount: number;
   type: "AUTOMATIC" | "MANUAL";
-  workFrontSummary: {
-    totalTime: number;
-    workFrontCode: number;
-    totalCount: number;
-    averageTime: number;
-  }[];
+  // workFrontSummary: {
+  //   totalTime: number;
+  //   workFrontCode: number;
+  //   totalCount: number;
+  //   averageTime: number;
+  // }[];
 }

@@ -113,7 +113,7 @@ export interface CttShiftInefficiencyByFront {
     workFrontCode: number;
     time: string;
 }
-export interface Journey {
+export interface JourneyResponse {
     totalEquipments: number;
     totalTime: number;
     activeEquipments: number[];
@@ -153,10 +153,4 @@ export interface JourneyEventDetails {
     averageTime: number;
     totalCount: number;
     type: "AUTOMATIC" | "MANUAL";
-    workFrontSummary: {
-        totalTime: number;
-        workFrontCode: number;
-        totalCount: number;
-        averageTime: number;
-    }[];
 }

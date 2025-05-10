@@ -35,13 +35,12 @@ import {
 /**
  * GET the performance indicators by Front
  * @param equipmentProductivity equipment coming from the productivity API
- * @param events events from the day
  * @param equipments equipments from the day
- * @param idleEvents data from the operation table
  * @param telemetry telemetry of the day
  * @param tonPerHour calc of ton per hour in the PartialDelivered
  * @param workFronts the fronts code with the goals
- * @param interferences interferences coming from the interference table
+ * @param shiftsInefficiency
+ * @param journeys
  */
 const createPerformanceIndicators = async (
   equipmentProductivity: CttEquipmentProductivity[],
@@ -56,6 +55,9 @@ const createPerformanceIndicators = async (
     const tripQtd = getTripQtdByFront(equipmentProductivity, workFronts);
     const averageWeight = getAverageWeight(equipmentProductivity, workFronts);
     let awaitingTransshipment: Record<string, string> = {};
+    let idleTime: Record<string, string> = {};
+    let trucksLack: Record<string, string> = {};
+    let trucksLackMS: Record<string, number> = {};
 
     Object.keys(journeys).forEach((workFront) => {
       const journey = journeys[workFront];
@@ -65,11 +67,20 @@ const createPerformanceIndicators = async (
           (event) =>
             event.name === "Aguardando Transbordo" && event.type === "MANUAL"
         );
-
         if (awaitingTransshipmentData) {
           awaitingTransshipment[workFront] =
-            awaitingTransshipmentData.totalTime.toString();
+            msToTime(awaitingTransshipmentData.totalTime);
         }
+
+        const trucksLackData = journey.eventsDetails.find((event) =>
+            event.name === "Falta caminhão" && event.type === "MANUAL"
+        )
+        if (trucksLackData) {
+            trucksLack[workFront] = msToTime(trucksLackData.totalTime);
+            trucksLackMS[workFront] = trucksLackData.totalTime;
+        }
+
+        idleTime[workFront] = msToTime(journey.engineIdle.time)
       }
     });
 
@@ -86,8 +97,8 @@ const createPerformanceIndicators = async (
     );
 
     const autoPilotUse = calcAutopilotUse(autoPilot, engineHours);
-    const trucksLack = calcTrucksLack([]);
-    const tOffenders = calcTOffenders(trucksLack.trucksLack, tonPerHour);
+    // const trucksLack = calcTrucksLack([]);
+    const tOffenders = calcTOffenders(trucksLackMS, tonPerHour);
 
     const elevatorHours = groupEquipmentTelemetryByFront(
       equipments,
@@ -124,13 +135,13 @@ const createPerformanceIndicators = async (
 
     const summary = calcSummary(ctOffenders, workFronts);
 
-    const formatPerformanceIndicator = formatPerformanceIndicatorReturn(
+    return formatPerformanceIndicatorReturn(
       tripQtd,
       averageWeight,
       awaitingTransshipment,
       idleTime,
       autoPilotUse,
-      trucksLack.formattedTrucksLack,
+      trucksLack,
       tOffenders,
       agriculturalEfficiency,
       maneuvers,
@@ -142,8 +153,6 @@ const createPerformanceIndicators = async (
       elevatorUse,
       shiftsInefficiency
     );
-
-    return formatPerformanceIndicator;
   } catch (error) {
     console.error("Ocorreu um erro:", error);
     throw error;

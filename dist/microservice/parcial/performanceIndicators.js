@@ -4,35 +4,53 @@ const helper_1 = require("../../helper/helper");
 /**
  * GET the performance indicators by Front
  * @param equipmentProductivity equipment coming from the productivity API
- * @param events events from the day
  * @param equipments equipments from the day
- * @param idleEvents data from the operation table
  * @param telemetry telemetry of the day
  * @param tonPerHour calc of ton per hour in the PartialDelivered
  * @param workFronts the fronts code with the goals
- * @param interferences interferences coming from the interference table
+ * @param shiftsInefficiency
+ * @param journeys
  */
-const createPerformanceIndicators = async (equipmentProductivity, equipments, telemetry, tonPerHour, workFronts, shiftsInefficiency, journey) => {
+const createPerformanceIndicators = async (equipmentProductivity, equipments, telemetry, tonPerHour, workFronts, shiftsInefficiency, journeys) => {
     try {
         const tripQtd = getTripQtdByFront(equipmentProductivity, workFronts);
         const averageWeight = getAverageWeight(equipmentProductivity, workFronts);
+        let awaitingTransshipment = {};
+        let idleTime = {};
+        let trucksLack = {};
+        let trucksLackMS = {};
+        Object.keys(journeys).forEach((workFront) => {
+            const journey = journeys[workFront];
+            if (journey) {
+                const awaitingTransshipmentData = journey.eventsDetails.find((event) => event.name === "Aguardando Transbordo" && event.type === "MANUAL");
+                if (awaitingTransshipmentData) {
+                    awaitingTransshipment[workFront] =
+                        (0, helper_1.msToTime)(awaitingTransshipmentData.totalTime);
+                }
+                const trucksLackData = journey.eventsDetails.find((event) => event.name === "Falta caminhão" && event.type === "MANUAL");
+                if (trucksLackData) {
+                    trucksLack[workFront] = (0, helper_1.msToTime)(trucksLackData.totalTime);
+                    trucksLackMS[workFront] = trucksLackData.totalTime;
+                }
+                idleTime[workFront] = (0, helper_1.msToTime)(journey.engineIdle.time);
+            }
+        });
         const engineHours = (0, helper_1.groupEquipmentTelemetryByFront)(equipments, telemetry.filter((hourMeter) => hourMeter.sensor_name === "hour_meter"));
         const autoPilot = (0, helper_1.groupEquipmentTelemetryByFront)(equipments, telemetry.filter((hourMeter) => hourMeter.sensor_name === "autopilot_hour_meter"));
         const autoPilotUse = calcAutopilotUse(autoPilot, engineHours);
-        const trucksLack = calcTrucksLack([]);
-        const tOffenders = calcTOffenders(trucksLack.trucksLack, tonPerHour);
+        // const trucksLack = calcTrucksLack([]);
+        const tOffenders = calcTOffenders(trucksLackMS, tonPerHour);
         const elevatorHours = (0, helper_1.groupEquipmentTelemetryByFront)(equipments, telemetry.filter((hourMeter) => hourMeter.sensor_name === "elevator_conveyor_belt_hour_meter"));
         const elevatorUse = calcElevatorUse(elevatorHours, engineHours);
         const agriculturalEfficiency = calcAgriculturalEfficiency(elevatorHours, engineHours);
         // TODO
         const maneuvers = calcManuvers([]);
-        const filteredEvents = (0, helper_1.getHarvesterEvents)(equipments, events);
+        const { formattedUnproductiveTime, unproductiveTime } = formatUnproductiveTime(journeys);
         const ctOffenders = await calcCtOffenders(unproductiveTime, equipments, tonPerHour);
-        const unproductiveTimeFormatted = formatUnproductiveTime(journey);
-        const averageRadius = await calcAverageRadius(events, telemetry.filter((hourMeter) => hourMeter.sensor_name === "odometer"));
+        // TODO
+        const averageRadius = await calcAverageRadius([], telemetry.filter((hourMeter) => hourMeter.sensor_name === "odometer"));
         const summary = calcSummary(ctOffenders, workFronts);
-        const formatPerformanceIndicator = formatPerformanceIndicatorReturn(tripQtd, averageWeight, awaitingTransshipment, idleTime, autoPilotUse, trucksLack.formattedTrucksLack, tOffenders, agriculturalEfficiency, maneuvers, workFronts, ctOffenders, unproductiveTimeFormatted, averageRadius, summary, elevatorUse, shiftsInefficiency);
-        return formatPerformanceIndicator;
+        return formatPerformanceIndicatorReturn(tripQtd, averageWeight, awaitingTransshipment, idleTime, autoPilotUse, trucksLack, tOffenders, agriculturalEfficiency, maneuvers, workFronts, ctOffenders, formattedUnproductiveTime, averageRadius, summary, elevatorUse, shiftsInefficiency);
     }
     catch (error) {
         console.error("Ocorreu um erro:", error);
@@ -289,10 +307,10 @@ const calcAverageRadius = async (events, odometerReadings) => {
         throw err;
     }
 };
-const formatUnproductiveTime = (journey) => {
+const formatUnproductiveTime = (journeys) => {
     let unproductiveTime = {};
-    journey.forEach((journey) => {
-        const totalTime = journey.totalInterferenceOperationalTime;
+    Object.values(journeys).forEach((journey) => {
+        const totalTime = journey.improductive.time + journey.maintenance.time;
         for (const [workFrontCode, time] of Object.entries(totalTime)) {
             if (unproductiveTime[workFrontCode]) {
                 unproductiveTime[workFrontCode] += time;
@@ -307,7 +325,7 @@ const formatUnproductiveTime = (journey) => {
         const timeInMs = timeInHours * 1000;
         formattedUnproductiveTime[code] = (0, helper_1.msToTime)(timeInMs);
     }
-    return formattedUnproductiveTime;
+    return { formattedUnproductiveTime, unproductiveTime };
 };
 const calcElevatorUse = (elevatorHours, engineHours) => {
     let elevatorUse = {};
