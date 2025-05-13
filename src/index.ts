@@ -4,17 +4,19 @@ import {
   CttEvent,
   CttAvailabilityAndAllocationResult,
 } from "./interfaces/availabilityAllocation.interface";
+
 import {
   CttCaneDelivery,
   CttWorkFrontUnit,
 } from "./interfaces/caneDelivery.interface";
+
 import {
   CttTon,
   CttDeliveredReturn,
-  CttEstimatedTons,
   CttPartialDeliveredResult,
   CttWorkFronts,
 } from "./interfaces/partialDelivered.interface";
+
 import {
   CttEquipmentProductivity,
   CttEquipmentProductivityFront,
@@ -46,7 +48,6 @@ export {
   CttAvailabilityAndAllocationResult,
   CttTon,
   CttDeliveredReturn,
-  CttEstimatedTons,
   CttPartialDeliveredResult,
   CttWorkFronts,
   CttEquipmentProductivity,
