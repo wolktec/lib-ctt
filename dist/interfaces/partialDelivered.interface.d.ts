@@ -3,13 +3,20 @@ export interface CttWorkFronts {
     code: number;
     goal: number;
 }
-export interface CttEstimatedTons {
-    estimated: {
+export interface WorkFrontProductionReturn {
+    activeEquipments: number[];
+    actualHours: number;
+    periodDelivered: {
+        total: number;
+        projected: number;
+        progress: number;
+    };
+    dailyDelivered: {
         total: number;
         goal: number;
         progress: number;
     };
-    [key: string]: number | {
+    hourlyDelivered: {
         total: number;
         goal: number;
         progress: number;
@@ -23,11 +30,12 @@ export interface CttDeliveredReturn {
     tonPerHour: number;
     estimatedPerGoal: number;
 }
+export interface CttEstimatedDelivered {
+    total: number;
+    goal: number;
+    progress: number;
+}
 export interface CttPartialDeliveredResult {
     delivered: CttDeliveredReturn[];
-    estimated: {
-        total: number;
-        goal: number;
-        progress: number;
-    };
+    estimated: CttEstimatedDelivered;
 }
