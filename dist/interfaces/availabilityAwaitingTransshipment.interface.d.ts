@@ -7,3 +7,7 @@ export interface AvailabilityAwaitingTransshipmentData {
     progress: number;
     time: string;
 }
+export type AwaitingTransshipmentData = {
+    time: string;
+    totalTime: number;
+};

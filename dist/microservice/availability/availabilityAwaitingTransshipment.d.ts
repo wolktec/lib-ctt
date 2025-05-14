@@ -1,11 +1,9 @@
-import { CttEvent } from "../../interfaces/availabilityAllocation.interface";
-import { CttAvailabilityAwaitingTransshipment } from "../../interfaces/availabilityAwaitingTransshipment.interface";
-export declare const localTimeZone = "America/Sao_Paulo";
+import { AwaitingTransshipmentData, CttAvailabilityAwaitingTransshipment } from "../../interfaces/availabilityAwaitingTransshipment.interface";
 /**
  * CALCULATE percentage and time awaiting transshipment by TYPE
  * @param partialEvents the equipment's events
  * @param closureEvents the equipment's events
  * @param workFronts logistic work fronts
  */
-declare const createAvailabilityAwaitingTransshipment: (partialEvents: CttEvent[], closureEvents: CttEvent[], workFronts: number[]) => Promise<CttAvailabilityAwaitingTransshipment>;
+declare const createAvailabilityAwaitingTransshipment: (partialAwaitingTransshipmentMap: Record<number, AwaitingTransshipmentData>, closureAwaitingTransshipmentMap: Record<number, AwaitingTransshipmentData>) => Promise<CttAvailabilityAwaitingTransshipment>;
 export default createAvailabilityAwaitingTransshipment;

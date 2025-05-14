@@ -1,60 +1,30 @@
-import { CttEvent } from "./availabilityAllocation.interface";
-
-export interface CttEquipmentProductivity {
-  equipmentCode: number;
-  totalWeight: number;
-  averageWeight: number;
-  averageTripWeight: number;
-  trips: number;
-  loads: number;
-  workFrontCode: number;
-}
-
-export interface CttEquipmentProductivityFront
-  extends CttEquipmentProductivity {
-  workFrontCode: number;
-}
-
-export interface CttIdleEvents {
+export interface CttEvent {
+  code: string;
+  equipment: {
+    code: number;
+  };
+  workFront: {
+    id: number;
+    code: number;
+    name: string;
+  };
   name: string;
-  has_engine_idle: boolean;
-  engine_idle_sec: number;
+  interference?: {
+    id: number;
+    name: string;
+  };
+  time: {
+    start: number;
+    end: number;
+  };
+  shift: {
+    id: number;
+    name: string;
+    order: number;
+  },
+  type: "AUTOMATIC" | "MANUAL";
 }
 
-export interface CttTelemetry {
-  occurrence: number;
-  sensor_name: string;
-  current_value: string;
-  equipment_code: string;
-}
-
-export interface CttTelemetryByFront {
-  equipmentCode: number;
-  workFrontCode: number;
-  firstRecord: CttTelemetry;
-  lastRecord: CttTelemetry;
-}
-
-export interface CttTrucksLack {
-  formattedTrucksLack: Record<string, string>;
-  trucksLack: Record<string, number>;
-}
-
-export type CttAutoPilotUse = Record<
-  string,
-  {
-    value: number;
-    goal: number;
-  }
->;
-
-export type CttAgriculturalEfficiency = Record<
-  string,
-  {
-    value: number;
-    goal: number;
-  }
->;
 
 export interface CttInterferences {
   id: number;
@@ -63,35 +33,38 @@ export interface CttInterferences {
   };
 }
 
+type GoalValue = {
+  value: number;
+  goal: number;
+}
+
+export interface PerformanceIndicatorsWorkFront {
+  workFrontCode: number;
+  trips: number;
+  averageWeight: number;
+  trucksLack: string;
+  awaitingTransshipment: string;
+  engineIdle: string;
+  autopilotUse: GoalValue;
+  unproductiveTime: string;
+  ctOffenders: number;
+  tOffenders: number;
+  agriculturalEfficiency: GoalValue;
+  maneuvers: string;
+  zone: number;
+  averageRadius: number;
+  averageShiftInefficiency: string;
+}
+
+export interface PerformanceIndicatorsSummary {
+  label: string;
+  lostTons: number;
+  progress: number;
+}
+
 export interface CttPerformanceIndicators {
-  workFronts: Array<{
-    workFrontCode: number;
-    trips: number;
-    averageWeight: number;
-    trucksLack: string;
-    awaitingTransshipment: string;
-    engineIdle: string;
-    autopilotUse: {
-      value: number;
-      goal: number;
-    };
-    elevatorUse: {
-      value: number;
-      goal: number;
-    };
-    unproductiveTime: string;
-    ctOffenders: number;
-    tOffenders: number;
-    agriculturalEfficiency: {
-      value: number;
-      goal: number;
-    };
-    maneuvers: string;
-    zone: number;
-    averageRadius: number;
-    averageShiftInefficiency: string;
-  }>;
-  summary: CttSummaryReturn[];
+  workFronts: PerformanceIndicatorsWorkFront[];
+  summary: PerformanceIndicatorsSummary[];
 }
 
 export interface Journey {
@@ -109,11 +82,7 @@ export interface Journey {
   equipmentsInterferenceOperational: number[];
 }
 
-export interface CttSummaryReturn {
-  label: string;
-  lostTons: number;
-  progress: number;
-}
+
 
 export interface JourneyFront {
   totalOperationalTime: Record<string, number>;
@@ -176,10 +145,46 @@ export interface JourneyEventDetails {
   averageTime: number;
   totalCount: number;
   type: "AUTOMATIC" | "MANUAL";
-  // workFrontSummary: {
-  //   totalTime: number;
-  //   workFrontCode: number;
-  //   totalCount: number;
-  //   averageTime: number;
-  // }[];
+}
+
+export interface EfficiencyResponse {
+  hourmeter: {
+    totalHourMeter: number;
+    averageHourMeter: number;
+    control: number;
+    utilization: number;
+    goal: number;
+  };
+  elevator: {
+    totalElevator: number;
+    averageElevator: number;
+    control: number;
+    utilization: number;
+    goal?: number;
+  };
+  automaticPilot: {
+    totalAutomaticPilot: number;
+    averageAutomaticPilot: number;
+    control: number;
+    goal: number;
+    usePilotAutomatic: number;
+  };
+  operationalEffectiveness: {
+    total: number;
+    control: number;
+    goal: number;
+  };
+}
+
+export interface WorkFrontWeightReturn {
+  workFrontCode: number;
+  totalWeight: number;
+  averageWeight: number;
+  averageTripWeight: number;
+  trips: number;
+  loads: number;
+  lastTrips: number;
+  championWeight: number;
+  trucksCycles: number | null;
+  averageRadius: number | null;
 }

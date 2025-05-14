@@ -1,15 +1,12 @@
-import { CttEquipment } from "../../interfaces/availabilityAllocation.interface";
-import { CttDeliveredReturn, CttWorkFronts } from "../../interfaces/partialDelivered.interface";
-import { CttEquipmentProductivity, CttPerformanceIndicators, CttTelemetry, CttShiftInefficiencyByFront, JourneyResponse } from "../../interfaces/performanceIndicators.interface";
+import { CttPerformanceIndicators, JourneyResponse, EfficiencyResponse, WorkFrontWeightReturn } from "../../interfaces/performanceIndicators.interface";
+import { WorkFrontProductionReturn } from "../../interfaces/partialDelivered.interface";
 /**
  * GET the performance indicators by Front
- * @param equipmentProductivity equipment coming from the productivity API
- * @param equipments equipments from the day
- * @param telemetry telemetry of the day
- * @param tonPerHour calc of ton per hour in the PartialDelivered
- * @param workFronts the fronts code with the goals
- * @param shiftsInefficiency
- * @param journeys
+ * @param workFrontJourneyMap - Map of journeys received from the API journey service.
+ * @param workFrontEfficiencyMap - Map of efficiencies received from the API efficiency service.
+ * @param workFrontShiftInefficiencyMap - Map of shifts inefficiencies received from the API shift service.
+ * @param workFrontProductionMap - Map of workFront productions received from the API production service.
+ * @param workFrontWeightMap - Map of workFront weights received from the API weight service.
  */
-declare const createPerformanceIndicators: (equipmentProductivity: CttEquipmentProductivity[], equipments: CttEquipment[], telemetry: CttTelemetry[], tonPerHour: CttDeliveredReturn[], workFronts: CttWorkFronts[], shiftsInefficiency: CttShiftInefficiencyByFront[], journeys: Record<string, JourneyResponse>) => Promise<CttPerformanceIndicators>;
+declare const createPerformanceIndicators: (workFrontJourneyMap: Record<number, JourneyResponse>, workFrontEfficiencyMap: Record<number, EfficiencyResponse>, workFrontShiftInefficiencyMap: Record<number, string>, workFrontProductionMap: Record<number, WorkFrontProductionReturn>, workFrontWeightMap: Record<number, WorkFrontWeightReturn>) => Promise<CttPerformanceIndicators>;
 export default createPerformanceIndicators;
