@@ -1,9 +1,7 @@
-import { CttPartialDeliveredResult, CttTon, CttWorkFronts } from "../../interfaces/partialDelivered.interface";
+import { CttPartialDeliveredResult, WorkFrontProductionReturn } from "../../interfaces/partialDelivered.interface";
 /**
- * GET the partial develired tons by Front
- * @param workFronts the fronts code with the goals
- * @param realTons object with the tons by Front, it comes from the productivity API
- * @param date '2023-12-23 15:41:51' datetime filter
+ * GET the partial delivered tons by Front
+ * @param workFrontProductionMap - Map of workFront productions received from the API production service.
  */
-declare const createPartialDelivered: (workFronts: CttWorkFronts[], realTons: CttTon, date: string) => Promise<CttPartialDeliveredResult>;
+declare const createPartialDelivered: (workFrontProductionMap: Record<number, WorkFrontProductionReturn>) => Promise<CttPartialDeliveredResult>;
 export default createPartialDelivered;
