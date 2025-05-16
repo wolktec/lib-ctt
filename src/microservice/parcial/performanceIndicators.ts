@@ -59,8 +59,11 @@ const formatPerformanceIndicatorsWorkFronts = (
       workFrontJourney.unproductive.time + workFrontJourney.maintenance.time;
     const unproductiveTime = hourToTime(unproductiveTotalTime);
 
+    const autopilotUseValue =
+      workFrontEfficiency.automaticPilot.usePilotAutomatic;
+
     const autopilotUse = {
-      value: workFrontEfficiency.automaticPilot.usePilotAutomatic,
+      value: autopilotUseValue > 100 ? 100 : autopilotUseValue,
       goal: AUTOPILOT_USE_GOAL,
     };
 
