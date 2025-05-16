@@ -11,15 +11,15 @@ const formatPerformanceIndicatorsWorkFronts = (workFrontJourneyMap, workFrontEff
         const workFrontProduction = workFrontProductionMap[parsedWorkFrontCode];
         const workFrontWeight = workFrontWeightMap[parsedWorkFrontCode];
         const tonPerHour = workFrontProduction.hourlyDelivered.total;
-        const awaitingTransshipmentData = workFrontJourney.eventsDetails.find((event) => event.name === "Aguardando Transbordo" && event.type === "MANUAL");
+        const awaitingTransshipmentData = workFrontJourney?.eventsDetails?.find((event) => event.name === "Aguardando Transbordo" && event.type === "MANUAL");
         const awaitingTransshipmentTime = (0, helper_1.hourToTime)(awaitingTransshipmentData?.totalTime || 0);
-        const trucksLackData = workFrontJourney.eventsDetails.find((event) => event.name === "Falta caminhão" && event.type === "MANUAL");
+        const trucksLackData = workFrontJourney?.eventsDetails?.find((event) => event.name === "Falta caminhão" && event.type === "MANUAL");
         const trucksLackTotalTime = trucksLackData?.totalTime || 0;
         const trucksLackTime = (0, helper_1.hourToTime)(trucksLackTotalTime);
-        const maneuversData = workFrontJourney.eventsDetails.find((event) => event.name === "Manobra" && event.type === "AUTOMATIC");
+        const maneuversData = workFrontJourney?.eventsDetails?.find((event) => event.name === "Manobra" && event.type === "AUTOMATIC");
         const maneuversTime = (0, helper_1.hourToTime)(maneuversData?.totalTime || 0);
         const engineIdleTime = (0, helper_1.hourToTime)(workFrontJourney.engineIdle.time);
-        const unproductiveTotalTime = workFrontJourney.improductive.time + workFrontJourney.maintenance.time;
+        const unproductiveTotalTime = workFrontJourney.unproductive.time + workFrontJourney.maintenance.time;
         const unproductiveTime = (0, helper_1.hourToTime)(unproductiveTotalTime);
         const autopilotUse = {
             value: workFrontEfficiency.automaticPilot.usePilotAutomatic,

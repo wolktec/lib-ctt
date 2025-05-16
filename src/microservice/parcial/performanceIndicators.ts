@@ -34,7 +34,7 @@ const formatPerformanceIndicatorsWorkFronts = (
 
     const tonPerHour = workFrontProduction.hourlyDelivered.total;
 
-    const awaitingTransshipmentData = workFrontJourney.eventsDetails.find(
+    const awaitingTransshipmentData = workFrontJourney?.eventsDetails?.find(
       (event) =>
         event.name === "Aguardando Transbordo" && event.type === "MANUAL"
     );
@@ -42,13 +42,13 @@ const formatPerformanceIndicatorsWorkFronts = (
       awaitingTransshipmentData?.totalTime || 0
     );
 
-    const trucksLackData = workFrontJourney.eventsDetails.find(
+    const trucksLackData = workFrontJourney?.eventsDetails?.find(
       (event) => event.name === "Falta caminhão" && event.type === "MANUAL"
     );
     const trucksLackTotalTime = trucksLackData?.totalTime || 0;
     const trucksLackTime = hourToTime(trucksLackTotalTime);
 
-    const maneuversData = workFrontJourney.eventsDetails.find(
+    const maneuversData = workFrontJourney?.eventsDetails?.find(
       (event) => event.name === "Manobra" && event.type === "AUTOMATIC"
     );
     const maneuversTime = hourToTime(maneuversData?.totalTime || 0);
@@ -56,7 +56,7 @@ const formatPerformanceIndicatorsWorkFronts = (
     const engineIdleTime = hourToTime(workFrontJourney.engineIdle.time);
 
     const unproductiveTotalTime =
-      workFrontJourney.improductive.time + workFrontJourney.maintenance.time;
+      workFrontJourney.unproductive.time + workFrontJourney.maintenance.time;
     const unproductiveTime = hourToTime(unproductiveTotalTime);
 
     const autopilotUse = {

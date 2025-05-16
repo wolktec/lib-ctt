@@ -92,38 +92,13 @@ export interface CttShiftInefficiencyByFront {
     workFrontCode: number;
     time: string;
 }
-export interface JourneyResponse {
+interface Indicators {
+    time: number;
+    progress: number;
     totalEquipments: number;
-    totalTime: number;
-    activeEquipments: number[];
-    totalActiveEquipmentsInProductive: number;
-    totalActiveEquipmentsInInterference: number;
-    operational: {
-        time: number;
-        progress: number;
-        totalEquipments: number;
-        average: number;
-    };
-    maintenance: {
-        time: number;
-        progress: number;
-        totalEquipments: number;
-        average: number;
-    };
-    improductive: {
-        time: number;
-        progress: number;
-        totalEquipments: number;
-        average: number;
-    };
-    engineIdle: {
-        time: number;
-        average: number;
-        progress: number;
-        engineIdleEquipments: number[];
-    };
-    mechanicalAvailability: number;
-    eventsDetails: JourneyEventDetails[];
+    average: number;
+    equipments: number[];
+    count: number;
 }
 export interface JourneyEventDetails {
     code: number;
@@ -132,6 +107,19 @@ export interface JourneyEventDetails {
     averageTime: number;
     totalCount: number;
     type: "AUTOMATIC" | "MANUAL";
+}
+export interface JourneyResponse {
+    totalEquipments: number;
+    totalTime: number;
+    activeEquipments: number[];
+    totalActiveEquipmentsInProductive: number;
+    totalActiveEquipmentsInInterference: number;
+    operational: Indicators;
+    maintenance: Indicators;
+    unproductive: Indicators;
+    engineIdle: Indicators;
+    mechanicalAvailability: number;
+    eventsDetails?: JourneyEventDetails[];
 }
 export interface EfficiencyResponse {
     hourmeter: {
