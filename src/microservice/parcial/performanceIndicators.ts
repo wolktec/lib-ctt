@@ -51,7 +51,7 @@ const formatPerformanceIndicatorsWorkFronts = (
     const maneuversData = workFrontJourney?.eventsDetails?.find(
       (event) => event.name === "Manobra" && event.type === "AUTOMATIC"
     );
-    const maneuversTime = hourToTime(maneuversData?.totalTime || 0);
+    const maneuversTime = hourToTime(maneuversData?.averageTime || 0);
 
     const engineIdleTime = hourToTime(workFrontJourney.engineIdle.time);
 
