@@ -17,7 +17,7 @@ const formatPerformanceIndicatorsWorkFronts = (workFrontJourneyMap, workFrontEff
         const trucksLackTotalTime = trucksLackData?.totalTime || 0;
         const trucksLackTime = (0, helper_1.hourToTime)(trucksLackTotalTime);
         const maneuversData = workFrontJourney?.eventsDetails?.find((event) => event.name === "Manobra" && event.type === "AUTOMATIC");
-        const maneuversTime = (0, helper_1.hourToTime)(maneuversData?.totalTime || 0);
+        const maneuversTime = (0, helper_1.hourToTime)(maneuversData?.averageTime || 0);
         const engineIdleTime = (0, helper_1.hourToTime)(workFrontJourney.engineIdle.time);
         const unproductiveTotalTime = workFrontJourney.unproductive.time + workFrontJourney.maintenance.time;
         const unproductiveTime = (0, helper_1.hourToTime)(unproductiveTotalTime);
