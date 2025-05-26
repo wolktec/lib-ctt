@@ -21,10 +21,9 @@ export interface CttEvent {
     id: number;
     name: string;
     order: number;
-  },
+  };
   type: "AUTOMATIC" | "MANUAL";
 }
-
 
 export interface CttInterferences {
   id: number;
@@ -36,7 +35,7 @@ export interface CttInterferences {
 type GoalValue = {
   value: number;
   goal: number;
-}
+};
 
 export interface PerformanceIndicatorsWorkFront {
   workFrontCode: number;
@@ -51,7 +50,7 @@ export interface PerformanceIndicatorsWorkFront {
   tOffenders: number;
   agriculturalEfficiency: GoalValue;
   maneuvers: string;
-  zone: number;
+  zone: string;
   averageRadius: number;
   averageShiftInefficiency: string;
 }
@@ -81,8 +80,6 @@ export interface Journey {
   interferenceOperationalEvents: CttEvent[];
   equipmentsInterferenceOperational: number[];
 }
-
-
 
 export interface JourneyFront {
   totalOperationalTime: Record<string, number>;
@@ -133,6 +130,7 @@ export interface JourneyResponse {
   engineIdle: Indicators;
   mechanicalAvailability: number;
   eventsDetails?: JourneyEventDetails[];
+  harvestAreas: string[];
 }
 
 export interface EfficiencyResponse {
