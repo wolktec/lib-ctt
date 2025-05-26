@@ -96,7 +96,7 @@ const formatPerformanceIndicatorsWorkFronts = (
       tOffenders,
       agriculturalEfficiency,
       maneuvers: maneuversTime,
-      zone: uniqueZones.join("/"),
+      zone: uniqueZones.join(" / "),
       averageRadius: workFrontWeight.averageRadius || 0,
       averageShiftInefficiency: workFrontShiftInefficiency,
     };
