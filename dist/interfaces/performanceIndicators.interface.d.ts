@@ -47,7 +47,7 @@ export interface PerformanceIndicatorsWorkFront {
     tOffenders: number;
     agriculturalEfficiency: GoalValue;
     maneuvers: string;
-    zone: number;
+    zone: string;
     averageRadius: number;
     averageShiftInefficiency: string;
 }
@@ -120,6 +120,7 @@ export interface JourneyResponse {
     engineIdle: Indicators;
     mechanicalAvailability: number;
     eventsDetails?: JourneyEventDetails[];
+    harvestAreas: string[];
 }
 export interface EfficiencyResponse {
     hourmeter: {

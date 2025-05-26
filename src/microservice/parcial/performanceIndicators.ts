@@ -77,6 +77,12 @@ const formatPerformanceIndicatorsWorkFronts = (
       goal: AGRICULTURAL_EFFICIENCY_GOAL,
     };
 
+    const zones = workFrontJourney.harvestAreas.map(
+      (area) => area.split("/")[0]
+    );
+
+    const uniqueZones = Array.from(new Set(zones));
+
     return {
       workFrontCode: parsedWorkFrontCode,
       trips: workFrontWeight.trips,
@@ -90,7 +96,7 @@ const formatPerformanceIndicatorsWorkFronts = (
       tOffenders,
       agriculturalEfficiency,
       maneuvers: maneuversTime,
-      zone: 0,
+      zone: uniqueZones.join("/"),
       averageRadius: workFrontWeight.averageRadius || 0,
       averageShiftInefficiency: workFrontShiftInefficiency,
     };
