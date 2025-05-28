@@ -68,7 +68,8 @@ const formatPerformanceIndicatorsWorkFronts = (
     };
 
     const ctOffenders =
-      (unproductiveTotalTime * tonPerHour) / workFrontJourney.totalEquipments;
+      (unproductiveTotalTime * tonPerHour) /
+      workFrontJourney.activeEquipments.total;
 
     const tOffenders = trucksLackTotalTime * tonPerHour;
 
