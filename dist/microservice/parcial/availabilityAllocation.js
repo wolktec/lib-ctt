@@ -9,9 +9,10 @@ const createAvailabilityAllocation = async (monitoringCenterAvailability) => {
     const formattedGroupsData = groups.map((groupData) => {
         const { group, workFronts } = groupData;
         const formattedWorkFrontsData = workFronts.map((workFront) => {
-            const { workFrontCode, availability, available, unavailable } = workFront;
+            const { workFrontCode, allocated, availability, available, unavailable } = workFront;
             return {
                 workFrontCode,
+                allocated: allocated || 0,
                 equipments: (available || 0) + (unavailable || 0),
                 availability: availability || 0,
             };
