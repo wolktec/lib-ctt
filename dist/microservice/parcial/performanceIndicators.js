@@ -26,7 +26,8 @@ const formatPerformanceIndicatorsWorkFronts = (workFrontJourneyMap, workFrontEff
             value: autopilotUseValue > 100 ? 100 : autopilotUseValue,
             goal: AUTOPILOT_USE_GOAL,
         };
-        const ctOffenders = (unproductiveTotalTime * tonPerHour) / workFrontJourney.totalEquipments;
+        const ctOffenders = (unproductiveTotalTime * tonPerHour) /
+            workFrontJourney.activeEquipments.total;
         const tOffenders = trucksLackTotalTime * tonPerHour;
         const agriculturalEfficiency = {
             value: workFrontEfficiency.elevator.utilization,
