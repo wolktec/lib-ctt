@@ -17,7 +17,7 @@
     "dev": "ts-node src/index.ts",
     "dev:auto": "concurrently \"pnpm run build --watch\" \"pnpm run start\""
   },
-  "author": "",
+  "author": "Analitica",
   "license": "ISC",
   "devDependencies": {
     "@types/express": "^5.0.0",
