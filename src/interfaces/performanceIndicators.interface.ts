@@ -150,6 +150,7 @@ export interface JourneyEventDetails {
 
 export interface JourneyResponse {
   totalTime: number;
+  allocated: EquipmentAllocationData;
   activeEquipments: EquipmentAllocationData;
   equipmentsInProduction: EquipmentAllocationData;
   equipmentsInInterference: EquipmentAllocationData;
