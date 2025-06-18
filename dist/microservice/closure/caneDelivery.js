@@ -27,15 +27,15 @@ const processUnitData = (unit, currentMonth) => {
                 totalHarvestWorkFrontProductionMap[parsedWorkFrontCode] = 0;
             }
             totalHarvestWorkFrontProductionMap[parsedWorkFrontCode] +=
-                production.periodDelivered.total;
+                production.delivered.total;
             if (month === currentMonth) {
                 totalMonthlyWorkFrontProductionMap[parsedWorkFrontCode] =
-                    production.periodDelivered.total;
+                    production.delivered.total;
             }
         });
     });
-    const totalUnitDaily = Object.values(workFrontProductionMap).reduce((sum, production) => sum + production.periodDelivered.total, 0);
-    const totalUnitDailyGoal = Object.values(workFrontProductionMap).reduce((sum, production) => sum + production.dailyDelivered.goal, 0);
+    const totalUnitDaily = Object.values(workFrontProductionMap).reduce((sum, production) => sum + production.delivered.total, 0);
+    const totalUnitDailyGoal = Object.values(workFrontProductionMap).reduce((sum, production) => sum + production.delivered.totalOverGoal, 0);
     const totalUnitMonthly = Object.values(totalMonthlyWorkFrontProductionMap).reduce((sum, total) => sum + total, 0);
     const totalUnitHarvest = Object.values(totalHarvestWorkFrontProductionMap).reduce((sum, total) => sum + total, 0);
     return {
@@ -56,13 +56,13 @@ const formatCttWorkFrontsCaneDelivery = (defaultWorkFrontProductionMap, totalMon
         const totalHarvest = totalHarvestWorkFrontProductionMap[parsedWorkFrontCode];
         return {
             workFrontCode: parsedWorkFrontCode,
-            day: production.periodDelivered.total,
-            dayGoalPercentage: production.dailyDelivered.progress,
+            day: production.delivered.total,
+            dayGoalPercentage: production.delivered.totalOverGoal,
             tonPerHour: production.hourlyDelivered.total,
             month: totalMonthlyWorkFrontProductionMap[parsedWorkFrontCode],
             harvest: totalHarvest,
             harvestGoalPercentage: (totalHarvest / harvestGoal) * 100,
-            goal: production.dailyDelivered.goal,
+            goal: production.delivered.goal,
         };
     });
 };

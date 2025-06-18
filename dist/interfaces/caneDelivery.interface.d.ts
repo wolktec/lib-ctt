@@ -1,4 +1,4 @@
-import { CttWorkFronts, WorkFrontProductionReturn } from "./partialDelivered.interface";
+import { CttWorkFronts, GetProductionReturn } from "./partialDelivered.interface";
 export interface CttCaneDelivery {
     workFronts: CttWorkFrontsCaneDelivery[];
     units: CttUnitsCaneDelivery[];
@@ -40,8 +40,8 @@ export interface CttWorkFrontUnit extends CttWorkFronts {
 export interface UnitData {
     code: number;
     name: string;
-    workFrontProductionMap: Record<number, WorkFrontProductionReturn>;
-    monthlyWorkFrontProductionMap: Record<string, Record<number, WorkFrontProductionReturn>>;
+    workFrontProductionMap: Record<number, GetProductionReturn>;
+    monthlyWorkFrontProductionMap: Record<string, Record<number, GetProductionReturn>>;
 }
 export interface CreateCaneDeliveryParams {
     date: string;
@@ -51,6 +51,6 @@ export interface CreateCaneDeliveryParams {
 export interface UnitProductionData {
     code: number;
     name: string;
-    monthlyWorkFrontProductionMap: Record<string, Record<number, WorkFrontProductionReturn>>;
-    workFrontProductionMap: Record<number, WorkFrontProductionReturn>;
+    monthlyWorkFrontProductionMap: Record<string, Record<number, GetProductionReturn>>;
+    workFrontProductionMap: Record<number, GetProductionReturn>;
 }

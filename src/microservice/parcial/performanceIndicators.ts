@@ -9,7 +9,7 @@ import {
   PerformanceIndicatorsSummary,
 } from "../../interfaces/performanceIndicators.interface";
 
-import { WorkFrontProductionReturn } from "../../interfaces/partialDelivered.interface";
+import { GetProductionReturn } from "../../interfaces/partialDelivered.interface";
 
 const AUTOPILOT_USE_GOAL = 75;
 const AGRICULTURAL_EFFICIENCY_GOAL = 70;
@@ -18,7 +18,7 @@ const formatPerformanceIndicatorsWorkFronts = (
   workFrontJourneyMap: Record<number, JourneyResponse>,
   workFrontEfficiencyMap: Record<number, EfficiencyResponse>,
   workFrontShiftInefficiencyMap: Record<number, string>,
-  workFrontProductionMap: Record<number, WorkFrontProductionReturn>,
+  workFrontProductionMap: Record<number, GetProductionReturn>,
   workFrontWeightMap: Record<number, WorkFrontWeightReturn>
 ): PerformanceIndicatorsWorkFront[] => {
   const formattedWorkFronts: PerformanceIndicatorsWorkFront[] = Object.entries(
@@ -150,7 +150,7 @@ const createPerformanceIndicators = async (
   workFrontJourneyMap: Record<number, JourneyResponse>,
   workFrontEfficiencyMap: Record<number, EfficiencyResponse>,
   workFrontShiftInefficiencyMap: Record<number, string>,
-  workFrontProductionMap: Record<number, WorkFrontProductionReturn>,
+  workFrontProductionMap: Record<number, GetProductionReturn>,
   workFrontWeightMap: Record<number, WorkFrontWeightReturn>
 ): Promise<CttPerformanceIndicators> => {
   try {

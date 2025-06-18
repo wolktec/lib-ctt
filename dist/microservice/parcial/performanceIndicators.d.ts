@@ -1,5 +1,5 @@
 import { CttPerformanceIndicators, JourneyResponse, EfficiencyResponse, WorkFrontWeightReturn } from "../../interfaces/performanceIndicators.interface";
-import { WorkFrontProductionReturn } from "../../interfaces/partialDelivered.interface";
+import { GetProductionReturn } from "../../interfaces/partialDelivered.interface";
 /**
  * GET the performance indicators by Front
  * @param workFrontJourneyMap - Map of journeys received from the API journey service.
@@ -8,5 +8,5 @@ import { WorkFrontProductionReturn } from "../../interfaces/partialDelivered.int
  * @param workFrontProductionMap - Map of workFront productions received from the API production service.
  * @param workFrontWeightMap - Map of workFront weights received from the API weight service.
  */
-declare const createPerformanceIndicators: (workFrontJourneyMap: Record<number, JourneyResponse>, workFrontEfficiencyMap: Record<number, EfficiencyResponse>, workFrontShiftInefficiencyMap: Record<number, string>, workFrontProductionMap: Record<number, WorkFrontProductionReturn>, workFrontWeightMap: Record<number, WorkFrontWeightReturn>) => Promise<CttPerformanceIndicators>;
+declare const createPerformanceIndicators: (workFrontJourneyMap: Record<number, JourneyResponse>, workFrontEfficiencyMap: Record<number, EfficiencyResponse>, workFrontShiftInefficiencyMap: Record<number, string>, workFrontProductionMap: Record<number, GetProductionReturn>, workFrontWeightMap: Record<number, WorkFrontWeightReturn>) => Promise<CttPerformanceIndicators>;
 export default createPerformanceIndicators;
