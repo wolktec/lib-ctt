@@ -6,13 +6,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
  */
 const createPartialDelivered = async (workFrontProductionMap) => {
     try {
-        const formattedDelivered = Object.entries(workFrontProductionMap)
-            .map(([workFrontCode, production]) => ({
+        const formattedDelivered = Object.entries(workFrontProductionMap).map(([workFrontCode, production]) => ({
             workFrontCode: Number(workFrontCode),
-            goal: production.dailyDelivered.goal,
-            realTons: production.periodDelivered.total,
-            estimatedTons: production.dailyDelivered.total,
-            estimatedPerGoal: production.dailyDelivered.progress,
+            goal: production.delivered.goal,
+            realTons: production.delivered.total,
+            estimatedTons: production.dailyProjectedDelivered.total,
+            estimatedPerGoal: production.dailyProjectedDelivered.totalOverGoal,
             tonPerHour: production.hourlyDelivered.total,
         }));
         const totalEstimated = formattedDelivered.reduce((acc, item) => acc + item.estimatedTons, 0);

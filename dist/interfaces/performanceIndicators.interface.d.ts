@@ -175,6 +175,17 @@ export interface EfficiencyResponse {
         goal: number;
     };
 }
+export interface EquipmentResponse {
+    equipmentCode: number;
+    totalWeight: number;
+    averageWeight: number;
+    averageTripWeight: number;
+    trips: number;
+    loads: number;
+    lastTrips: number;
+    championWeight: number;
+    workFrontCode: number;
+}
 export interface WorkFrontWeightReturn {
     workFrontCode: number;
     totalWeight: number;
@@ -186,5 +197,6 @@ export interface WorkFrontWeightReturn {
     championWeight: number;
     trucksCycles: number | null;
     averageRadius: number | null;
+    equipmentsData: EquipmentResponse[];
 }
 export {};

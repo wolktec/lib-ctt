@@ -9,7 +9,7 @@ import {
   UnitProductionData,
 } from "../../interfaces/caneDelivery.interface";
 
-import { WorkFrontProductionReturn } from "../../interfaces/partialDelivered.interface";
+import { GetProductionReturn } from "../../interfaces/partialDelivered.interface";
 
 const UNIT_MONTH_CANE_DELIVERY_GOAL_MAP: Record<number, number> = {
   112: 107455,
@@ -47,11 +47,11 @@ const processUnitData = (unit: UnitProductionData, currentMonth: string) => {
           }
 
           totalHarvestWorkFrontProductionMap[parsedWorkFrontCode] +=
-            production.periodDelivered.total;
+            production.delivered.total;
 
           if (month === currentMonth) {
             totalMonthlyWorkFrontProductionMap[parsedWorkFrontCode] =
-              production.periodDelivered.total;
+              production.delivered.total;
           }
         }
       );
@@ -59,12 +59,12 @@ const processUnitData = (unit: UnitProductionData, currentMonth: string) => {
   );
 
   const totalUnitDaily = Object.values(workFrontProductionMap).reduce(
-    (sum, production) => sum + production.periodDelivered.total,
+    (sum, production) => sum + production.delivered.total,
     0
   );
 
   const totalUnitDailyGoal = Object.values(workFrontProductionMap).reduce(
-    (sum, production) => sum + production.dailyDelivered.goal,
+    (sum, production) => sum + production.delivered.totalOverGoal,
     0
   );
 
@@ -90,7 +90,7 @@ const processUnitData = (unit: UnitProductionData, currentMonth: string) => {
 };
 
 const formatCttWorkFrontsCaneDelivery = (
-  defaultWorkFrontProductionMap: Record<number, WorkFrontProductionReturn>,
+  defaultWorkFrontProductionMap: Record<number, GetProductionReturn>,
   totalMonthlyWorkFrontProductionMap: Record<number, number>,
   totalHarvestWorkFrontProductionMap: Record<number, number>,
   harvestGoal: number
@@ -103,13 +103,13 @@ const formatCttWorkFrontsCaneDelivery = (
 
       return {
         workFrontCode: parsedWorkFrontCode,
-        day: production.periodDelivered.total,
-        dayGoalPercentage: production.dailyDelivered.progress,
+        day: production.delivered.total,
+        dayGoalPercentage: production.delivered.totalOverGoal,
         tonPerHour: production.hourlyDelivered.total,
         month: totalMonthlyWorkFrontProductionMap[parsedWorkFrontCode],
         harvest: totalHarvest,
         harvestGoalPercentage: (totalHarvest / harvestGoal) * 100,
-        goal: production.dailyDelivered.goal,
+        goal: production.delivered.goal,
       };
     }
   );
@@ -132,7 +132,7 @@ const formatCttUnitCaneDelivery = (
 
 const formatCttDayPeriodCaneDelivery = (
   totalDaily: number,
-  goal: number,
+  goal: number
 ): CttPeriodsCaneDelivery => {
   const progress = normalizeCalc((totalDaily / goal) * 100, 2);
 
@@ -151,7 +151,10 @@ const formatCttDayPeriodCaneDelivery = (
   };
 };
 
-const formatCttMonthPeriodCaneDelivery = (totalMonthly: number, goal: number): CttPeriodsCaneDelivery => {
+const formatCttMonthPeriodCaneDelivery = (
+  totalMonthly: number,
+  goal: number
+): CttPeriodsCaneDelivery => {
   const progress = normalizeCalc((totalMonthly / goal) * 100, 2);
 
   const toDo = goal - totalMonthly;
@@ -175,9 +178,12 @@ const formatCttMonthPeriodCaneDelivery = (totalMonthly: number, goal: number): C
       },
     ],
   };
-}
+};
 
-const formatCttHarvestPeriodCaneDelivery = (totalHarvest: number, goal: number): CttPeriodsCaneDelivery => {
+const formatCttHarvestPeriodCaneDelivery = (
+  totalHarvest: number,
+  goal: number
+): CttPeriodsCaneDelivery => {
   const progress = normalizeCalc((totalHarvest / goal) * 100, 2);
 
   const toDo = goal - totalHarvest;
@@ -206,7 +212,7 @@ const formatCttHarvestPeriodCaneDelivery = (totalHarvest: number, goal: number):
       },
     ],
   };
-}
+};
 
 /**
  * GET the cane delivered based on the productivity API registered by FRONT
@@ -251,10 +257,19 @@ const createCaneDelivery = async ({
   ];
 
   const periods: CttPeriodsCaneDelivery[] = [
-    formatCttDayPeriodCaneDelivery(defaultUnitData.totalUnitDaily, defaultUnitData.totalUnitDailyGoal),
-    formatCttMonthPeriodCaneDelivery(defaultUnitData.totalUnitMonthly, defaultUnitData.monthGoal),
-    formatCttHarvestPeriodCaneDelivery(defaultUnitData.totalUnitHarvest, defaultUnitData.harvestGoal),
-  ]
+    formatCttDayPeriodCaneDelivery(
+      defaultUnitData.totalUnitDaily,
+      defaultUnitData.totalUnitDailyGoal
+    ),
+    formatCttMonthPeriodCaneDelivery(
+      defaultUnitData.totalUnitMonthly,
+      defaultUnitData.monthGoal
+    ),
+    formatCttHarvestPeriodCaneDelivery(
+      defaultUnitData.totalUnitHarvest,
+      defaultUnitData.harvestGoal
+    ),
+  ];
 
   return {
     workFronts,
