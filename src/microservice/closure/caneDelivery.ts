@@ -64,7 +64,7 @@ const processUnitData = (unit: UnitProductionData, currentMonth: string) => {
   );
 
   const totalUnitDailyGoal = Object.values(workFrontProductionMap).reduce(
-    (sum, production) => sum + production.delivered.totalOverGoal,
+    (sum, production) => sum + production.delivered.goal,
     0
   );
 
