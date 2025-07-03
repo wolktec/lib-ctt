@@ -38,7 +38,7 @@ const formatPerformanceIndicatorsWorkFronts = (workFrontJourneyMap, workFrontEff
         return {
             workFrontCode: parsedWorkFrontCode,
             trips: workFrontWeight.trips,
-            averageWeight: workFrontWeight.averageWeight,
+            averageWeight: workFrontWeight.averageTripWeight,
             trucksLack: trucksLackTime,
             awaitingTransshipment: awaitingTransshipmentTime,
             engineIdle: engineIdleTime,
