@@ -35,7 +35,7 @@ const processUnitData = (unit, currentMonth) => {
         });
     });
     const totalUnitDaily = Object.values(workFrontProductionMap).reduce((sum, production) => sum + production.delivered.total, 0);
-    const totalUnitDailyGoal = Object.values(workFrontProductionMap).reduce((sum, production) => sum + production.delivered.totalOverGoal, 0);
+    const totalUnitDailyGoal = Object.values(workFrontProductionMap).reduce((sum, production) => sum + production.delivered.goal, 0);
     const totalUnitMonthly = Object.values(totalMonthlyWorkFrontProductionMap).reduce((sum, total) => sum + total, 0);
     const totalUnitHarvest = Object.values(totalHarvestWorkFrontProductionMap).reduce((sum, total) => sum + total, 0);
     return {
