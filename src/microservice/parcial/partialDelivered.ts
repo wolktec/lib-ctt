@@ -22,6 +22,7 @@ const createPartialDelivered = async (
       estimatedTons: production.dailyProjectedDelivered.total,
       estimatedPerGoal: production.dailyProjectedDelivered.totalOverGoal,
       tonPerHour: production.hourlyDelivered.total,
+      tonPerHourmeter: production.tonPerHourmeter,
     }));
 
     const totalEstimated = formattedDelivered.reduce(

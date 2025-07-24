@@ -46,6 +46,8 @@ export interface PerformanceIndicatorsWorkFront {
   engineIdle: string;
   autopilotUse: GoalValue;
   unproductiveTime: string;
+  maintenanceTime: string;
+  mechanicalAvailability?: number;
   ctOffenders: number;
   tOffenders: number;
   agriculturalEfficiency: GoalValue;
@@ -53,6 +55,7 @@ export interface PerformanceIndicatorsWorkFront {
   zone: string;
   averageRadius: number;
   averageShiftInefficiency: string;
+  totalHourmeter: number;
 }
 
 export interface PerformanceIndicatorsSummary {

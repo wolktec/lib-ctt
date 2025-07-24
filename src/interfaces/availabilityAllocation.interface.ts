@@ -21,6 +21,7 @@ interface AvailabilityAndAllocationWorkFrontData {
   workFrontCode: number;
   allocated: number;
   equipments: number;
+  unavailable: number;
   availability: number;
 }
 

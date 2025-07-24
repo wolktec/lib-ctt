@@ -14,11 +14,13 @@ import { GetProductionReturn } from "../../interfaces/partialDelivered.interface
 const UNIT_MONTH_CANE_DELIVERY_GOAL_MAP: Record<number, number> = {
   112: 107455,
   115: 148112,
+  127: 100000,
 };
 
 const UNIT_HARVEST_CANE_DELIVERY_GOAL_MAP: Record<number, number> = {
   112: 1960000,
   115: 2687880,
+  127: 1000000,
 };
 
 const getCurrentMonthDate = (date: string): string => {
@@ -106,6 +108,7 @@ const formatCttWorkFrontsCaneDelivery = (
         day: production.delivered.total,
         dayGoalPercentage: production.delivered.totalOverGoal,
         tonPerHour: production.hourlyDelivered.total,
+        tonPerHourmeter: production.tonPerHourmeter,
         month: totalMonthlyWorkFrontProductionMap[parsedWorkFrontCode],
         harvest: totalHarvest,
         harvestGoalPercentage: (totalHarvest / harvestGoal) * 100,

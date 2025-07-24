@@ -63,6 +63,7 @@ export interface CttDeliveredReturn {
   realTons: number;
   estimatedTons: number;
   tonPerHour: number;
+  tonPerHourmeter: number;
   estimatedPerGoal: number;
 }
 

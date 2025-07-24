@@ -4,10 +4,12 @@ const helper_1 = require("../../helper/helper");
 const UNIT_MONTH_CANE_DELIVERY_GOAL_MAP = {
     112: 107455,
     115: 148112,
+    127: 100000,
 };
 const UNIT_HARVEST_CANE_DELIVERY_GOAL_MAP = {
     112: 1960000,
     115: 2687880,
+    127: 1000000,
 };
 const getCurrentMonthDate = (date) => {
     const parsedDate = new Date(date);
@@ -59,6 +61,7 @@ const formatCttWorkFrontsCaneDelivery = (defaultWorkFrontProductionMap, totalMon
             day: production.delivered.total,
             dayGoalPercentage: production.delivered.totalOverGoal,
             tonPerHour: production.hourlyDelivered.total,
+            tonPerHourmeter: production.tonPerHourmeter,
             month: totalMonthlyWorkFrontProductionMap[parsedWorkFrontCode],
             harvest: totalHarvest,
             harvestGoalPercentage: (totalHarvest / harvestGoal) * 100,
