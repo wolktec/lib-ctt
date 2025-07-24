@@ -21,11 +21,13 @@ const formatPerformanceIndicatorsWorkFronts = (workFrontJourneyMap, workFrontEff
         const engineIdleTime = (0, helper_1.hourToTime)(workFrontJourney.engineIdle.time);
         const unproductiveTotalTime = workFrontJourney.unproductive.time + workFrontJourney.maintenance.time;
         const unproductiveTime = (0, helper_1.hourToTime)(unproductiveTotalTime);
+        const maintenanceTime = (0, helper_1.hourToTime)(workFrontJourney.maintenance.time);
         const autopilotUseValue = workFrontEfficiency.automaticPilot.usePilotAutomatic;
         const autopilotUse = {
             value: autopilotUseValue > 100 ? 100 : autopilotUseValue,
             goal: AUTOPILOT_USE_GOAL,
         };
+        const totalHourmeter = workFrontEfficiency.hourmeter.totalHourMeter;
         const ctOffenders = (unproductiveTotalTime * tonPerHour) /
             workFrontJourney.activeEquipments.total;
         const tOffenders = trucksLackTotalTime * tonPerHour;
@@ -44,6 +46,7 @@ const formatPerformanceIndicatorsWorkFronts = (workFrontJourneyMap, workFrontEff
             engineIdle: engineIdleTime,
             autopilotUse,
             unproductiveTime,
+            maintenanceTime,
             ctOffenders: ctOffenders || 0,
             tOffenders: tOffenders || 0,
             agriculturalEfficiency,
@@ -51,6 +54,7 @@ const formatPerformanceIndicatorsWorkFronts = (workFrontJourneyMap, workFrontEff
             zone: uniqueZones.join(" / "),
             averageRadius: workFrontWeight.averageRadius || 0,
             averageShiftInefficiency: workFrontShiftInefficiency,
+            totalHourmeter,
         };
     });
     return formattedWorkFronts;

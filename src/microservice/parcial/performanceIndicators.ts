@@ -59,6 +59,8 @@ const formatPerformanceIndicatorsWorkFronts = (
       workFrontJourney.unproductive.time + workFrontJourney.maintenance.time;
     const unproductiveTime = hourToTime(unproductiveTotalTime);
 
+    const maintenanceTime = hourToTime(workFrontJourney.maintenance.time);
+
     const autopilotUseValue =
       workFrontEfficiency.automaticPilot.usePilotAutomatic;
 
@@ -66,6 +68,8 @@ const formatPerformanceIndicatorsWorkFronts = (
       value: autopilotUseValue > 100 ? 100 : autopilotUseValue,
       goal: AUTOPILOT_USE_GOAL,
     };
+
+    const totalHourmeter = workFrontEfficiency.hourmeter.totalHourMeter;
 
     const ctOffenders =
       (unproductiveTotalTime * tonPerHour) /
@@ -93,6 +97,7 @@ const formatPerformanceIndicatorsWorkFronts = (
       engineIdle: engineIdleTime,
       autopilotUse,
       unproductiveTime,
+      maintenanceTime,
       ctOffenders: ctOffenders || 0,
       tOffenders: tOffenders || 0,
       agriculturalEfficiency,
@@ -100,6 +105,7 @@ const formatPerformanceIndicatorsWorkFronts = (
       zone: uniqueZones.join(" / "),
       averageRadius: workFrontWeight.averageRadius || 0,
       averageShiftInefficiency: workFrontShiftInefficiency,
+      totalHourmeter,
     };
   });
 

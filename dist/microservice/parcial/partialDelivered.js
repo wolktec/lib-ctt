@@ -13,6 +13,7 @@ const createPartialDelivered = async (workFrontProductionMap) => {
             estimatedTons: production.dailyProjectedDelivered.total,
             estimatedPerGoal: production.dailyProjectedDelivered.totalOverGoal,
             tonPerHour: production.hourlyDelivered.total,
+            tonPerHourmeter: production.tonPerHourmeter,
         }));
         const totalEstimated = formattedDelivered.reduce((acc, item) => acc + item.estimatedTons, 0);
         const totalGoal = formattedDelivered.reduce((acc, item) => acc + item.goal, 0);

@@ -15,6 +15,7 @@ export interface CttWorkFrontsCaneDelivery {
   dayGoalPercentage: number;
   month: number;
   tonPerHour: number;
+  tonPerHourmeter: number;
   harvest: number;
   harvestGoalPercentage: number;
   goal: number;

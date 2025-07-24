@@ -14,6 +14,7 @@ const createAvailabilityAllocation = async (monitoringCenterAvailability) => {
                 workFrontCode,
                 allocated: allocated || 0,
                 equipments: (available || 0) + (unavailable || 0),
+                unavailable: unavailable || 0,
                 availability: availability || 0,
             };
         });
