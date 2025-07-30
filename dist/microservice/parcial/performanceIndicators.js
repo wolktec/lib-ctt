@@ -23,7 +23,8 @@ const formatPerformanceIndicatorsWorkFronts = (workFrontJourneyMap, workFrontJou
         const unproductiveTotalTime = workFrontJourney.unproductive.time + workFrontJourney.maintenance.time;
         const unproductiveTime = (0, helper_1.hourToTime)(unproductiveTotalTime);
         const maintenanceTime = (0, helper_1.hourToTime)(workFrontJourney.maintenance.time);
-        const loadingTime = (0, helper_1.hourToTime)(workFrontJourneyTractor.eventsDetails?.find((event) => event.name === "Carregando" && event.type === "MANUAL")?.totalTime || 0);
+        const loadingTime = (0, helper_1.hourToTime)(workFrontJourneyTractor.eventsDetails?.find((event) => event.name === "Carregando" && event.type === "AUTOMATIC")?.averageTime || 0);
+        const countLoadTime = workFrontJourneyTractor.eventsDetails?.find((event) => event.name === "Carregando" && event.type === "AUTOMATIC")?.totalCount || 0;
         const autopilotUseValue = workFrontEfficiency.automaticPilot.usePilotAutomatic;
         const autopilotUse = {
             value: autopilotUseValue > 100 ? 100 : autopilotUseValue,
@@ -57,6 +58,7 @@ const formatPerformanceIndicatorsWorkFronts = (workFrontJourneyMap, workFrontJou
             averageShiftInefficiency: workFrontShiftInefficiency,
             totalHourmeter,
             loadingTime,
+            countLoadTime: countLoadTime,
         };
     });
     return formattedWorkFronts;
