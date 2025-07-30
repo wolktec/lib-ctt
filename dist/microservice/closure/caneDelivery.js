@@ -150,16 +150,14 @@ const formatCttHarvestPeriodCaneDelivery = (totalHarvest, goal) => {
  * @param defaultUnit - Default unit data containing unit code, work fronts and productions map.
  * @param secondUnit - Second unit data containing unit code, work fronts and productions map.
  */
-const createCaneDelivery = async ({ date, defaultUnit, secondUnit, }) => {
+const createCaneDelivery = async ({ date, defaultUnit, }) => {
     const currentMonth = getCurrentMonthDate(date);
     const defaultUnitData = processUnitData(defaultUnit, currentMonth);
-    const secondUnitData = processUnitData(secondUnit, currentMonth);
     // Format work fronts
     const workFronts = formatCttWorkFrontsCaneDelivery(defaultUnit.workFrontProductionMap, defaultUnitData.totalMonthlyWorkFrontProductionMap, defaultUnitData.totalHarvestWorkFrontProductionMap, defaultUnitData.harvestGoal);
     // Format units
     const units = [
         formatCttUnitCaneDelivery(defaultUnit.name, defaultUnitData.totalUnitDaily, defaultUnitData.totalUnitMonthly, defaultUnitData.totalUnitHarvest, defaultUnitData.harvestGoal),
-        formatCttUnitCaneDelivery(secondUnit.name, secondUnitData.totalUnitDaily, secondUnitData.totalUnitMonthly, secondUnitData.totalUnitHarvest, secondUnitData.harvestGoal),
     ];
     const periods = [
         formatCttDayPeriodCaneDelivery(defaultUnitData.totalUnitDaily, defaultUnitData.totalUnitDailyGoal),
