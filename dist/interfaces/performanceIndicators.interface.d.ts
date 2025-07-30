@@ -50,6 +50,7 @@ export interface PerformanceIndicatorsWorkFront {
     agriculturalEfficiency: GoalValue;
     maneuvers: string;
     loadingTime: string;
+    countLoadTime: number;
     zone: string;
     averageRadius: number;
     averageShiftInefficiency: string;

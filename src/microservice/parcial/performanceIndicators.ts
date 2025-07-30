@@ -66,9 +66,15 @@ const formatPerformanceIndicatorsWorkFronts = (
 
     const loadingTime = hourToTime(
       workFrontJourneyTractor.eventsDetails?.find(
-        (event) => event.name === "Carregando" && event.type === "MANUAL"
-      )?.totalTime || 0
+        (event) => event.name === "Carregando" && event.type === "AUTOMATIC"
+      )?.averageTime || 0
     );
+
+    const countLoadTime =
+      workFrontJourneyTractor.eventsDetails?.find(
+        (event) => event.name === "Carregando" && event.type === "AUTOMATIC"
+      )?.totalCount || 0;
+
     const autopilotUseValue =
       workFrontEfficiency.automaticPilot.usePilotAutomatic;
 
@@ -113,6 +119,7 @@ const formatPerformanceIndicatorsWorkFronts = (
       averageShiftInefficiency: workFrontShiftInefficiency,
       totalHourmeter,
       loadingTime,
+      countLoadTime: countLoadTime,
     };
   });
 
