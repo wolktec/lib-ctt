@@ -37,6 +37,7 @@ export interface GetProductionReturn {
         totalOverGoal: number;
     };
     tonPerHourmeter: number;
+    tonPerHourmeterGoal: number;
     fuelConsumption: {
         total: number;
         perHour: number;

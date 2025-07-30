@@ -16,6 +16,7 @@ const AGRICULTURAL_EFFICIENCY_GOAL = 70;
 
 const formatPerformanceIndicatorsWorkFronts = (
   workFrontJourneyMap: Record<number, JourneyResponse>,
+  workFrontJourneyTractorMap: Record<number, JourneyResponse>,
   workFrontEfficiencyMap: Record<number, EfficiencyResponse>,
   workFrontShiftInefficiencyMap: Record<number, string>,
   workFrontProductionMap: Record<number, GetProductionReturn>,
@@ -31,8 +32,10 @@ const formatPerformanceIndicatorsWorkFronts = (
       workFrontShiftInefficiencyMap[parsedWorkFrontCode];
     const workFrontProduction = workFrontProductionMap[parsedWorkFrontCode];
     const workFrontWeight = workFrontWeightMap[parsedWorkFrontCode];
+    const workFrontJourneyTractor =
+      workFrontJourneyTractorMap[parsedWorkFrontCode];
 
-    const tonPerHour = workFrontProduction.hourlyDelivered.total;
+    const tonPerHour = workFrontProduction.tonPerHourmeterGoal;
 
     const awaitingTransshipmentData = workFrontJourney?.eventsDetails?.find(
       (event) =>
@@ -61,6 +64,11 @@ const formatPerformanceIndicatorsWorkFronts = (
 
     const maintenanceTime = hourToTime(workFrontJourney.maintenance.time);
 
+    const loadingTime = hourToTime(
+      workFrontJourneyTractor.eventsDetails?.find(
+        (event) => event.name === "Carregando" && event.type === "MANUAL"
+      )?.totalTime || 0
+    );
     const autopilotUseValue =
       workFrontEfficiency.automaticPilot.usePilotAutomatic;
 
@@ -71,9 +79,7 @@ const formatPerformanceIndicatorsWorkFronts = (
 
     const totalHourmeter = workFrontEfficiency.hourmeter.totalHourMeter;
 
-    const ctOffenders =
-      (unproductiveTotalTime * tonPerHour) /
-      workFrontJourney.activeEquipments.total;
+    const ctOffenders = unproductiveTotalTime * tonPerHour;
 
     const tOffenders = trucksLackTotalTime * tonPerHour;
 
@@ -106,6 +112,7 @@ const formatPerformanceIndicatorsWorkFronts = (
       averageRadius: workFrontWeight.averageRadius || 0,
       averageShiftInefficiency: workFrontShiftInefficiency,
       totalHourmeter,
+      loadingTime,
     };
   });
 
@@ -154,6 +161,7 @@ const processSummaryData = (
  */
 const createPerformanceIndicators = async (
   workFrontJourneyMap: Record<number, JourneyResponse>,
+  workFrontJourneyTractorMap: Record<number, JourneyResponse>,
   workFrontEfficiencyMap: Record<number, EfficiencyResponse>,
   workFrontShiftInefficiencyMap: Record<number, string>,
   workFrontProductionMap: Record<number, GetProductionReturn>,
@@ -162,6 +170,7 @@ const createPerformanceIndicators = async (
   try {
     const formattedWorkFronts = formatPerformanceIndicatorsWorkFronts(
       workFrontJourneyMap,
+      workFrontJourneyTractorMap,
       workFrontEfficiencyMap,
       workFrontShiftInefficiencyMap,
       workFrontProductionMap,

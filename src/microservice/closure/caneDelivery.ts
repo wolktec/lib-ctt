@@ -226,12 +226,10 @@ const formatCttHarvestPeriodCaneDelivery = (
 const createCaneDelivery = async ({
   date,
   defaultUnit,
-  secondUnit,
 }: CreateCaneDeliveryParams): Promise<CttCaneDelivery> => {
   const currentMonth = getCurrentMonthDate(date);
 
   const defaultUnitData = processUnitData(defaultUnit, currentMonth);
-  const secondUnitData = processUnitData(secondUnit, currentMonth);
 
   // Format work fronts
   const workFronts = formatCttWorkFrontsCaneDelivery(
@@ -249,13 +247,6 @@ const createCaneDelivery = async ({
       defaultUnitData.totalUnitMonthly,
       defaultUnitData.totalUnitHarvest,
       defaultUnitData.harvestGoal
-    ),
-    formatCttUnitCaneDelivery(
-      secondUnit.name,
-      secondUnitData.totalUnitDaily,
-      secondUnitData.totalUnitMonthly,
-      secondUnitData.totalUnitHarvest,
-      secondUnitData.harvestGoal
     ),
   ];
 

@@ -5,5 +5,5 @@ import { CttCaneDelivery, CreateCaneDeliveryParams } from "../../interfaces/cane
  * @param defaultUnit - Default unit data containing unit code, work fronts and productions map.
  * @param secondUnit - Second unit data containing unit code, work fronts and productions map.
  */
-declare const createCaneDelivery: ({ date, defaultUnit, secondUnit, }: CreateCaneDeliveryParams) => Promise<CttCaneDelivery>;
+declare const createCaneDelivery: ({ date, defaultUnit, }: CreateCaneDeliveryParams) => Promise<CttCaneDelivery>;
 export default createCaneDelivery;

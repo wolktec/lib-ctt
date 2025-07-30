@@ -60,7 +60,6 @@ export interface UnitData {
 export interface CreateCaneDeliveryParams {
   date: string;
   defaultUnit: UnitData;
-  secondUnit: UnitData;
 }
 
 export interface UnitProductionData {
