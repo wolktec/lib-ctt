@@ -11,16 +11,18 @@ import {
 
 import { GetProductionReturn } from "../../interfaces/partialDelivered.interface";
 
+//TODO: Remove this when the new unit codes are fully integrated
 const UNIT_MONTH_CANE_DELIVERY_GOAL_MAP: Record<number, number> = {
   112: 107455,
   115: 148112,
-  127: 100000,
+  127: 114570,
 };
 
+//TODO: Remove this when the new unit codes are fully integrated
 const UNIT_HARVEST_CANE_DELIVERY_GOAL_MAP: Record<number, number> = {
   112: 1960000,
   115: 2687880,
-  127: 1000000,
+  127: 769539,
 };
 
 const getCurrentMonthDate = (date: string): string => {
