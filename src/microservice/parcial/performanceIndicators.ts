@@ -58,8 +58,7 @@ const formatPerformanceIndicatorsWorkFronts = (
 
     const engineIdleTime = hourToTime(workFrontJourney.engineIdle.time);
 
-    const unproductiveTotalTime =
-      workFrontJourney.unproductive.time + workFrontJourney.maintenance.time;
+    const unproductiveTotalTime = workFrontJourney.unproductive.time;
     const unproductiveTime = hourToTime(unproductiveTotalTime);
 
     const maintenanceTime = hourToTime(workFrontJourney.maintenance.time);
