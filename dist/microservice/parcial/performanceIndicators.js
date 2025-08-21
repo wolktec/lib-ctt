@@ -20,7 +20,7 @@ const formatPerformanceIndicatorsWorkFronts = (workFrontJourneyMap, workFrontJou
         const maneuversData = workFrontJourney?.eventsDetails?.find((event) => event.name === "Manobra" && event.type === "AUTOMATIC");
         const maneuversTime = (0, helper_1.hourToTime)(maneuversData?.averageTime || 0);
         const engineIdleTime = (0, helper_1.hourToTime)(workFrontJourney.engineIdle.time);
-        const unproductiveTotalTime = workFrontJourney.unproductive.time + workFrontJourney.maintenance.time;
+        const unproductiveTotalTime = workFrontJourney.unproductive.time;
         const unproductiveTime = (0, helper_1.hourToTime)(unproductiveTotalTime);
         const maintenanceTime = (0, helper_1.hourToTime)(workFrontJourney.maintenance.time);
         const loadingTime = (0, helper_1.hourToTime)(workFrontJourneyTractor.eventsDetails?.find((event) => event.name === "Carregando" && event.type === "AUTOMATIC")?.averageTime || 0);
