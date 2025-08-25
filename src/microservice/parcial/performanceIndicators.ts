@@ -46,7 +46,7 @@ const formatPerformanceIndicatorsWorkFronts = (
     );
 
     const trucksLackData = workFrontJourney?.eventsDetails?.find(
-      (event) => event.name === "Falta caminhão" && event.type === "MANUAL"
+      (event) => event.name === "Falta de Caminhão" && event.type === "MANUAL"
     );
     const trucksLackTotalTime = trucksLackData?.totalTime || 0;
     const trucksLackTime = hourToTime(trucksLackTotalTime);

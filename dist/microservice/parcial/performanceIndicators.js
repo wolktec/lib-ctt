@@ -14,7 +14,7 @@ const formatPerformanceIndicatorsWorkFronts = (workFrontJourneyMap, workFrontJou
         const tonPerHour = workFrontProduction.tonPerHourmeterGoal;
         const awaitingTransshipmentData = workFrontJourney?.eventsDetails?.find((event) => event.name === "Aguardando Transbordo" && event.type === "MANUAL");
         const awaitingTransshipmentTime = (0, helper_1.hourToTime)(awaitingTransshipmentData?.totalTime || 0);
-        const trucksLackData = workFrontJourney?.eventsDetails?.find((event) => event.name === "Falta caminhão" && event.type === "MANUAL");
+        const trucksLackData = workFrontJourney?.eventsDetails?.find((event) => event.name === "Falta de Caminhão" && event.type === "MANUAL");
         const trucksLackTotalTime = trucksLackData?.totalTime || 0;
         const trucksLackTime = (0, helper_1.hourToTime)(trucksLackTotalTime);
         const maneuversData = workFrontJourney?.eventsDetails?.find((event) => event.name === "Manobra" && event.type === "AUTOMATIC");
