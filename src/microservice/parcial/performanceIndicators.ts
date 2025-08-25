@@ -20,7 +20,8 @@ const formatPerformanceIndicatorsWorkFronts = (
   workFrontEfficiencyMap: Record<number, EfficiencyResponse>,
   workFrontShiftInefficiencyMap: Record<number, string>,
   workFrontProductionMap: Record<number, GetProductionReturn>,
-  workFrontWeightMap: Record<number, WorkFrontWeightReturn>
+  workFrontWeightMap: Record<number, WorkFrontWeightReturn>,
+  tonPerHourGoalByTractor: number
 ): PerformanceIndicatorsWorkFront[] => {
   const formattedWorkFronts: PerformanceIndicatorsWorkFront[] = Object.entries(
     workFrontJourneyMap
@@ -45,7 +46,7 @@ const formatPerformanceIndicatorsWorkFronts = (
       awaitingTransshipmentData?.totalTime || 0
     );
 
-    const trucksLackData = workFrontJourney?.eventsDetails?.find(
+    const trucksLackData = workFrontJourneyTractor?.eventsDetails?.find(
       (event) => event.name === "Falta de Caminhão" && event.type === "MANUAL"
     );
     const trucksLackTotalTime = trucksLackData?.totalTime || 0;
@@ -86,7 +87,7 @@ const formatPerformanceIndicatorsWorkFronts = (
 
     const ctOffenders = unproductiveTotalTime * tonPerHour;
 
-    const tOffenders = trucksLackTotalTime * tonPerHour;
+    const tOffenders = trucksLackTotalTime * tonPerHourGoalByTractor;
 
     const agriculturalEfficiency = {
       value: workFrontEfficiency.elevator.utilization,
@@ -171,7 +172,8 @@ const createPerformanceIndicators = async (
   workFrontEfficiencyMap: Record<number, EfficiencyResponse>,
   workFrontShiftInefficiencyMap: Record<number, string>,
   workFrontProductionMap: Record<number, GetProductionReturn>,
-  workFrontWeightMap: Record<number, WorkFrontWeightReturn>
+  workFrontWeightMap: Record<number, WorkFrontWeightReturn>,
+  tonPerHourGoalByTractor: number
 ): Promise<CttPerformanceIndicators> => {
   try {
     const formattedWorkFronts = formatPerformanceIndicatorsWorkFronts(
@@ -180,7 +182,8 @@ const createPerformanceIndicators = async (
       workFrontEfficiencyMap,
       workFrontShiftInefficiencyMap,
       workFrontProductionMap,
-      workFrontWeightMap
+      workFrontWeightMap,
+      tonPerHourGoalByTractor
     );
 
     const summary = processSummaryData(formattedWorkFronts);

@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const helper_1 = require("../../helper/helper");
 const AUTOPILOT_USE_GOAL = 75;
 const AGRICULTURAL_EFFICIENCY_GOAL = 70;
-const formatPerformanceIndicatorsWorkFronts = (workFrontJourneyMap, workFrontJourneyTractorMap, workFrontEfficiencyMap, workFrontShiftInefficiencyMap, workFrontProductionMap, workFrontWeightMap) => {
+const formatPerformanceIndicatorsWorkFronts = (workFrontJourneyMap, workFrontJourneyTractorMap, workFrontEfficiencyMap, workFrontShiftInefficiencyMap, workFrontProductionMap, workFrontWeightMap, tonPerHourGoalByTractor) => {
     const formattedWorkFronts = Object.entries(workFrontJourneyMap).map(([workFrontCode, workFrontJourney]) => {
         const parsedWorkFrontCode = Number(workFrontCode);
         const workFrontEfficiency = workFrontEfficiencyMap[parsedWorkFrontCode];
@@ -14,7 +14,7 @@ const formatPerformanceIndicatorsWorkFronts = (workFrontJourneyMap, workFrontJou
         const tonPerHour = workFrontProduction.tonPerHourmeterGoal;
         const awaitingTransshipmentData = workFrontJourney?.eventsDetails?.find((event) => event.name === "Aguardando Transbordo" && event.type === "MANUAL");
         const awaitingTransshipmentTime = (0, helper_1.hourToTime)(awaitingTransshipmentData?.totalTime || 0);
-        const trucksLackData = workFrontJourney?.eventsDetails?.find((event) => event.name === "Falta de Caminhão" && event.type === "MANUAL");
+        const trucksLackData = workFrontJourneyTractor?.eventsDetails?.find((event) => event.name === "Falta de Caminhão" && event.type === "MANUAL");
         const trucksLackTotalTime = trucksLackData?.totalTime || 0;
         const trucksLackTime = (0, helper_1.hourToTime)(trucksLackTotalTime);
         const maneuversData = workFrontJourney?.eventsDetails?.find((event) => event.name === "Manobra" && event.type === "AUTOMATIC");
@@ -32,7 +32,7 @@ const formatPerformanceIndicatorsWorkFronts = (workFrontJourneyMap, workFrontJou
         };
         const totalHourmeter = workFrontEfficiency.hourmeter.totalHourMeter;
         const ctOffenders = unproductiveTotalTime * tonPerHour;
-        const tOffenders = trucksLackTotalTime * tonPerHour;
+        const tOffenders = trucksLackTotalTime * tonPerHourGoalByTractor;
         const agriculturalEfficiency = {
             value: workFrontEfficiency.elevator.utilization,
             goal: AGRICULTURAL_EFFICIENCY_GOAL,
@@ -91,9 +91,9 @@ const processSummaryData = (formattedWorkFronts) => {
  * @param workFrontProductionMap - Map of workFront productions received from the API production service.
  * @param workFrontWeightMap - Map of workFront weights received from the API weight service.
  */
-const createPerformanceIndicators = async (workFrontJourneyMap, workFrontJourneyTractorMap, workFrontEfficiencyMap, workFrontShiftInefficiencyMap, workFrontProductionMap, workFrontWeightMap) => {
+const createPerformanceIndicators = async (workFrontJourneyMap, workFrontJourneyTractorMap, workFrontEfficiencyMap, workFrontShiftInefficiencyMap, workFrontProductionMap, workFrontWeightMap, tonPerHourGoalByTractor) => {
     try {
-        const formattedWorkFronts = formatPerformanceIndicatorsWorkFronts(workFrontJourneyMap, workFrontJourneyTractorMap, workFrontEfficiencyMap, workFrontShiftInefficiencyMap, workFrontProductionMap, workFrontWeightMap);
+        const formattedWorkFronts = formatPerformanceIndicatorsWorkFronts(workFrontJourneyMap, workFrontJourneyTractorMap, workFrontEfficiencyMap, workFrontShiftInefficiencyMap, workFrontProductionMap, workFrontWeightMap, tonPerHourGoalByTractor);
         const summary = processSummaryData(formattedWorkFronts);
         return {
             workFronts: formattedWorkFronts,

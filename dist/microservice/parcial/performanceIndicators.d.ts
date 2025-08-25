@@ -8,5 +8,5 @@ import { GetProductionReturn } from "../../interfaces/partialDelivered.interface
  * @param workFrontProductionMap - Map of workFront productions received from the API production service.
  * @param workFrontWeightMap - Map of workFront weights received from the API weight service.
  */
-declare const createPerformanceIndicators: (workFrontJourneyMap: Record<number, JourneyResponse>, workFrontJourneyTractorMap: Record<number, JourneyResponse>, workFrontEfficiencyMap: Record<number, EfficiencyResponse>, workFrontShiftInefficiencyMap: Record<number, string>, workFrontProductionMap: Record<number, GetProductionReturn>, workFrontWeightMap: Record<number, WorkFrontWeightReturn>) => Promise<CttPerformanceIndicators>;
+declare const createPerformanceIndicators: (workFrontJourneyMap: Record<number, JourneyResponse>, workFrontJourneyTractorMap: Record<number, JourneyResponse>, workFrontEfficiencyMap: Record<number, EfficiencyResponse>, workFrontShiftInefficiencyMap: Record<number, string>, workFrontProductionMap: Record<number, GetProductionReturn>, workFrontWeightMap: Record<number, WorkFrontWeightReturn>, tonPerHourGoalByTractor: number) => Promise<CttPerformanceIndicators>;
 export default createPerformanceIndicators;
