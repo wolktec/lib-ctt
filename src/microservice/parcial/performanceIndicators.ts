@@ -62,7 +62,8 @@ const formatPerformanceIndicatorsWorkFronts = (
     const unproductiveTotalTime = workFrontJourney.unproductive.time;
     const unproductiveTime = hourToTime(unproductiveTotalTime);
 
-    const maintenanceTime = hourToTime(workFrontJourney.maintenance.time);
+    const maintenanceTimeInNumber = workFrontJourney.maintenance.time;
+    const maintenanceTime = hourToTime(maintenanceTimeInNumber);
 
     const loadingTime = hourToTime(
       workFrontJourneyTractor.eventsDetails?.find(
@@ -85,7 +86,9 @@ const formatPerformanceIndicatorsWorkFronts = (
 
     const totalHourmeter = workFrontEfficiency.hourmeter.totalHourMeter;
 
-    const ctOffenders = unproductiveTotalTime * tonPerHour;
+  const offenderTime = unproductiveTotalTime + maintenanceTimeInNumber; 
+  
+  const ctOffenders = offenderTime * tonPerHour;
 
     const tOffenders = trucksLackTotalTime * tonPerHourGoalByTractor;
 

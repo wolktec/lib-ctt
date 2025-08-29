@@ -22,7 +22,8 @@ const formatPerformanceIndicatorsWorkFronts = (workFrontJourneyMap, workFrontJou
         const engineIdleTime = (0, helper_1.hourToTime)(workFrontJourney.engineIdle.time);
         const unproductiveTotalTime = workFrontJourney.unproductive.time;
         const unproductiveTime = (0, helper_1.hourToTime)(unproductiveTotalTime);
-        const maintenanceTime = (0, helper_1.hourToTime)(workFrontJourney.maintenance.time);
+        const maintenanceTimeInNumber = workFrontJourney.maintenance.time;
+        const maintenanceTime = (0, helper_1.hourToTime)(maintenanceTimeInNumber);
         const loadingTime = (0, helper_1.hourToTime)(workFrontJourneyTractor.eventsDetails?.find((event) => event.name === "Carregando" && event.type === "AUTOMATIC")?.averageTime || 0);
         const countLoadTime = workFrontJourneyTractor.eventsDetails?.find((event) => event.name === "Carregando" && event.type === "AUTOMATIC")?.totalCount || 0;
         const autopilotUseValue = workFrontEfficiency.automaticPilot.usePilotAutomatic;
@@ -31,7 +32,8 @@ const formatPerformanceIndicatorsWorkFronts = (workFrontJourneyMap, workFrontJou
             goal: AUTOPILOT_USE_GOAL,
         };
         const totalHourmeter = workFrontEfficiency.hourmeter.totalHourMeter;
-        const ctOffenders = unproductiveTotalTime * tonPerHour;
+        const offenderTime = unproductiveTotalTime + maintenanceTimeInNumber;
+        const ctOffenders = offenderTime * tonPerHour;
         const tOffenders = trucksLackTotalTime * tonPerHourGoalByTractor;
         const agriculturalEfficiency = {
             value: workFrontEfficiency.elevator.utilization,
